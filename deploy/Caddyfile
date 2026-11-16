@@ -1,6 +1,15 @@
 # SITE_ADDRESS มาจาก .env
-#   ":80"                          = ยังไม่มีโดเมน เปิดด้วย IP ผ่าน HTTP
-#   "tmth-th.com, www.tmth-th.com" = Caddy ขอใบรับรอง Let's Encrypt และ redirect HTTP -> HTTPS ให้เอง
+#   ":80"                          = รับ HTTP (เปิดด้วย IP หรือมี Caddy ตัวอื่นทำ HTTPS อยู่ข้างหน้า)
+#   "tmth-th.com, www.tmth-th.com" = Caddy ตัวนี้ขอใบรับรอง Let's Encrypt และ redirect HTTP -> HTTPS เอง
+{
+	servers {
+		# เชื่อ X-Forwarded-Proto / X-Forwarded-For จาก proxy ข้างหน้าเฉพาะ IP ที่ไว้ใจ
+		# (ช่วงใช้คู่ระบบเดิม: Caddy ของระบบเดิมทำ HTTPS แล้วส่งต่อมาที่นี่)
+		# ค่าเริ่มต้น private_ranges = IP ภายใน docker/เครือข่ายส่วนตัว · คนจากอินเทอร์เน็ตปลอม header ไม่ได้
+		trusted_proxies static {$TRUSTED_PROXIES:private_ranges}
+	}
+}
+
 {$SITE_ADDRESS} {
 	encode zstd gzip
 

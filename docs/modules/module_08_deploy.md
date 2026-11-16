@@ -52,7 +52,20 @@ bash deploy/backup.sh                   # สำรองทันที
 - ส่งไฟล์ service account ไป `~/kitchen/secrets/` + ใส่ค่า `FIREBASE_*` ใน `.env` (ถ้าต้องการ push)
 - ใส่ค่าพร้อมเพย์ / บัญชี / EasySlip ใน `.env` แล้ว `dc up -d`
 
-## 6. ขั้นที่ 2: โดเมน `tmth-th.com` + HTTPS (ยังไม่ทำ)
+## 6. ขั้นที่ 2: โดเมน `tmth-th.com` + HTTPS — แผนที่เลือก (17/11/2569)
+user เรียงงาน: (1) โดเมน (2) คีย์ที่เหลือ (3) ทดสอบจริง + ปิดระบบเดิม → ช่วงนี้ **ใช้คู่กับระบบเดิม**
+
+```
+ลูกค้า ──HTTPS──> Caddy ระบบเดิม (ถือ 443, ขอใบรับรอง tmth-th.com)
+                   ├─ api.tmth-th.com ──> ระบบเดิม (เหมือนเดิม)
+                   └─ tmth-th.com ──────> 177.202.247.183:8080 ──> Caddy ระบบใหม่ ──> Django
+```
+- DNS (17/11): `tmth-th.com` → `2.57.91.91` (Hostinger hcdn) · NS `dns-parking.com` · ไม่มี MX / AAAA / CAA → แก้แค่ A record ปลอดภัย
+- Caddy ระบบใหม่ `trusted_proxies` (ค่า `TRUSTED_PROXIES`) ให้เชื่อ `X-Forwarded-Proto: https` จาก Caddy ระบบเดิม ไม่อย่างนั้น Django คิดว่าเป็น HTTP แล้ว redirect วน
+- ระบบใหม่ `.env`: `HTTPS_ENABLED=True`, โดเมนใน `DJANGO_ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` / `SITE_URL`, `SITE_ADDRESS=:80` (HTTP ภายใน), พอร์ต 8080 เหมือนเดิม
+- ขั้นที่ 3 ปิดระบบเดิม: ระบบใหม่ใช้ `HTTP_PORT=80`, `HTTPS_PORT=443`, `SITE_ADDRESS=tmth-th.com, www.tmth-th.com` แล้ว Caddy ระบบใหม่ขอใบรับรองเอง
+
+### ทางเลือกเดิม (อ้างอิง)
 ต้องตัดสินใจก่อน เพราะ Caddy ระบบเดิมถือพอร์ต 80/443 อยู่:
 - **A. ปิดระบบเดิม** แล้วให้ระบบใหม่ใช้ 80/443 (`HTTP_PORT=80`, `HTTPS_PORT=443`) — ง่ายสุด ถ้าเลิกใช้ระบบเดิมแล้ว
 - **B. ให้ Caddy ระบบเดิมส่งต่อ** `tmth-th.com` มาที่ `:8080` — ใช้คู่กันได้ระหว่างเปลี่ยนผ่าน

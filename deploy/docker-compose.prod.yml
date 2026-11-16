@@ -84,6 +84,8 @@ services:
     environment:
       # ยังไม่มีโดเมน = ":80" (เปิดด้วย IP) · มีโดเมนแล้ว = "tmth-th.com, www.tmth-th.com" (Caddy ออก HTTPS ให้เอง)
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      # IP ของ proxy ข้างหน้าที่เชื่อ header ได้ (เพิ่ม IP สาธารณะของ server ถ้าระบบเดิมส่งต่อผ่าน IP นั้น)
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-private_ranges}
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
