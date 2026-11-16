@@ -6,7 +6,7 @@ import json
 
 from django.shortcuts import render
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_safe, require_POST
 
 from apps.accounts.models import Role
 from apps.catalog.selectors import menu_selector
@@ -31,7 +31,7 @@ def _shop_context():
 
 
 @kitchen_required
-@require_GET
+@require_safe
 def kitchen_home(request):
     branch = branch_service.get_or_create_main_branch()
     categories, uncategorized = menu_selector.console_menu(branch)
@@ -42,7 +42,7 @@ def kitchen_home(request):
 
 
 @kitchen_required
-@require_GET
+@require_safe
 @never_cache
 def kitchen_board(request):
     return render(request, 'orders/kitchen/_board.html', kitchen_selector.board())

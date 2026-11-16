@@ -4,7 +4,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_safe, require_POST
 
 from apps.accounts.models import Role
 from apps.accounts.selectors import user_selector
@@ -22,7 +22,7 @@ owner_required = role_required(Role.OWNER)
 
 # --------------------------------------------------------------------------- ค่าส่งไรเดอร์
 @owner_required
-@require_GET
+@require_safe
 def rider_pay_list(request):
     return render(request, 'console/riders/pay_list.html', {
         'console_active': 'rider_pay', 'riders': payout_selector.riders_with_unpaid(),
@@ -30,7 +30,7 @@ def rider_pay_list(request):
 
 
 @owner_required
-@require_GET
+@require_safe
 def rider_pay_detail(request, rider_id):
     rider = payout_selector.get_rider(rider_id)
     return render(request, 'console/riders/pay_detail.html', {
@@ -61,7 +61,7 @@ def rider_pay_record(request, rider_id):
 
 # --------------------------------------------------------------------------- ลูกค้า
 @owner_required
-@require_GET
+@require_safe
 def customer_list(request):
     query = request.GET.get('q', '')
     page = Paginator(user_selector.list_customers(query), 30).get_page(request.GET.get('page'))
@@ -69,7 +69,7 @@ def customer_list(request):
 
 
 @owner_required
-@require_GET
+@require_safe
 def customer_detail(request, user_id):
     customer = user_selector.get_customer(user_id)
     return render(request, 'console/customers/detail.html', {
@@ -94,7 +94,7 @@ def customer_toggle_active(request, user_id):
 
 # --------------------------------------------------------------------------- บันทึกการแก้ไข
 @owner_required
-@require_GET
+@require_safe
 def audit_list(request):
     action, query = request.GET.get('action', ''), request.GET.get('q', '')
     page = Paginator(audit_selector.list_logs(action=action, query=query), 50).get_page(request.GET.get('page'))

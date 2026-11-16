@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.views.decorators.debug import sensitive_post_parameters
-from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.views.decorators.http import require_safe, require_http_methods, require_POST
 
 from apps.accounts.models import Role
 from apps.accounts.selectors import user_selector
@@ -19,7 +19,7 @@ owner_required = role_required(Role.OWNER)
 
 
 @owner_required
-@require_GET
+@require_safe
 def overview(request):
     branch = branch_service.get_or_create_main_branch()
     return render(request, 'console/overview.html', {

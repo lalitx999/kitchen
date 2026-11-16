@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.views.decorators.http import require_safe, require_http_methods, require_POST
 
 from apps.accounts.models import Role
 from apps.catalog.selectors import menu_selector
@@ -29,7 +29,7 @@ def _toast(response: HttpResponse, message: str, level: str = 'success') -> Http
 
 
 # --------------------------------------------------------------------------- เลือกเมนู
-@require_GET
+@require_safe
 def item_sheet(request, item_id):
     """HTMX: เนื้อหา modal เลือกตัวเลือก/จำนวน ของเมนูหนึ่ง"""
     branch = _branch()
@@ -64,7 +64,7 @@ def _cart_context(request):
     return {'cart': cart, 'branch': branch, 'shop': menu_selector.shop_status(branch)}
 
 
-@require_GET
+@require_safe
 def cart_page(request):
     return render(request, 'orders/cart.html', _cart_context(request))
 
@@ -138,7 +138,7 @@ def checkout_quote(request):
 
 # --------------------------------------------------------------------------- ออเดอร์ของฉัน
 @customer_required
-@require_GET
+@require_safe
 def order_list(request):
     orders = list(order_selector.customer_orders(request.user)[:50])
     active = [o for o in orders if o.is_active]
@@ -147,7 +147,7 @@ def order_list(request):
 
 
 @customer_required
-@require_GET
+@require_safe
 def order_detail(request, order_id):
     order = order_selector.get_customer_order(request.user, order_id)
     # import ในฟังก์ชัน กัน import วน (payments/delivery ใช้ orders)
@@ -160,7 +160,7 @@ def order_detail(request, order_id):
 
 
 @customer_required
-@require_GET
+@require_safe
 def order_tracking(request, order_id):
     """HTMX ทุก 10 วิ ระหว่างกำลังไปส่ง: ระยะไรเดอร์ถึงบ้าน + อายุของตำแหน่ง"""
     from apps.delivery.selectors import job_selector
@@ -170,7 +170,7 @@ def order_tracking(request, order_id):
 
 
 @customer_required
-@require_GET
+@require_safe
 def order_status(request, order_id):
     """HTMX polling: ถ้าสถานะเปลี่ยน สั่งให้หน้าโหลดใหม่ (ข้อมูลหลายส่วนเปลี่ยนพร้อมกัน)"""
     order = order_selector.get_customer_order_status(request.user, order_id)

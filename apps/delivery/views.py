@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_safe, require_POST
 
 from apps.accounts.models import Role
 from apps.core.decorators import role_required
@@ -38,14 +38,14 @@ def _jobs_context(request, profile):
 
 
 @rider_required
-@require_GET
+@require_safe
 def rider_home(request):
     profile = _profile_for(request)
     return render(request, 'delivery/rider_home.html', _jobs_context(request, profile))
 
 
 @rider_required
-@require_GET
+@require_safe
 @never_cache
 def rider_jobs(request):
     return render(request, 'delivery/_jobs.html', _jobs_context(request, _profile_for(request)))
@@ -121,7 +121,7 @@ def rider_location(request):
     return JsonResponse({'ok': True, 'updated_at': location.updated_at})
 
 
-@require_GET
+@require_safe
 @never_cache
 def delivery_proof_photo(request, order_id):
     """รูปหลักฐานการส่ง: เจ้าของร้าน, ลูกค้าเจ้าของออเดอร์, ไรเดอร์คนส่ง เท่านั้น"""

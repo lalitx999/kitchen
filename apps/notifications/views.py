@@ -6,14 +6,14 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import cache_control
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_safe, require_POST
 
 from .selectors import notification_selector
 from .services import notify_service
 
 
 @login_required
-@require_GET
+@require_safe
 def notification_list(request):
     # ใช้ layout ตามบทบาท ให้หน้าตาเหมือนส่วนอื่นที่ผู้ใช้คนนั้นใช้อยู่
     layout = {
@@ -26,7 +26,7 @@ def notification_list(request):
 
 
 @login_required
-@require_GET
+@require_safe
 def notification_open(request, notification_id):
     """กดแจ้งเตือน -> ทำเป็นอ่านแล้ว -> ไปหน้าที่เกี่ยวข้อง (เฉพาะ path ในเว็บเรา)"""
     n = notify_service.mark_read(request.user, notification_id)
@@ -66,7 +66,7 @@ def device_unregister(request):
     return JsonResponse({'ok': True})
 
 
-@require_GET
+@require_safe
 @cache_control(no_cache=True)
 def service_worker(request):
     """

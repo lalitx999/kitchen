@@ -1,7 +1,7 @@
 """Console: คิวสลิปที่ต้องตรวจเอง (EasySlip ใช้ไม่ได้ / โหมด MANUAL)"""
 from django.contrib import messages
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_safe, require_POST
 
 from apps.accounts.models import Role
 from apps.core.decorators import role_required
@@ -14,7 +14,7 @@ owner_required = role_required(Role.OWNER)
 
 
 @owner_required
-@require_GET
+@require_safe
 def slip_queue(request):
     return render(request, 'console/slips/queue.html', {
         'console_active': 'slips',

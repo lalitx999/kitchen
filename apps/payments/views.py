@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.http import FileResponse
 from django.shortcuts import redirect
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_safe, require_POST
 
 from apps.accounts.models import Role
 from apps.core.decorators import role_required
@@ -25,7 +25,7 @@ def upload_slip(request, order_id):
     return redirect('orders:detail', order_id=order.pk)
 
 
-@require_GET
+@require_safe
 @never_cache
 def slip_image(request, slip_id):
     """ส่งรูปสลิปจาก private storage หลังตรวจสิทธิ์ (ไม่มี URL สาธารณะ)"""

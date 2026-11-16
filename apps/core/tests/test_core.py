@@ -80,3 +80,11 @@ def test_healthz_reports_database_and_cache(client):
 def test_styleguide_hidden_when_not_debug(client, settings):
     settings.DEBUG = False
     assert client.get(reverse('core:styleguide')).status_code == 404
+
+
+@pytest.mark.django_db
+def test_head_requests_allowed_for_monitors_and_link_previews(client):
+    # บอทตรวจสถานะเว็บและพรีวิวลิงก์ (LINE / Facebook) ใช้ HEAD
+    assert client.head(reverse('core:home')).status_code == 200
+    assert client.head(reverse('core:healthz')).status_code in (200, 503)
+    assert client.post(reverse('core:home')).status_code == 405

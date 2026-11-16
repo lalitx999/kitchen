@@ -2,7 +2,7 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_safe, require_POST
 
 from apps.accounts.models import Role
 from apps.core.decorators import role_required
@@ -17,7 +17,7 @@ owner_required = role_required(Role.OWNER)
 
 
 @owner_required
-@require_GET
+@require_safe
 def order_list(request):
     status = request.GET.get('status', 'active')
     query = request.GET.get('q', '')
@@ -29,7 +29,7 @@ def order_list(request):
 
 
 @owner_required
-@require_GET
+@require_safe
 def order_detail(request, order_id):
     order = order_selector.get_console_order(order_id)
     return render(request, 'console/orders/detail.html', {
@@ -58,7 +58,7 @@ def order_cancel(request, order_id):
 
 
 @owner_required
-@require_GET
+@require_safe
 def order_export(request):
     """ดาวน์โหลด CSV ออเดอร์ตามช่วงวันที่ (เปิดใน Excel ภาษาไทยได้ เพราะมี BOM)"""
     import csv

@@ -1,6 +1,6 @@
 # TMPP — แผนสร้างระบบสั่งอาหารและส่งอาหารใหม่
 
-> วันที่: 17/11/2569 · สถานะ: M0-M9 เสร็จ · M10 ขั้นที่ 1 ออนไลน์ที่ http://177.202.247.183:8080 · เหลือโดเมน + HTTPS
+> วันที่: 17/11/2569 · สถานะ: ออนไลน์ที่ https://tmth-th.com (ใช้คู่ระบบเดิม) · ถัดไป: คีย์ที่เหลือ → ทดสอบจริง + ปิดระบบเดิม
 > ของเดิม: `~/Documents/food` (Django 5 + DRF + Next.js 15) · ของใหม่: `~/Documents/foodnes`
 
 ---
@@ -231,3 +231,4 @@ AuditLog (actor, action, target, before/after JSON, ip)
 | 17/11/2569 | M9 | ค่าส่งไรเดอร์ + บันทึกจ่าย, ลูกค้า + ปิดบัญชี, หน้าบันทึกการแก้ไข, ยอดขาย 7 วัน + เมนูขายดี, ดาวน์โหลด CSV (`docs/modules/module_06_console.md`) | pytest 180 passed, ทดสอบในเบราว์เซอร์ + มือถือ, ไม่มีลิงก์ว่างในเมนู |
 | 17/11/2569 | M8 | แจ้งเตือนในเว็บ (กระดิ่ง + หน้าแจ้งเตือน) + push FCM ผ่าน Celery, ทุกเหตุการณ์ออเดอร์/สลิป/ไรเดอร์ใกล้ถึง, service worker, manifest (`docs/modules/module_07_notifications.md`) | pytest 198 passed, ทดสอบกระดิ่ง/หน้าแจ้งเตือนในเบราว์เซอร์ · รอค่า Firebase ทดสอบ push จริง |
 | 17/11/2569 | M10 ขั้นที่ 1 | ขึ้น VPS ด้วย docker compose `tmpp-prod` + Caddy พอร์ต 8080 (80/443 เป็นของระบบเดิม), แก้ worker พังเพราะขาด `packaging` (`docs/modules/module_08_deploy.md`) | migrate ผ่าน, ทุก service ขึ้นค้าง, /healthz/ ok จากภายนอก, หน้าเว็บโหลดครบ |
+| 17/11/2569 | M10 ขั้นที่ 2 | โดเมน `tmth-th.com` + HTTPS ผ่าน Caddy ระบบเดิม ส่งต่อมาระบบใหม่ :8080, รองรับ HEAD | ใบรับรองออกแล้ว, redirect/HSTS/cookie Secure ถูกต้อง, api เดิมยังทำงาน |

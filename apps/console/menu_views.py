@@ -1,7 +1,7 @@
 """Console: จัดการเมนู หมวด และตัวเลือก (ทุกการแก้ไขบันทึก AuditLog)"""
 from django.contrib import messages
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.views.decorators.http import require_safe, require_http_methods, require_POST
 
 from apps.accounts.models import Role
 from apps.catalog.forms import CategoryForm, MenuItemForm, MenuOptionForm
@@ -20,7 +20,7 @@ def _audit(request, action, obj, changes=None):
 
 
 @owner_required
-@require_GET
+@require_safe
 def menu_list(request):
     branch = branch_service.get_or_create_main_branch()
     categories, uncategorized = menu_selector.console_menu(branch)
