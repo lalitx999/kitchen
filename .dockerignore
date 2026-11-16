@@ -14,3 +14,5 @@ docs/
 firebase-*.json
 service-account*.json
 .DS_Store
+secrets/
+deploy/backup.sh

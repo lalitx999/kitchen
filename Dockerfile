@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # GDAL/GEOS/PROJ สำหรับ GeoDjango (PostGIS) แล้วลบ cache ของ apt ให้ image เล็กลง
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gdal-bin libgdal32 libgeos-c1v5 libproj25 \
+    && apt-get install -y --no-install-recommends gdal-bin libgdal32 libgeos-c1v5 libproj25 curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,8 +19,10 @@ RUN pip install -r requirements/production.txt
 
 COPY . .
 
-# ไม่รันด้วย root
-RUN useradd --create-home --uid 1000 app && chown -R app:app /app
+# ไม่รันด้วย root · สร้างโฟลเดอร์ไฟล์ไว้ก่อน ให้ volume ที่ mount ทับได้สิทธิ์ของ app (เขียน static/รูปได้)
+RUN useradd --create-home --uid 1000 app \
+    && mkdir -p /app/staticfiles /app/media /app/private_media \
+    && chown -R app:app /app
 USER app
 
 EXPOSE 8000

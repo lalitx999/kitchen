@@ -36,6 +36,11 @@ def _messaging():
     path = settings.FIREBASE_CREDENTIALS_PATH
     if not path:
         raise PushNotConfigured('ยังไม่ได้ตั้งค่า FIREBASE_CREDENTIALS_PATH')
+    import os
+
+    if not os.path.isfile(path):
+        # ตั้ง path ไว้แต่ยังไม่ได้วางไฟล์บน server -> ข้ามการส่ง ไม่ให้ task พัง
+        raise PushNotConfigured(f'ไม่พบไฟล์ service account ที่ {path}')
     import firebase_admin
     from firebase_admin import credentials, messaging
 
