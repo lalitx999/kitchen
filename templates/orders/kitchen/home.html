@@ -1,0 +1,44 @@
+{% extends "layouts/kitchen.html" %}
+{% load static %}
+
+{% block header_actions %}
+  {# เบราว์เซอร์ไม่ให้เล่นเสียงจนกว่าผู้ใช้จะกดอะไรสักอย่าง จึงต้องมีปุ่มเปิดเสียงทุกครั้งที่เปิดจอ #}
+  {% include "components/_push_button.html" %}
+  <button type="button" id="kds-sound" class="btn btn-primary btn-sm btn-icon" aria-pressed="false">
+    <i class="bi bi-volume-mute"></i><span>เปิดเสียง</span>
+  </button>
+{% endblock %}
+
+{% block content %}
+<div x-data="{ tab: 'new', showMenu: false }">
+  <div class="d-flex flex-wrap align-items-stretch gap-3 mb-3">
+    <div class="flex-grow-1">{% include "orders/kitchen/_shop_switch.html" %}</div>
+    <button type="button" class="btn btn-outline-ink btn-icon" @click="showMenu = !showMenu" :aria-expanded="showMenu">
+      <i class="bi bi-journal-text"></i>เมนูหมด / มีขาย
+    </button>
+  </div>
+
+  <section class="card-tm card-tm-body mb-3" x-show="showMenu" x-cloak>
+    <div class="small text-muted-tm mb-2">กด "หมด" แล้วเมนูจะหายจากหน้าร้านทันที</div>
+    {% if menu_items %}
+      <div class="d-flex flex-wrap gap-2">
+        {% for item in menu_items %}{% include "orders/kitchen/_menu_item.html" %}{% endfor %}
+      </div>
+    {% else %}
+      <div class="small text-muted-tm">ยังไม่มีเมนู</div>
+    {% endif %}
+  </section>
+
+  {# ถามบอร์ดใหม่ทุก 5 วินาที เฉพาะตอนแท็บเปิด · data-refresh-on-visible: กลับมาที่แท็บแล้วโหลดทันที (app.js) #}
+  <div id="kds-board" hx-get="{% url 'orders:kitchen_board' %}"
+       hx-trigger="every 5s [document.visibilityState === 'visible'], refresh" hx-swap="innerHTML" data-refresh-on-visible>
+    {% include "orders/kitchen/_board.html" %}
+  </div>
+</div>
+
+<audio id="kds-bell" src="{% static 'sounds/bell-order.mp3' %}" preload="auto"></audio>
+{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/kitchen.js' %}" defer></script>
+{% endblock %}

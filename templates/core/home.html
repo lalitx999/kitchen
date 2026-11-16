@@ -1,0 +1,92 @@
+{% extends "layouts/customer.html" %}
+{# หน้าร้าน: ข้อมูลร้าน + เมนูจริง · เมนูที่มีตัวเลือกเปิด modal ส่วนเมนูธรรมดากดเพิ่มลงตะกร้าได้ทันที #}
+
+{% block title %}{% if branch %}{{ branch.name }}{% else %}{{ SITE_NAME }}{% endif %} — สั่งอาหารออนไลน์{% endblock %}
+
+{% block subbar %}
+{% if categories|length > 1 %}
+<div class="tm-subbar position-sticky" style="top: var(--tm-header-h); z-index: 1020;">
+  <div class="container-xl">
+    <nav class="scroller" aria-label="หมวดเมนู">
+      {% for category in categories %}
+        <a href="#cat-{{ category.pk }}" class="tm-pill tm-pill-muted">{{ category.name }}</a>
+      {% endfor %}
+      {% if uncategorized %}<a href="#cat-other" class="tm-pill tm-pill-muted">อื่นๆ</a>{% endif %}
+    </nav>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated and user.is_customer %}
+<section class="container-xl pt-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 px-md-4 rounded-4 bg-brand-soft border" style="border-color: var(--tm-brand-line) !important;">
+    <div class="d-flex align-items-center gap-3">
+      <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-brand fw-black" style="width:44px;height:44px;">{{ user.full_name|slice:":1" }}</span>
+      <div>
+        <div class="fw-black">สวัสดี คุณ{{ user.get_short_name }}</div>
+        <div class="small text-muted-tm">วันนี้อยากกินอะไรดี</div>
+      </div>
+    </div>
+    {% if not user.phone %}
+      {# สมัครด้วย Google จะยังไม่มีเบอร์ ไรเดอร์ต้องใช้โทรหาตอนส่ง #}
+      <a href="{% url 'accounts:account' %}" class="btn btn-sm btn-primary btn-icon"><i class="bi bi-telephone"></i>เพิ่มเบอร์โทรก่อนสั่ง</a>
+    {% else %}
+      <a href="{% url 'orders:list' %}" class="btn btn-sm btn-outline-ink btn-icon"><i class="bi bi-receipt"></i>ออเดอร์ของฉัน</a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<section class="container-xl pt-4">
+  <div class="card-tm card-tm-body p-4">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+      <div class="min-w-0">
+        <h1 class="h3 fw-black mb-1">{% if branch %}{{ branch.name }}{% else %}{{ SITE_NAME }}{% endif %}</h1>
+        <div class="small text-muted-tm d-flex flex-wrap gap-3">
+          {% if branch.opens_at %}<span><i class="bi bi-clock me-1"></i>{{ branch.opens_at|time:"H:i" }} - {{ branch.closes_at|time:"H:i" }} น.</span>{% endif %}
+          {% if branch.phone %}<a href="tel:{{ branch.phone }}" class="text-muted-tm text-decoration-none"><i class="bi bi-telephone me-1"></i>{{ branch.phone }}</a>{% endif %}
+          <span><i class="bi bi-qr-code me-1"></i>จ่ายด้วย QR พร้อมเพย์</span>
+        </div>
+      </div>
+      {% if shop.accepting %}
+        <span class="tm-pill tm-pill-action"><i class="bi bi-circle-fill" style="font-size:.5rem"></i>เปิดรับออเดอร์</span>
+      {% else %}
+        <span class="tm-pill tm-pill-muted"><i class="bi bi-moon"></i>ปิดรับออเดอร์</span>
+      {% endif %}
+    </div>
+    {% if not shop.accepting %}
+      <div class="alert alert-warning small mb-0 mt-3"><i class="bi bi-info-circle me-1"></i>{{ shop.reason }} · ดูเมนูและใส่ตะกร้าไว้ก่อนได้</div>
+    {% endif %}
+  </div>
+</section>
+
+<section id="menu" class="container-xl pt-4">
+  {% for category in categories %}
+    <div id="cat-{{ category.pk }}" class="mb-4" style="scroll-margin-top: 7.5rem;">
+      <h2 class="h5 fw-black mb-3">{{ category.name }}</h2>
+      <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-4">
+        {% for item in category.menu %}{% include "catalog/_menu_card.html" %}{% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+
+  {% if uncategorized %}
+    <div id="cat-other" class="mb-4" style="scroll-margin-top: 7.5rem;">
+      {% if categories %}<h2 class="h5 fw-black mb-3">อื่นๆ</h2>{% endif %}
+      <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-4">
+        {% for item in uncategorized %}{% include "catalog/_menu_card.html" %}{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not categories and not uncategorized %}
+    <div class="card-tm card-tm-body text-center py-5">
+      <i class="bi bi-journal-plus fs-1 text-muted-tm"></i>
+      <div class="fw-bold mt-2">ยังไม่มีเมนูในระบบ</div>
+      <div class="small text-muted-tm">เจ้าของร้านเพิ่มเมนูได้ที่ Console &gt; เมนูอาหาร</div>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

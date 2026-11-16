@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+{# จอครัว: เต็มความกว้าง ใช้บนแท็บเล็ต/มือถือในครัว ปุ่มใหญ่ ไม่มี footer #}
+
+{% block title %}จอครัว — {{ SITE_NAME }}{% endblock %}
+{% block body_class %}kds-app{% endblock %}
+
+{% block layout %}
+<header class="tm-header">
+  <div class="container-fluid px-3 px-lg-4">
+    <a href="{% url 'orders:kitchen' %}" class="tm-brand">
+      <img src="{% static 'img/logo-mark.svg' %}" alt="" width="36" height="36">
+      <span class="d-flex flex-column">
+        <span class="tm-brand-name">{{ SITE_NAME }}</span>
+        <span class="tm-brand-tag">จอครัว</span>
+      </span>
+    </a>
+    <div class="d-flex align-items-center gap-2">
+      {% block header_actions %}{% endblock %}
+      {% include "components/_bell.html" %}
+      {% if user.is_owner %}<a href="{% url 'console:overview' %}" class="btn btn-outline-ink btn-sm btn-icon"><i class="bi bi-grid-1x2"></i><span class="d-none d-md-inline">Console</span></a>{% endif %}
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+        <button type="submit" class="btn btn-outline-ink btn-sm" aria-label="ออกจากระบบ"><i class="bi bi-box-arrow-right"></i></button>
+      </form>
+    </div>
+  </div>
+</header>
+
+{% include "components/_messages.html" %}
+
+<main class="container-fluid px-3 px-lg-4 py-3">
+  {% block content %}{% endblock %}
+</main>
+
+<div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index: 1090;">
+  <div id="tm-toast" class="toast align-items-center border-0" role="status" aria-live="polite" aria-atomic="true">
+    <div class="d-flex"><div class="toast-body fw-semibold" id="tm-toast-body"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="ปิด"></button></div>
+  </div>
+</div>
+{% endblock %}

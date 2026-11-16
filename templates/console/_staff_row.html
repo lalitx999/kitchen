@@ -1,0 +1,35 @@
+{# แถวพนักงาน: HTMX แทนที่ทั้งแถวเมื่อเปิด/ปิดบัญชี #}
+<tr id="staff-{{ staff.pk }}" class="{% if not staff.is_active %}text-muted-tm{% endif %}">
+  <td>
+    <div class="fw-bold">{{ staff.full_name }}</div>
+    <div class="small-xs text-muted-tm">{{ staff.email }}</div>
+  </td>
+  <td>
+    {% if staff.role == 'RIDER' %}<span class="tm-pill tm-pill-brand"><i class="bi bi-scooter"></i>ไรเดอร์</span>
+    {% else %}<span class="tm-pill tm-pill-muted"><i class="bi bi-fire"></i>ครัว</span>{% endif %}
+  </td>
+  <td class="font-mono-num">{{ staff.phone|default:"-" }}</td>
+  <td>
+    {% if staff.role == 'RIDER' %}
+      {{ staff.rider_profile.vehicle_plate|default:"-" }}
+      {% if staff.rider_profile.is_online %}<span class="status-badge status-paid ms-1">รับงานอยู่</span>{% endif %}
+    {% else %}-{% endif %}
+  </td>
+  <td>
+    {% if staff.is_active %}<span class="status-badge status-completed">ใช้งานได้</span>
+    {% else %}<span class="status-badge status-cancelled">ปิดแล้ว</span>{% endif %}
+  </td>
+  <td class="text-muted-tm small text-nowrap">{{ staff.last_login|date:"j M H:i"|default:"ยังไม่เคย" }}</td>
+  <td class="text-end text-nowrap">
+    <a href="{% url 'console:staff_password' staff.pk %}" class="btn btn-sm btn-outline-ink" title="ตั้งรหัสผ่านใหม่"><i class="bi bi-key"></i></a>
+    <form class="d-inline" hx-post="{% url 'console:staff_toggle_active' staff.pk %}" hx-target="#staff-{{ staff.pk }}" hx-swap="outerHTML"
+          {% if staff.is_active %}hx-confirm="ปิดบัญชี {{ staff.full_name }}? เครื่องที่ล็อกอินอยู่จะหลุดทันที"{% endif %}>
+      <input type="hidden" name="active" value="{% if staff.is_active %}0{% else %}1{% endif %}">
+      {% if staff.is_active %}
+        <button type="submit" class="btn btn-sm btn-outline-ink">ปิดบัญชี</button>
+      {% else %}
+        <button type="submit" class="btn btn-sm btn-action">เปิดบัญชี</button>
+      {% endif %}
+    </form>
+  </td>
+</tr>

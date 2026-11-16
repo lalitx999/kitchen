@@ -1,0 +1,47 @@
+{% load humanize %}
+{# เนื้อหา modal: เลือกตัวเลือก + จำนวน + หมายเหตุ · ยอดรวมคิดใน Alpine เพื่อแสดงผล ราคาจริงคิดที่เซิร์ฟเวอร์ #}
+<form hx-post="{% url 'orders:cart_add' %}" hx-swap="none" hx-disabled-elt="find button[type=submit]"
+      x-data="{ qty: 1, base: {{ item.price|stringformat:'f' }}, extras: {}, get unit() { return this.base + Object.values(this.extras).reduce((a, b) => a + b, 0) } }">
+  <input type="hidden" name="item_id" value="{{ item.pk }}">
+  {% if item.image %}<img src="{{ item.image.url }}" alt="" class="w-100 object-fit-cover" style="aspect-ratio: 16/9; border-radius: var(--tm-radius-lg) var(--tm-radius-lg) 0 0;">{% endif %}
+  <div class="modal-header border-0 pb-0">
+    <div>
+      <h2 class="modal-title h5 fw-black mb-0">{{ item.name }}</h2>
+      {% if item.description %}<div class="small text-muted-tm">{{ item.description }}</div>{% endif %}
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+  </div>
+  <div class="modal-body">
+    {% if item.options.all %}
+      <div class="small fw-bold text-muted-tm mb-2">ตัวเลือกเพิ่ม (เลือกได้หลายอย่าง)</div>
+      <div class="d-grid gap-2 mb-3">
+        {% for option in item.options.all %}
+          <label class="d-flex align-items-center justify-content-between gap-2 border rounded-3 px-3 py-2">
+            <span class="d-flex align-items-center gap-2">
+              <input class="form-check-input m-0" type="checkbox" name="option_ids" value="{{ option.pk }}"
+                     @change="$event.target.checked ? extras['{{ option.pk }}'] = {{ option.extra_price|stringformat:'f' }} : delete extras['{{ option.pk }}']">
+              <span>{{ option.name }}</span>
+            </span>
+            <span class="small text-muted-tm">{% if option.extra_price %}+฿{{ option.extra_price|floatformat:"-2" }}{% else %}ฟรี{% endif %}</span>
+          </label>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <label class="form-label" for="sheet-note">หมายเหตุ</label>
+    <input class="form-control mb-3" id="sheet-note" name="note" maxlength="120" placeholder="เช่น ไม่เผ็ด">
+    <div class="d-flex align-items-center justify-content-between">
+      <span class="small fw-bold text-muted-tm">จำนวน</span>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-ink btn-sm" @click="qty = Math.max(1, qty - 1)" aria-label="ลด"><i class="bi bi-dash-lg"></i></button>
+        <input type="number" name="qty" x-model.number="qty" min="1" max="20" class="form-control form-control-sm text-center" style="width: 4rem;" aria-label="จำนวน">
+        <button type="button" class="btn btn-outline-ink btn-sm" @click="qty = Math.min(20, qty + 1)" aria-label="เพิ่ม"><i class="bi bi-plus-lg"></i></button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer border-0 pt-0">
+    <button type="submit" class="btn btn-action btn-lg w-100 btn-icon justify-content-between">
+      <span><span class="spinner-border spinner-border-sm htmx-indicator me-1"></span>ใส่ตะกร้า</span>
+      <span x-text="'฿' + (unit * qty).toLocaleString('th-TH')">฿{{ item.price|floatformat:"-2" }}</span>
+    </button>
+  </div>
+</form>

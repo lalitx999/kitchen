@@ -1,0 +1,53 @@
+from django import forms
+from django.contrib.auth import password_validation
+
+from apps.accounts.forms import ThaiPhoneField
+from apps.accounts.models import Role, normalize_email_address
+from apps.accounts.selectors import user_selector
+
+
+def _validate_new_password(form, field):
+    value = form.cleaned_data.get(field)
+    if value:
+        try:
+            password_validation.validate_password(value)
+        except forms.ValidationError as exc:
+            form.add_error(field, exc)
+
+
+class StaffCreateForm(forms.Form):
+    role = forms.ChoiceField(
+        label='ตำแหน่ง', choices=[(Role.RIDER, 'ไรเดอร์'), (Role.KITCHEN, 'ครัว')], initial=Role.RIDER,
+    )
+    full_name = forms.CharField(label='ชื่อ', max_length=150)
+    email = forms.EmailField(label='อีเมล (ใช้ล็อกอิน)')
+    phone = ThaiPhoneField()
+    vehicle_plate = forms.CharField(label='ทะเบียนรถ (ไรเดอร์)', max_length=20, required=False)
+    password = forms.CharField(
+        label='รหัสผ่านเริ่มต้น', strip=False, widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+        help_text='อย่างน้อย 8 ตัว ส่งให้พนักงานแล้วให้เปลี่ยนภายหลัง',
+    )
+
+    def clean_email(self):
+        email = normalize_email_address(self.cleaned_data['email'])
+        if user_selector.email_exists(email):
+            raise forms.ValidationError('อีเมลนี้มีบัญชีแล้ว')
+        return email
+
+    def clean(self):
+        cleaned = super().clean()
+        _validate_new_password(self, 'password')
+        if cleaned.get('role') != Role.RIDER:
+            cleaned['vehicle_plate'] = ''
+        return cleaned
+
+
+class StaffPasswordForm(forms.Form):
+    new_password = forms.CharField(
+        label='รหัสผ่านใหม่', strip=False, widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        _validate_new_password(self, 'new_password')
+        return cleaned

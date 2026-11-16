@@ -1,0 +1,118 @@
+{% extends "layouts/customer.html" %}
+{# หน้าตรวจธีม (DEBUG เท่านั้น) — ข้อมูลในหน้านี้เป็นตัวอย่างเพื่อดูหน้าตา ไม่ใช่ข้อมูลจริง #}
+
+{% block title %}Styleguide — {{ SITE_NAME }}{% endblock %}
+
+{% block subbar %}
+<div class="tm-subbar">
+  <div class="container-xl">
+    <div class="scroller">
+      <a href="#" class="tm-pill tm-pill-ink">ทั้งหมด</a>
+      <a href="#" class="tm-pill tm-pill-muted">ข้าวผัด</a>
+      <a href="#" class="tm-pill tm-pill-muted">ก๋วยเตี๋ยว</a>
+      <a href="#" class="tm-pill tm-pill-muted">กับข้าว</a>
+      <a href="#" class="tm-pill tm-pill-muted">เครื่องดื่ม</a>
+      <span class="tm-pill tm-pill-accent"><i class="bi bi-bell"></i>เมนูใหม่</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4 d-grid gap-4">
+  <div class="alert alert-warning mb-0"><i class="bi bi-info-circle me-1"></i>หน้านี้ใช้ตรวจธีมเท่านั้น ข้อมูลทั้งหมดเป็นตัวอย่าง เปิดได้เฉพาะตอน DEBUG · <a href="{% url 'core:styleguide_console' %}">ดูหน้า Console</a></div>
+
+  <section class="card-tm card-tm-body">
+    <h2 class="h6 fw-black mb-3">สี</h2>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="tm-pill" style="background:var(--tm-brand);color:#fff">brand #e11d74</span>
+      <span class="tm-pill" style="background:var(--tm-action);color:#fff">action #00c274</span>
+      <span class="tm-pill" style="background:var(--tm-accent);color:#fff">accent #ff6b00</span>
+      <span class="tm-pill" style="background:var(--tm-ink);color:#fff">ink #111827</span>
+      <span class="tm-pill tm-pill-brand">brand soft</span>
+      <span class="tm-pill tm-pill-muted">muted</span>
+    </div>
+  </section>
+
+  <section class="card-tm card-tm-body">
+    <h2 class="h6 fw-black mb-3">ปุ่ม</h2>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <button class="btn btn-action btn-icon"><i class="bi bi-bag-plus"></i>ใส่ตะกร้า</button>
+      <button class="btn btn-primary">ยืนยัน</button>
+      <button class="btn btn-ink btn-icon"><i class="bi bi-shield-check"></i>Console</button>
+      <button class="btn btn-soft">ปุ่มรอง</button>
+      <button class="btn btn-outline-ink">ยกเลิก</button>
+      <button class="btn btn-action btn-pill btn-sm">pill เล็ก</button>
+      <button class="btn btn-action" disabled>ปิดใช้งาน</button>
+      <button class="btn btn-primary btn-icon" hx-get="{% url 'core:healthz' %}" hx-swap="none">
+        <span class="spinner-border spinner-border-sm htmx-indicator"></span>ทดสอบ HTMX
+      </button>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="h6 fw-black mb-3">การ์ดเมนู (ตัวอย่าง)</h2>
+    <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-4">
+      <div class="col">
+        <div class="card-tm menu-card">
+          <div class="menu-thumb"><i class="bi bi-image fs-1"></i></div>
+          <div class="p-3 d-flex flex-column gap-1 flex-grow-1">
+            <div class="fw-bold">ข้าวผัดกะเพราหมูสับ</div>
+            <div class="small text-muted-tm">ไข่ดาวเพิ่มได้</div>
+            <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
+              <span class="price">฿60</span>
+              <button class="btn btn-action btn-sm btn-pill btn-icon" aria-label="ใส่ตะกร้า"><i class="bi bi-plus-lg"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card-tm menu-card">
+          <div class="menu-thumb"><i class="bi bi-image fs-1"></i></div>
+          <div class="p-3 d-flex flex-column gap-1 flex-grow-1">
+            <div class="fw-bold">ต้มยำกุ้งน้ำข้น</div>
+            <div class="small text-muted-tm">เผ็ดกลาง</div>
+            <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
+              <span class="price">฿120</span>
+              <span class="tm-pill tm-pill-muted">หมด</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card-tm card-tm-body">
+    <h2 class="h6 fw-black mb-3">สถานะออเดอร์</h2>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="status-badge status-pending_payment">รอชำระเงิน</span>
+      <span class="status-badge status-payment_review">รอตรวจสลิป</span>
+      <span class="status-badge status-paid">ชำระแล้ว</span>
+      <span class="status-badge status-preparing">กำลังทำ</span>
+      <span class="status-badge status-ready">พร้อมส่ง</span>
+      <span class="status-badge status-delivering">กำลังไปส่ง</span>
+      <span class="status-badge status-completed">ส่งสำเร็จ</span>
+      <span class="status-badge status-cancelled">ยกเลิก</span>
+    </div>
+  </section>
+
+  <section class="card-tm card-tm-body">
+    <h2 class="h6 fw-black mb-3">ฟอร์ม</h2>
+    <form class="row g-3" onsubmit="return false">
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="sg-name">ชื่อผู้รับ</label>
+        <input class="form-control" id="sg-name" placeholder="เช่น สมชาย">
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="sg-phone">เบอร์โทร</label>
+        <input class="form-control is-invalid" id="sg-phone" value="08">
+        <div class="invalid-feedback">เบอร์โทรต้องมี 10 หลัก</div>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="sg-note">หมายเหตุถึงร้าน</label>
+        <textarea class="form-control" id="sg-note" rows="2" placeholder="ไม่ใส่ผัก"></textarea>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

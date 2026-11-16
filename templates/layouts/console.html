@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+{# หลังบ้านเจ้าของร้าน: แถบบนสีเข้ม + sidebar ซ้าย (จอใหญ่) / ปุ่มเมนู 2 คอลัมน์ (มือถือ) #}
+{# view ส่ง console_active มาใน context เพื่อไฮไลต์เมนู เช่น 'overview', 'orders' #}
+
+{% block title %}{% block console_title %}ภาพรวม{% endblock %} — {{ SITE_NAME }} Console{% endblock %}
+
+{% block layout %}
+<div class="console-topbar">
+  <div class="container-fluid px-3 px-lg-4 py-2 d-flex align-items-center justify-content-between gap-2" style="max-width: 1600px;">
+    <div class="d-flex align-items-center gap-2">
+      <img src="{% static 'img/logo-mark.svg' %}" alt="" width="32" height="32">
+      <div class="lh-sm">
+        <div class="fw-black">{{ SITE_NAME }} Console</div>
+        <div class="small-xs text-secondary">หลังบ้านเจ้าของร้าน</div>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{% url 'core:home' %}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-light btn-icon">
+        <i class="bi bi-box-arrow-up-right"></i><span class="d-none d-sm-inline">ดูหน้าร้าน</span>
+      </a>
+      {% include "components/_bell.html" with bell_class="btn-outline-light" %}
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-light btn-icon" title="ออกจากระบบ"><i class="bi bi-box-arrow-right"></i><span class="d-none d-sm-inline">ออก</span></button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% include "components/_messages.html" %}
+
+<div class="container-fluid px-3 px-lg-4 py-4" style="max-width: 1600px;">
+  <div class="console-shell">
+    <aside class="console-sidebar" aria-label="เมนูหลังบ้าน">
+      {% with active=console_active %}
+      <div class="group-label">ร้าน</div>
+      <nav class="nav-grid">
+        <a href="{% url 'console:overview' %}" class="console-link {% if active == 'overview' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-grid-1x2"></i>ภาพรวม</span></a>
+        <a href="{% url 'console:orders' %}" class="console-link {% if active == 'orders' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-receipt"></i>ออเดอร์</span></a>
+        <a href="{% url 'console:slips' %}" class="console-link {% if active == 'slips' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-qr-code-scan"></i>ตรวจสลิป</span>{% if pending_slip_count %}<span class="count">{{ pending_slip_count }}</span>{% endif %}</a>
+        <a href="{% url 'console:menu' %}" class="console-link {% if active == 'menu' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-journal-text"></i>เมนูอาหาร</span></a>
+        <a href="{% url 'console:shop' %}" class="console-link {% if active == 'shop' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-shop"></i>ข้อมูลร้าน</span></a>
+      </nav>
+      <div class="group-label mt-2">คนและเงิน</div>
+      <nav class="nav-grid">
+        <a href="{% url 'console:staff' %}" class="console-link {% if active == 'staff' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-person-badge"></i>ไรเดอร์และพนักงาน</span></a>
+        <a href="{% url 'console:rider_pay' %}" class="console-link {% if active == 'rider_pay' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-cash-coin"></i>ค่าส่งไรเดอร์</span></a>
+        <a href="{% url 'console:customers' %}" class="console-link {% if active == 'users' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-people"></i>ลูกค้า</span></a>
+        <a href="{% url 'orders:kitchen' %}" class="console-link"><span class="d-flex align-items-center gap-2"><i class="bi bi-fire"></i>จอครัว</span></a>
+        <a href="{% url 'console:audit' %}" class="console-link {% if active == 'audit' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-clock-history"></i>บันทึกการแก้ไข</span></a>
+      </nav>
+      {% endwith %}
+    </aside>
+
+    <main class="console-main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

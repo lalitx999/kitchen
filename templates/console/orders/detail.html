@@ -1,0 +1,114 @@
+{% extends "layouts/console.html" %}
+{% load humanize %}
+{% block console_title %}{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4">
+  <div>
+    <a href="{% url 'console:orders' %}" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i>ออเดอร์ทั้งหมด</a>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+      <h1 class="h4 fw-black mb-0 font-mono-num">{{ order.order_number }}</h1>
+      {% include "components/_status_badge.html" %}
+    </div>
+    <div class="small text-muted-tm">สั่งเมื่อ {{ order.created_at|date:"j M Y H:i" }} น. · {{ order.branch.name }}</div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-xl-7 d-grid gap-4 align-content-start">
+      <section class="card-tm card-tm-body p-4">
+        <h2 class="h6 fw-black mb-3">รายการ</h2>
+        <ul class="list-unstyled d-grid gap-2 mb-3">
+          {% for item in order.items.all %}
+            <li class="d-flex justify-content-between gap-2">
+              <span>{{ item.quantity }} x {{ item.name }}
+                {% if item.options %}<span class="d-block small text-muted-tm">{% for o in item.options %}{{ o.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+                {% if item.note %}<span class="d-block small text-muted-tm">{{ item.note }}</span>{% endif %}
+              </span>
+              <span class="font-mono-num">฿{{ item.line_total|floatformat:"-2"|intcomma }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="border-top pt-3 d-grid gap-1 small">
+          <div class="d-flex justify-content-between"><span class="text-muted-tm">ค่าอาหาร</span><span>฿{{ order.subtotal|floatformat:"-2"|intcomma }}</span></div>
+          <div class="d-flex justify-content-between"><span class="text-muted-tm">ค่าส่ง ({{ order.distance_km }} กม.)</span><span>฿{{ order.delivery_fee|floatformat:"-2" }}</span></div>
+          <div class="d-flex justify-content-between fw-black fs-6"><span>ลูกค้าจ่าย</span><span class="text-brand">฿{{ order.total|floatformat:"-2"|intcomma }}</span></div>
+          <div class="d-flex justify-content-between text-muted-tm"><span>ส่วนของไรเดอร์</span><span>฿{{ order.rider_fee|floatformat:"-2" }}</span></div>
+        </div>
+        {% if order.note %}<div class="alert alert-info small mt-3 mb-0"><i class="bi bi-chat-left-text me-1"></i>{{ order.note }}</div>{% endif %}
+      </section>
+
+      <section class="card-tm card-tm-body p-4">
+        <h2 class="h6 fw-black mb-3">ประวัติสถานะ</h2>
+        <ol class="list-unstyled d-grid gap-2 small mb-0">
+          {% for log in order.status_logs.all %}
+            <li class="d-flex gap-3">
+              <span class="text-muted-tm text-nowrap">{{ log.created_at|date:"j M H:i" }}</span>
+              <span><span class="fw-bold">{{ log.get_to_status_display }}</span> · {{ log.actor.full_name|default:"ระบบ" }}{% if log.note %}<span class="d-block text-muted-tm">{{ log.note }}</span>{% endif %}</span>
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+    </div>
+
+    <div class="col-12 col-xl-5 d-grid gap-4 align-content-start">
+      <section class="card-tm card-tm-body p-4">
+        <h2 class="h6 fw-black mb-3">ลูกค้า / จัดส่ง</h2>
+        <div class="fw-bold">{{ order.recipient_name }}</div>
+        <a href="tel:{{ order.recipient_phone }}" class="small">{{ order.recipient_phone }}</a>
+        <div class="small text-muted-tm">บัญชี: {{ order.customer.email }}</div>
+        <div class="small mt-2">{{ order.address_text }}</div>
+        {% if order.address_note %}<div class="small text-muted-tm">จุดสังเกต: {{ order.address_note }}</div>{% endif %}
+        <a class="small" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination={{ order.delivery_location.y|stringformat:'f' }},{{ order.delivery_location.x|stringformat:'f' }}"><i class="bi bi-map me-1"></i>เปิดหมุดใน Google Maps</a>
+      </section>
+
+      <section class="card-tm card-tm-body p-4">
+        <h2 class="h6 fw-black mb-3">ไรเดอร์</h2>
+        {% if order.rider %}
+          <div class="fw-bold">{{ order.rider.full_name }}</div>
+          <div class="small text-muted-tm">รับงาน {{ order.rider_assigned_at|date:"H:i" }}{% if order.picked_up_at %} · รับอาหาร {{ order.picked_up_at|date:"H:i" }}{% endif %}{% if order.completed_at %} · ส่งถึง {{ order.completed_at|date:"H:i" }}{% endif %}</div>
+          {% if order.delivery_proof %}
+            <a class="small" href="{% url 'delivery:proof_photo' order.pk %}" target="_blank" rel="noopener"><i class="bi bi-image me-1"></i>รูปหลักฐานการส่ง</a>
+            {% if order.delivery_proof.distance_to_customer_m is not None %}<div class="small-xs text-muted-tm">กดส่งห่างจากหมุดลูกค้า {{ order.delivery_proof.distance_to_customer_m }} ม.</div>{% endif %}
+          {% endif %}
+        {% else %}
+          <div class="small text-muted-tm">ยังไม่มีไรเดอร์รับงาน</div>
+        {% endif %}
+      </section>
+
+      <section class="card-tm card-tm-body p-4">
+        <h2 class="h6 fw-black mb-3">สลิป</h2>
+        {% if order.slips.all %}
+          <ul class="list-unstyled d-grid gap-2 small mb-0">
+            {% for slip in order.slips.all %}
+              <li class="d-flex justify-content-between align-items-start gap-2">
+                <span>ครั้งที่ {{ slip.attempt_no }} · <span class="fw-bold">{{ slip.get_status_display }}</span>
+                  {% if slip.reason %}<span class="d-block text-muted-tm">{{ slip.reason }}</span>{% endif %}
+                  {% if slip.trans_ref %}<span class="d-block text-muted-tm">อ้างอิง {{ slip.trans_ref }}</span>{% endif %}</span>
+                <a href="{% url 'payments:slip_image' slip.pk %}" target="_blank" rel="noopener" class="text-nowrap"><i class="bi bi-image me-1"></i>ดูรูป</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="small text-muted-tm">ยังไม่มีสลิป</div>
+        {% endif %}
+      </section>
+
+      {% if order.is_active %}
+        <section class="card-tm card-tm-body p-4">
+          <h2 class="h6 fw-black mb-2">ยกเลิกออเดอร์</h2>
+          {% if order.status != 'DELIVERING' %}
+            <form method="post" action="{% url 'console:order_cancel' order.pk %}" onsubmit="return confirm('ยกเลิกออเดอร์นี้?');">
+              {% csrf_token %}
+              <input name="reason" class="form-control mb-2" placeholder="เหตุผล เช่น ของหมด / ลูกค้าขอยกเลิก" maxlength="255" required>
+              <button class="btn btn-outline-ink btn-sm text-danger">ยกเลิกออเดอร์</button>
+              {% if order.paid_at %}<div class="small text-muted-tm mt-2">ลูกค้าจ่ายแล้ว ต้องโอนคืนเอง (ระบบไม่โอนเงิน)</div>{% endif %}
+            </form>
+          {% else %}
+            <div class="small text-muted-tm">ไรเดอร์กำลังไปส่ง ยกเลิกไม่ได้</div>
+          {% endif %}
+        </section>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

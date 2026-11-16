@@ -1,0 +1,6 @@
+{% if form.non_field_errors %}
+<div class="alert alert-danger py-2 small d-flex gap-2" role="alert">
+  <i class="bi bi-exclamation-circle mt-1"></i>
+  <div>{% for error in form.non_field_errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
+</div>
+{% endif %}

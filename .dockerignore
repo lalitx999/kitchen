@@ -1,0 +1,16 @@
+.git/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+staticfiles/
+media/
+private_media/
+docs/
+.env
+*.env
+firebase-*.json
+service-account*.json
+.DS_Store

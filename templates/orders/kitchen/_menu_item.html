@@ -1,0 +1,8 @@
+<form id="kds-item-{{ item.pk }}" hx-post="{% url 'orders:kitchen_toggle_item' item.pk %}" hx-target="this" hx-swap="outerHTML">
+  <input type="hidden" name="available" value="{% if item.is_available %}0{% else %}1{% endif %}">
+  <button class="tm-pill {% if item.is_available %}tm-pill-muted{% else %}tm-pill-ink{% endif %} py-2 border-0" style="cursor: pointer;"
+          title="{% if item.is_available %}กดเพื่อตั้งเป็นหมด{% else %}กดเพื่อเปิดขาย{% endif %}">
+    {% if item.is_available %}<i class="bi bi-check-circle text-action"></i>{% else %}<i class="bi bi-slash-circle"></i>{% endif %}
+    {{ item.name }}{% if not item.is_available %} · หมด{% endif %}
+  </button>
+</form>

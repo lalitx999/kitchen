@@ -1,0 +1,38 @@
+{# ใบออเดอร์ 1 ใบ: ตัวใหญ่อ่านได้จากระยะไกล · ปุ่มเดียวต่อขั้น #}
+<article class="kds-ticket card-tm mb-3 {% if order.is_late %}kds-late{% endif %} kds-{{ order.status|lower }}">
+  <header class="d-flex align-items-center justify-content-between gap-2 px-3 pt-3">
+    <div class="fw-black fs-5 font-mono-num">{{ order.order_number|slice:"-4:" }}
+      <span class="small-xs text-muted-tm fw-normal">{{ order.order_number }}</span></div>
+    <span class="kds-timer {% if order.is_late %}is-late{% endif %}" title="นาทีตั้งแต่ลูกค้าจ่ายเงิน">
+      <i class="bi bi-stopwatch"></i> {{ order.waiting_minutes }} นาที
+    </span>
+  </header>
+
+  <ul class="list-unstyled px-3 py-2 mb-0 kds-items">
+    {% for item in order.items.all %}
+      <li>
+        <span class="kds-qty">{{ item.quantity }}</span>
+        <span class="fw-bold">{{ item.name }}</span>
+        {% if item.options %}<div class="kds-sub">+ {% for o in item.options %}{{ o.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+        {% if item.note %}<div class="kds-note"><i class="bi bi-exclamation-circle me-1"></i>{{ item.note }}</div>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% if order.rider and order.status != 'READY' %}<div class="small text-muted-tm px-3 mb-2"><i class="bi bi-scooter me-1"></i>ไรเดอร์ {{ order.rider.full_name }} รับงานแล้ว</div>{% endif %}
+  {% if order.note %}<div class="kds-order-note mx-3 mb-2"><i class="bi bi-chat-left-text me-1"></i>{{ order.note }}</div>{% endif %}
+
+  <footer class="d-flex gap-2 px-3 pb-3">
+    {% if order.status == 'PAID' %}
+      <button class="btn btn-primary btn-lg flex-grow-1 btn-icon" hx-post="{% url 'orders:kitchen_action' order.pk %}" hx-vals='{"action": "accept"}'
+              hx-target="#kds-board" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-fire"></i>รับออเดอร์</button>
+    {% elif order.status == 'PREPARING' %}
+      <button class="btn btn-action btn-lg flex-grow-1 btn-icon" hx-post="{% url 'orders:kitchen_action' order.pk %}" hx-vals='{"action": "ready"}'
+              hx-target="#kds-board" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-bag-check"></i>อาหารพร้อม</button>
+    {% else %}
+      <div class="flex-grow-1 small text-muted-tm align-self-center"><i class="bi bi-hourglass-split me-1"></i>{% if order.rider %}{{ order.rider.full_name }} กำลังมารับ{% else %}ยังไม่มีไรเดอร์รับงาน{% endif %}</div>
+    {% endif %}
+    <button class="btn btn-outline-ink btn-lg" aria-label="ยกเลิกออเดอร์ {{ order.order_number }}"
+            hx-post="{% url 'orders:kitchen_action' order.pk %}" hx-vals='{"action": "cancel"}' hx-target="#kds-board" hx-swap="innerHTML"
+            hx-prompt="ยกเลิก {{ order.order_number }} เพราะอะไร (ลูกค้าจะเห็น) · ลูกค้าจ่ายแล้ว ต้องโอนเงินคืนเอง"><i class="bi bi-x-lg"></i></button>
+  </footer>
+</article>

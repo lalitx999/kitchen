@@ -1,0 +1,56 @@
+{% extends "layouts/console.html" %}
+{% load tmpp_tags %}
+{% block console_title %}บันทึกการแก้ไข{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+      <h1 class="h4 fw-black mb-0">บันทึกการแก้ไข</h1>
+      <div class="small text-muted-tm">ใครทำอะไร เมื่อไร จากที่ไหน · แก้ไขหรือลบไม่ได้</div>
+    </div>
+    <form method="get" class="d-flex gap-2" role="search">
+      <input type="hidden" name="action" value="{{ action }}">
+      <input name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="ชื่อคน / เลขออเดอร์ / เมนู" aria-label="ค้นหาบันทึก">
+      <button class="btn btn-outline-ink btn-sm" aria-label="ค้นหา"><i class="bi bi-search"></i></button>
+    </form>
+  </div>
+
+  <nav class="d-flex gap-2 overflow-auto pb-1" aria-label="กรองประเภท">
+    {% for value, label in groups %}
+      <a href="?action={{ value }}&q={{ query|urlencode }}" class="tm-pill {% if action == value %}tm-pill-ink{% else %}tm-pill-muted{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="card-tm">
+    {% if page.object_list %}
+      <div class="table-scroll">
+        <table class="table table-tm">
+          <thead><tr><th>เวลา</th><th>ผู้ทำ</th><th>รายการ</th><th>เป้าหมาย</th><th>รายละเอียด</th><th>IP</th></tr></thead>
+          <tbody>
+            {% for log in page.object_list %}
+              <tr>
+                <td class="small text-muted-tm text-nowrap">{{ log.created_at|date:"j M Y H:i:s" }}</td>
+                <td class="text-nowrap">{{ log.actor.full_name|default:"ระบบ" }}</td>
+                <td><code class="small">{{ log.action }}</code></td>
+                <td>{{ log.target_label }}</td>
+                <td class="small text-muted-tm">{% for field, change in log.changes.items %}<div><span class="fw-bold">{{ field }}</span>: {{ change|audit_change }}</div>{% endfor %}</td>
+                <td class="small text-muted-tm">{{ log.ip_address|default:"" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page.has_other_pages %}
+        <div class="d-flex justify-content-between align-items-center p-3 border-top small">
+          {% if page.has_previous %}<a href="?action={{ action }}&q={{ query|urlencode }}&page={{ page.previous_page_number }}">ก่อนหน้า</a>{% else %}<span></span>{% endif %}
+          <span class="text-muted-tm">หน้า {{ page.number }} / {{ page.paginator.num_pages }}</span>
+          {% if page.has_next %}<a href="?action={{ action }}&q={{ query|urlencode }}&page={{ page.next_page_number }}">ถัดไป</a>{% else %}<span></span>{% endif %}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="text-center text-muted-tm py-5">ไม่มีบันทึก</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

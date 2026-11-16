@@ -1,0 +1,47 @@
+{% load humanize %}
+{# เนื้อหาตะกร้า: HTMX แทนที่ทั้งก้อนเมื่อเปลี่ยนจำนวน #}
+<div id="cart-body">
+  {% if oob_badges %}{% include "orders/_cart_badges.html" %}{% endif %}
+
+  {% if cart.is_empty %}
+    <div class="card-tm card-tm-body text-center py-5">
+      <i class="bi bi-bag fs-1 text-muted-tm"></i>
+      <div class="fw-bold mt-2">ตะกร้ายังว่าง</div>
+      <a href="{% url 'core:home' %}#menu" class="btn btn-action btn-pill mt-3">ไปเลือกเมนู</a>
+    </div>
+  {% else %}
+    <div class="card-tm">
+      {% for line in cart.lines %}
+        <div class="d-flex gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %} {% if not line.available %}opacity-50{% endif %}">
+          <div class="flex-grow-1 min-w-0">
+            <div class="fw-bold">{{ line.item.name }}{% if not line.available %} <span class="tm-pill tm-pill-muted ms-1">หมดแล้ว</span>{% endif %}</div>
+            {% if line.options %}<div class="small text-muted-tm">{% for o in line.options %}{{ o.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+            {% if line.note %}<div class="small text-muted-tm"><i class="bi bi-chat-left-text me-1"></i>{{ line.note }}</div>{% endif %}
+            <div class="small text-muted-tm">฿{{ line.unit_price|floatformat:"-2"|intcomma }} / ที่</div>
+          </div>
+          <div class="d-flex flex-column align-items-end justify-content-between gap-2">
+            <div class="fw-bold font-mono-num">฿{{ line.line_total|floatformat:"-2"|intcomma }}</div>
+            <div class="d-flex align-items-center gap-1">
+              <button class="btn btn-outline-ink btn-sm" aria-label="ลด" hx-post="{% url 'orders:cart_update' %}" hx-target="#cart-body"
+                      hx-vals='{"key": "{{ line.key }}", "qty": "{{ line.qty|add:-1 }}"}'><i class="bi {% if line.qty == 1 %}bi-trash{% else %}bi-dash-lg{% endif %}"></i></button>
+              <span class="px-2 fw-bold font-mono-num">{{ line.qty }}</span>
+              <button class="btn btn-outline-ink btn-sm" aria-label="เพิ่ม" hx-post="{% url 'orders:cart_update' %}" hx-target="#cart-body"
+                      hx-vals='{"key": "{{ line.key }}", "qty": "{{ line.qty|add:1 }}"}' {% if not line.available %}disabled{% endif %}><i class="bi bi-plus-lg"></i></button>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="card-tm card-tm-body mt-3">
+      <div class="d-flex justify-content-between"><span class="text-muted-tm">ค่าอาหาร ({{ cart.item_count }} ที่)</span><span class="fw-bold font-mono-num">฿{{ cart.subtotal|floatformat:"-2"|intcomma }}</span></div>
+      <div class="d-flex justify-content-between small text-muted-tm mt-1"><span>ค่าส่ง</span><span>คิดจากระยะทางในขั้นต่อไป</span></div>
+      {% if cart.has_unavailable %}
+        <div class="alert alert-warning small mt-3 mb-0">มีเมนูที่หมดแล้ว กดลบออกก่อนสั่ง</div>
+      {% elif not shop.accepting %}
+        <div class="alert alert-warning small mt-3 mb-0">{{ shop.reason }}</div>
+      {% endif %}
+      <a href="{% url 'orders:checkout' %}" class="btn btn-action btn-lg w-100 mt-3 {% if cart.has_unavailable or not shop.accepting %}disabled{% endif %}">ไปขั้นตอนจัดส่ง</a>
+    </div>
+  {% endif %}
+</div>

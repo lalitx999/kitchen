@@ -1,0 +1,8 @@
+{% load static %}
+<a href="{% url 'core:home' %}" class="tm-brand" aria-label="{{ SITE_NAME }} หน้าแรก">
+  <img src="{% static 'img/logo-mark.svg' %}" alt="" width="36" height="36">
+  <span class="d-flex flex-column">
+    <span class="tm-brand-name">{{ SITE_NAME }}</span>
+    <span class="tm-brand-tag d-none d-sm-block">{{ SITE_TAGLINE }}</span>
+  </span>
+</a>

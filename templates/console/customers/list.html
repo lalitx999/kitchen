@@ -1,0 +1,49 @@
+{% extends "layouts/console.html" %}
+{% load humanize %}
+{% block console_title %}ลูกค้า{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+      <h1 class="h4 fw-black mb-0">ลูกค้า</h1>
+      <div class="small text-muted-tm">ทั้งหมด {{ page.paginator.count }} คน</div>
+    </div>
+    <form method="get" class="d-flex gap-2" role="search">
+      <input name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="ชื่อ / อีเมล / เบอร์" aria-label="ค้นหาลูกค้า">
+      <button class="btn btn-outline-ink btn-sm" aria-label="ค้นหา"><i class="bi bi-search"></i></button>
+    </form>
+  </div>
+
+  <div class="card-tm">
+    {% if page.object_list %}
+      <div class="table-scroll">
+        <table class="table table-tm table-hover">
+          <thead><tr><th>ลูกค้า</th><th>เบอร์</th><th>ส่งสำเร็จ</th><th>ยอดรวม</th><th>สั่งล่าสุด</th><th></th></tr></thead>
+          <tbody>
+            {% for c in page.object_list %}
+              <tr class="{% if not c.is_active %}text-muted-tm{% endif %}">
+                <td><div class="fw-bold">{{ c.full_name }}{% if not c.is_active %} <span class="status-badge status-cancelled">ปิดบัญชี</span>{% endif %}</div><div class="small-xs text-muted-tm">{{ c.email }}</div></td>
+                <td class="font-mono-num">{{ c.phone|default:"-" }}</td>
+                <td>{{ c.completed_orders }}</td>
+                <td class="font-mono-num">฿{{ c.total_spent|default:0|floatformat:"0"|intcomma }}</td>
+                <td class="small text-muted-tm text-nowrap">{{ c.last_order_at|date:"j M Y"|default:"-" }}</td>
+                <td class="text-end"><a href="{% url 'console:customer_detail' c.pk %}" class="btn btn-sm btn-outline-ink">ดู</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page.has_other_pages %}
+        <div class="d-flex justify-content-between align-items-center p-3 border-top small">
+          {% if page.has_previous %}<a href="?q={{ query|urlencode }}&page={{ page.previous_page_number }}">ก่อนหน้า</a>{% else %}<span></span>{% endif %}
+          <span class="text-muted-tm">หน้า {{ page.number }} / {{ page.paginator.num_pages }}</span>
+          {% if page.has_next %}<a href="?q={{ query|urlencode }}&page={{ page.next_page_number }}">ถัดไป</a>{% else %}<span></span>{% endif %}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="text-center text-muted-tm py-5"><i class="bi bi-people fs-1"></i><div class="mt-2">{% if query %}ไม่พบลูกค้าที่ค้นหา{% else %}ยังไม่มีลูกค้าสมัคร{% endif %}</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

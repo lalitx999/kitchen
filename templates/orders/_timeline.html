@@ -1,0 +1,30 @@
+{# ขั้นตอนของออเดอร์: ขั้นที่ผ่านแล้วเป็นสีหลัก ขั้นปัจจุบันเด่น #}
+{% with s=order.status %}
+<section class="card-tm card-tm-body p-4">
+  <h2 class="h6 fw-black mb-3"><i class="bi bi-list-check text-brand me-2"></i>สถานะ</h2>
+  {% if s == 'CANCELLED' %}
+    <div class="d-flex align-items-center gap-2 text-muted-tm"><i class="bi bi-x-circle fs-4"></i><span class="fw-bold">ยกเลิกแล้ว</span></div>
+  {% else %}
+    <ol class="list-unstyled mb-0 d-grid gap-3">
+      <li class="d-flex align-items-center gap-3">
+        <i class="bi bi-wallet2 fs-5 {% if s == 'PENDING_PAYMENT' or s == 'PAYMENT_REVIEW' %}text-brand{% else %}text-action{% endif %}"></i>
+        <div><div class="fw-bold">{% if s == 'PAYMENT_REVIEW' %}รอตรวจสลิป{% elif s == 'PENDING_PAYMENT' %}รอชำระเงิน{% else %}ชำระเงินแล้ว{% endif %}</div>
+          {% if order.paid_at %}<div class="small-xs text-muted-tm">{{ order.paid_at|time:"H:i" }} น.</div>{% endif %}</div>
+      </li>
+      <li class="d-flex align-items-center gap-3 {% if s == 'PENDING_PAYMENT' or s == 'PAYMENT_REVIEW' %}opacity-50{% endif %}">
+        <i class="bi bi-fire fs-5 {% if s == 'PAID' or s == 'PREPARING' %}text-brand{% elif s == 'READY' or s == 'DELIVERING' or s == 'COMPLETED' %}text-action{% else %}text-muted-tm{% endif %}"></i>
+        <div class="fw-bold">{% if s == 'PAID' %}รอครัวรับออเดอร์{% elif s == 'PREPARING' %}ครัวกำลังทำ{% else %}ทำอาหาร{% endif %}</div>
+      </li>
+      <li class="d-flex align-items-center gap-3 {% if s != 'READY' and s != 'DELIVERING' and s != 'COMPLETED' %}opacity-50{% endif %}">
+        <i class="bi bi-scooter fs-5 {% if s == 'READY' or s == 'DELIVERING' %}text-brand{% elif s == 'COMPLETED' %}text-action{% else %}text-muted-tm{% endif %}"></i>
+        <div class="fw-bold">{% if s == 'READY' %}รอไรเดอร์รับอาหาร{% elif s == 'DELIVERING' %}ไรเดอร์กำลังไปส่ง{% else %}จัดส่ง{% endif %}</div>
+      </li>
+      <li class="d-flex align-items-center gap-3 {% if s != 'COMPLETED' %}opacity-50{% endif %}">
+        <i class="bi bi-house-check fs-5 {% if s == 'COMPLETED' %}text-action{% else %}text-muted-tm{% endif %}"></i>
+        <div><div class="fw-bold">ส่งสำเร็จ</div>
+          {% if order.completed_at %}<div class="small-xs text-muted-tm">{{ order.completed_at|time:"H:i" }} น.</div>{% endif %}</div>
+      </li>
+    </ol>
+  {% endif %}
+</section>
+{% endwith %}

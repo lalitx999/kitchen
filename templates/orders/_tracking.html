@@ -1,0 +1,41 @@
+{# ติดตามไรเดอร์: แสดงเฉพาะตอนกำลังไปส่ง · พิกัดเก่าบอกตรงๆ ไม่เดาตำแหน่ง #}
+<section id="tracking-card" class="card-tm card-tm-body p-4"
+         {% if order.status == 'DELIVERING' %}hx-get="{% url 'orders:tracking' order.pk %}" hx-trigger="every 10s [document.visibilityState === 'visible']" hx-swap="outerHTML"{% endif %}>
+  <h2 class="h6 fw-black mb-3"><i class="bi bi-scooter text-brand me-2"></i>ไรเดอร์</h2>
+  {% if order.rider %}
+    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+      <div>
+        <div class="fw-bold">{{ order.rider.full_name }}</div>
+        {% if order.rider.rider_profile.vehicle_plate %}<div class="small text-muted-tm">ทะเบียน {{ order.rider.rider_profile.vehicle_plate }}</div>{% endif %}
+      </div>
+      {% if order.rider.phone and order.status == 'DELIVERING' %}
+        <a href="tel:{{ order.rider.phone }}" class="btn btn-soft btn-sm btn-icon"><i class="bi bi-telephone"></i>โทรหาไรเดอร์</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if tracking.available %}
+    {% if tracking.has_location %}
+      {% if tracking.near %}
+        <div class="fs-5 fw-black text-action">ไรเดอร์ใกล้ถึงแล้ว</div>
+      {% else %}
+        <div class="fs-5 fw-black">ห่างจากบ้านประมาณ {{ tracking.distance_km }} กม.</div>
+      {% endif %}
+      <div class="small {% if tracking.is_stale %}text-danger{% else %}text-muted-tm{% endif %}">
+        {% if tracking.is_stale %}ไรเดอร์อาจสัญญาณไม่ดี ตำแหน่งล่าสุดเมื่อ {{ tracking.age_seconds|floatformat:0 }} วินาทีที่แล้ว
+        {% else %}อัปเดต {{ tracking.age_seconds }} วินาทีที่แล้ว{% endif %}
+      </div>
+      <a class="small d-inline-block mt-2" target="_blank" rel="noopener"
+         href="https://www.google.com/maps?q={{ tracking.lat|stringformat:'f' }},{{ tracking.lng|stringformat:'f' }}"><i class="bi bi-map me-1"></i>ดูตำแหน่งไรเดอร์บน Google Maps</a>
+    {% else %}
+      <div class="small text-muted-tm">ไรเดอร์ออกเดินทางแล้ว กำลังรอตำแหน่งจากมือถือไรเดอร์</div>
+    {% endif %}
+  {% elif order.status == 'COMPLETED' %}
+    <div class="small text-action fw-bold"><i class="bi bi-check-circle me-1"></i>ส่งถึงแล้ว {{ order.completed_at|date:"H:i" }} น.</div>
+    {% if order.delivery_proof %}<a class="small" href="{% url 'delivery:proof_photo' order.pk %}" target="_blank" rel="noopener"><i class="bi bi-image me-1"></i>ดูรูปตอนส่ง</a>{% endif %}
+  {% elif order.rider %}
+    <div class="small text-muted-tm">ไรเดอร์รับงานแล้ว กำลังรออาหารที่ร้าน</div>
+  {% else %}
+    <div class="small text-muted-tm">ยังไม่มีไรเดอร์รับงาน</div>
+  {% endif %}
+</section>

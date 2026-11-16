@@ -1,0 +1,9 @@
+{% extends "layouts/customer.html" %}
+{% block title %}ตะกร้า — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4" style="max-width: 760px;">
+  <h1 class="h4 fw-black mb-3">ตะกร้า</h1>
+  {% include "orders/_cart_body.html" %}
+</div>
+{% endblock %}

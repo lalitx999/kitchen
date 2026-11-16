@@ -1,0 +1,119 @@
+{% extends "layouts/console.html" %}
+{% load humanize %}
+{% block console_title %}ภาพรวม{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+      <h1 class="h4 fw-black mb-0">สวัสดี คุณ{{ user.get_short_name }}</h1>
+      <div class="small text-muted-tm">{% now "j F Y" %}</div>
+    </div>
+    <div class="d-flex gap-2">
+      {% include "components/_push_button.html" %}
+      <a href="{% url 'console:menu_item_create' %}" class="btn btn-primary btn-sm btn-icon"><i class="bi bi-plus-circle"></i>เพิ่มเมนู</a>
+    </div>
+  </div>
+
+  {% include "console/_shop_switch.html" %}
+
+  <div class="stat-grid">
+    <div class="card-tm stat-card">
+      <div class="stat-label">ยอดขายวันนี้ (ชำระแล้ว)</div>
+      <div class="stat-value">฿{{ today.revenue|floatformat:"-2"|intcomma }}</div>
+      <div class="small-xs text-muted-tm">{{ today.paid_count }} ออเดอร์</div>
+    </div>
+    <div class="card-tm stat-card">
+      <div class="stat-label">ออเดอร์ที่ยังไม่จบ</div>
+      <div class="stat-value {% if today.active_count %}text-brand{% endif %}">{{ today.active_count }}</div>
+      <div class="small-xs text-muted-tm">สั่งวันนี้ทั้งหมด {{ today.created_count }}</div>
+    </div>
+    <div class="card-tm stat-card">
+      <div class="stat-label">ลูกค้าที่สมัครแล้ว</div>
+      <div class="stat-value">{{ role_counts.CUSTOMER }}</div>
+      <div class="small-xs text-muted-tm">ไรเดอร์ {{ role_counts.RIDER }} · ครัว {{ role_counts.KITCHEN }}</div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-xl-7">
+      <section class="card-tm card-tm-body h-100">
+        <div class="fw-black mb-3">ยอดขาย 7 วัน <span class="small text-muted-tm fw-normal">(นับวันที่จ่ายเงิน ไม่รวมยกเลิก)</span></div>
+        <div class="d-grid gap-2">
+          {% for d in daily_sales %}
+            <div class="d-flex align-items-center gap-2 small">
+              <span class="text-muted-tm text-nowrap" style="width: 4.5rem;">{{ d.day|date:"D j M" }}</span>
+              <div class="flex-grow-1 rounded-pill" style="background:#f3f4f6; height: .9rem;" role="img" aria-label="ยอด {{ d.revenue }} บาท">
+                <div class="rounded-pill h-100" style="width: {{ d.percent }}%; background: var(--tm-brand); min-width: {% if d.revenue %}.5rem{% else %}0{% endif %};"></div>
+              </div>
+              <span class="font-mono-num text-end text-nowrap" style="width: 6.5rem;">฿{{ d.revenue|floatformat:"0"|intcomma }} · {{ d.count }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+    <div class="col-12 col-xl-5">
+      <section class="card-tm card-tm-body h-100">
+        <div class="fw-black mb-3">เมนูขายดี 30 วัน</div>
+        {% if top_items %}
+          <ol class="list-unstyled d-grid gap-2 mb-0">
+            {% for item in top_items %}
+              <li class="d-flex justify-content-between small"><span><span class="fw-black me-2">{{ forloop.counter }}</span>{{ item.name }}</span><span class="text-muted-tm">{{ item.qty }} ที่ · ฿{{ item.revenue|floatformat:"0"|intcomma }}</span></li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <div class="small text-muted-tm">ยังไม่มียอดขาย</div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+
+  <div class="card-tm">
+    <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+      <div class="fw-black">ออเดอร์ที่กำลังดำเนินการ</div>
+      <a href="{% url 'console:orders' %}" class="small fw-bold">ดูทั้งหมด</a>
+    </div>
+    {% if recent_orders %}
+      <div class="table-scroll">
+        <table class="table table-tm table-hover">
+          <tbody>
+            {% for order in recent_orders %}
+              <tr>
+                <td class="fw-bold font-mono-num text-nowrap">{{ order.order_number }}</td>
+                <td>{{ order.recipient_name }}</td>
+                <td class="font-mono-num">฿{{ order.total|floatformat:"-2"|intcomma }}</td>
+                <td>{% include "components/_status_badge.html" %}</td>
+                <td class="text-end"><a href="{% url 'console:order_detail' order.pk %}" class="btn btn-sm btn-outline-ink">ดู</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center text-muted-tm small py-4">ไม่มีออเดอร์ค้าง</div>
+    {% endif %}
+  </div>
+
+  <div class="card-tm">
+    <div class="p-3 border-bottom fw-black">การแก้ไขล่าสุด</div>
+    {% if recent_logs %}
+      <div class="table-scroll">
+        <table class="table table-tm">
+          <tbody>
+            {% for log in recent_logs %}
+              <tr>
+                <td class="text-muted-tm text-nowrap small">{{ log.created_at|date:"j M H:i" }}</td>
+                <td>{{ log.actor.full_name|default:"ระบบ" }}</td>
+                <td><code class="small">{{ log.action }}</code></td>
+                <td>{{ log.target_label }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center text-muted-tm small py-4">ยังไม่มีการแก้ไข</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Django
+staticfiles/
+media/
+private_media/
+*.log
+
+# Secrets
+.env
+*.env
+!.env.example
+firebase-*.json
+service-account*.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

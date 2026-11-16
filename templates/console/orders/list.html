@@ -1,0 +1,64 @@
+{% extends "layouts/console.html" %}
+{% load humanize %}
+{% block console_title %}ออเดอร์{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <h1 class="h4 fw-black mb-0">ออเดอร์</h1>
+    <form method="get" class="d-flex gap-2" role="search">
+      <input type="hidden" name="status" value="{{ status }}">
+      <input name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="เลขออเดอร์ / เบอร์ / ชื่อ" aria-label="ค้นหาออเดอร์">
+      <button class="btn btn-outline-ink btn-sm" aria-label="ค้นหา"><i class="bi bi-search"></i></button>
+    </form>
+  </div>
+
+  <details class="card-tm card-tm-body py-2">
+    <summary class="small fw-bold"><i class="bi bi-download me-1"></i>ดาวน์โหลดออเดอร์ (CSV เปิดใน Excel ได้)</summary>
+    <form method="get" action="{% url 'console:order_export' %}" class="row g-2 mt-1 align-items-end">
+      <div class="col-6 col-md-3"><label class="form-label small" for="ex-start">ตั้งแต่</label><input type="date" id="ex-start" name="start" class="form-control form-control-sm" required></div>
+      <div class="col-6 col-md-3"><label class="form-label small" for="ex-end">ถึง</label><input type="date" id="ex-end" name="end" class="form-control form-control-sm" required></div>
+      <div class="col-12 col-md-auto"><button class="btn btn-outline-ink btn-sm w-100">ดาวน์โหลด</button></div>
+    </form>
+  </details>
+
+  <nav class="d-flex gap-2 overflow-auto pb-1" aria-label="กรองสถานะ">
+    <a href="?status=active" class="tm-pill {% if status == 'active' %}tm-pill-ink{% else %}tm-pill-muted{% endif %}">กำลังดำเนินการ {{ counts.active }}</a>
+    <a href="?status=all" class="tm-pill {% if status == 'all' %}tm-pill-ink{% else %}tm-pill-muted{% endif %}">ทั้งหมด</a>
+    {% for value, label in statuses %}
+      <a href="?status={{ value }}" class="tm-pill {% if status == value %}tm-pill-ink{% else %}tm-pill-muted{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="card-tm">
+    {% if page.object_list %}
+      <div class="table-scroll">
+        <table class="table table-tm table-hover">
+          <thead><tr><th>เลขที่</th><th>ลูกค้า</th><th>ยอด</th><th>สถานะ</th><th>เวลา</th><th></th></tr></thead>
+          <tbody>
+            {% for order in page.object_list %}
+              <tr>
+                <td class="fw-bold font-mono-num text-nowrap">{{ order.order_number }}</td>
+                <td><div>{{ order.recipient_name }}</div><div class="small-xs text-muted-tm">{{ order.recipient_phone }}</div></td>
+                <td class="font-mono-num text-nowrap">฿{{ order.total|floatformat:"-2"|intcomma }}</td>
+                <td>{% include "components/_status_badge.html" %}</td>
+                <td class="text-muted-tm text-nowrap small">{{ order.created_at|date:"j M H:i" }}</td>
+                <td class="text-end"><a href="{% url 'console:order_detail' order.pk %}" class="btn btn-sm btn-outline-ink">ดู</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page.has_other_pages %}
+        <div class="d-flex justify-content-between align-items-center p-3 border-top small">
+          {% if page.has_previous %}<a href="?status={{ status }}&q={{ query|urlencode }}&page={{ page.previous_page_number }}">ก่อนหน้า</a>{% else %}<span></span>{% endif %}
+          <span class="text-muted-tm">หน้า {{ page.number }} / {{ page.paginator.num_pages }}</span>
+          {% if page.has_next %}<a href="?status={{ status }}&q={{ query|urlencode }}&page={{ page.next_page_number }}">ถัดไป</a>{% else %}<span></span>{% endif %}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="text-center text-muted-tm py-5"><i class="bi bi-inbox fs-1"></i><div class="mt-2">ไม่มีออเดอร์ในหมวดนี้</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

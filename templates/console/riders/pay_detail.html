@@ -1,0 +1,75 @@
+{% extends "layouts/console.html" %}
+{% load humanize %}
+{% block console_title %}ค่าส่ง {{ rider.full_name }}{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4">
+  <div>
+    <a href="{% url 'console:rider_pay' %}" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i>ไรเดอร์ทั้งหมด</a>
+    <h1 class="h4 fw-black mt-2 mb-0">{{ rider.full_name }}</h1>
+    <div class="small text-muted-tm">{{ rider.phone|default:"" }}{% if rider.rider_profile.vehicle_plate %} · ทะเบียน {{ rider.rider_profile.vehicle_plate }}{% endif %}</div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-lg-5">
+      <section class="card-tm card-tm-body p-4">
+        <div class="stat-label small-xs text-muted-tm fw-bold">ค่าส่งค้างจ่าย</div>
+        <div class="display-6 fw-black {% if unpaid_total %}text-brand{% endif %} font-mono-num">฿{{ unpaid_total|floatformat:"2"|intcomma }}</div>
+        <div class="small text-muted-tm mb-3">{{ unpaid_orders|length }} เที่ยวที่ส่งสำเร็จและยังไม่จ่าย</div>
+        {% if unpaid_total %}
+          <form method="post" action="{% url 'console:rider_pay_record' rider.pk %}"
+                onsubmit="return confirm('บันทึกว่าจ่ายค่าส่ง {{ rider.full_name|escapejs }} ฿{{ unpaid_total }} แล้ว?');">
+            {% csrf_token %}
+            {# ยอดที่เห็นบนจอ: ถ้าระหว่างนั้นมีงานเพิ่ม ระบบจะให้กดใหม่ กันบันทึกไม่ตรงกับที่จ่ายจริง #}
+            <input type="hidden" name="expected_amount" value="{{ unpaid_total|stringformat:'s' }}">
+            <label class="form-label" for="pay-note">วิธีจ่าย / หมายเหตุ</label>
+            <input id="pay-note" name="note" class="form-control mb-3" maxlength="255" placeholder="เช่น โอนพร้อมเพย์ 17 พ.ย.">
+            <button class="btn btn-action w-100 btn-icon"><i class="bi bi-cash-coin"></i>จ่ายแล้ว บันทึก ฿{{ unpaid_total|floatformat:"0"|intcomma }}</button>
+          </form>
+        {% endif %}
+      </section>
+
+      <section class="card-tm mt-4">
+        <div class="p-3 border-bottom fw-black">ประวัติการจ่าย</div>
+        {% if history %}
+          <ul class="list-unstyled mb-0">
+            {% for p in history %}
+              <li class="d-flex justify-content-between gap-2 px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                <span class="small">{{ p.created_at|date:"j M Y H:i" }}<span class="d-block text-muted-tm">{{ p.job_count }} เที่ยว · {{ p.paid_by.full_name }}{% if p.note %} · {{ p.note }}{% endif %}</span></span>
+                <span class="fw-bold font-mono-num">฿{{ p.amount|floatformat:"0"|intcomma }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="small text-muted-tm p-3">ยังไม่เคยบันทึกการจ่าย</div>
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="col-12 col-lg-7">
+      <section class="card-tm">
+        <div class="p-3 border-bottom fw-black">งานที่ยังไม่จ่าย</div>
+        {% if unpaid_orders %}
+          <div class="table-scroll">
+            <table class="table table-tm">
+              <thead><tr><th>ส่งถึง</th><th>ออเดอร์</th><th>ระยะ</th><th class="text-end">ค่าส่งไรเดอร์</th></tr></thead>
+              <tbody>
+                {% for o in unpaid_orders %}
+                  <tr>
+                    <td class="small text-muted-tm text-nowrap">{{ o.completed_at|date:"j M H:i" }}</td>
+                    <td class="fw-bold font-mono-num"><a href="{% url 'console:order_detail' o.pk %}" class="text-reset">{{ o.order_number }}</a></td>
+                    <td class="small">{{ o.distance_km }} กม.</td>
+                    <td class="text-end font-mono-num">฿{{ o.rider_fee|floatformat:"0" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="small text-muted-tm p-3">ไม่มีงานค้างจ่าย</div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

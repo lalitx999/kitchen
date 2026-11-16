@@ -1,0 +1,68 @@
+{% load humanize %}
+{# การ์ดงาน 1 ใบ · mine=True: งานที่รับแล้ว (มีปุ่มขั้นถัดไป) · mine=False: งานใหม่ (ปุ่มรับงาน) #}
+<article class="card-tm mb-2 kds-ticket {% if job.status == 'DELIVERING' %}kds-preparing{% elif job.status == 'READY' %}kds-ready{% else %}kds-paid{% endif %}">
+  <div class="p-3 d-grid gap-2">
+    <div class="d-flex align-items-start justify-content-between gap-2">
+      <div>
+        <div class="fw-black fs-5 font-mono-num">{{ job.order_number|slice:"-4:" }} <span class="small-xs text-muted-tm fw-normal">{{ job.order_number }}</span></div>
+        {% include "components/_status_badge.html" with order=job %}
+      </div>
+      <div class="text-end">
+        <div class="fw-black text-brand">฿{{ job.rider_fee|floatformat:"0" }}</div>
+        <div class="small-xs text-muted-tm">{{ job.distance_km }} กม.</div>
+      </div>
+    </div>
+
+    <div class="small">
+      <div><i class="bi bi-shop text-muted-tm me-1"></i><span class="fw-bold">รับที่</span> {{ job.branch.name }}</div>
+      <div><i class="bi bi-house text-muted-tm me-1"></i><span class="fw-bold">ส่งที่</span> {{ job.address_text }}</div>
+      {% if job.address_note %}<div class="text-muted-tm ps-4">จุดสังเกต: {{ job.address_note }}</div>{% endif %}
+      <div class="text-muted-tm ps-4">{% for item in job.items.all %}{{ item.quantity }}x {{ item.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+    </div>
+
+    {% if mine %}
+      <div class="d-flex flex-wrap gap-2">
+        {% if job.status == 'DELIVERING' %}
+          <a class="btn btn-outline-ink btn-sm btn-icon flex-fill" target="_blank" rel="noopener"
+             href="https://www.google.com/maps/dir/?api=1&destination={{ job.delivery_location.y|stringformat:'f' }},{{ job.delivery_location.x|stringformat:'f' }}&travelmode=driving"><i class="bi bi-sign-turn-right"></i>นำทางไปบ้านลูกค้า</a>
+        {% elif job.branch.location %}
+          <a class="btn btn-outline-ink btn-sm btn-icon flex-fill" target="_blank" rel="noopener"
+             href="https://www.google.com/maps/dir/?api=1&destination={{ job.branch.location.y|stringformat:'f' }},{{ job.branch.location.x|stringformat:'f' }}&travelmode=driving"><i class="bi bi-sign-turn-right"></i>นำทางไปร้าน</a>
+        {% endif %}
+        <a class="btn btn-outline-ink btn-sm btn-icon flex-fill" href="tel:{{ job.recipient_phone }}"><i class="bi bi-telephone"></i>โทรลูกค้า</a>
+      </div>
+
+      {% if job.status == 'DELIVERING' %}
+        {# ส่งสำเร็จต้องถ่ายรูป · ใส่พิกัดตอนกดส่ง (rider.js เติมให้ถ้ามี) #}
+        <form method="post" action="{% url 'delivery:rider_complete' job.pk %}" enctype="multipart/form-data"
+              x-data="{ busy: false, picked: false }" @submit="busy = true" class="d-grid gap-2"
+              :data-busy="(picked || busy) ? 'true' : null">
+          {% csrf_token %}
+          <input type="hidden" name="latitude" data-gps-lat>
+          <input type="hidden" name="longitude" data-gps-lng>
+          <label class="btn btn-soft btn-icon mb-0" :class="picked && 'btn-action'">
+            <i class="bi bi-camera"></i><span x-text="picked ? 'ถ่ายรูปแล้ว (แตะเพื่อถ่ายใหม่)' : 'ถ่ายรูปตอนส่งของ'">ถ่ายรูปตอนส่งของ</span>
+            <input type="file" name="photo" accept="image/*" capture="environment" required class="d-none" @change="picked = $event.target.files.length > 0">
+          </label>
+          <button type="submit" class="btn btn-action btn-lg btn-icon" :disabled="!picked || busy">
+            <span class="spinner-border spinner-border-sm" x-show="busy" x-cloak></span><i class="bi bi-check2-circle"></i>ส่งสำเร็จ
+          </button>
+        </form>
+      {% else %}
+        <div class="d-flex gap-2">
+          {% if job.status == 'READY' %}
+            <button class="btn btn-action btn-lg flex-grow-1 btn-icon" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "pickup"}'
+                    hx-target="#rider-jobs" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-bag-check"></i>รับอาหารแล้ว ออกเดินทาง</button>
+          {% else %}
+            <div class="flex-grow-1 small text-muted-tm align-self-center"><i class="bi bi-hourglass-split me-1"></i>ครัว{% if job.status == 'PREPARING' %}กำลังทำ{% else %}ยังไม่รับออเดอร์{% endif %} รอที่ร้านได้</div>
+          {% endif %}
+          <button class="btn btn-outline-ink btn-lg" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "release"}'
+                  hx-target="#rider-jobs" hx-swap="innerHTML" hx-confirm="คืนงาน {{ job.order_number }}? งานจะกลับไปให้ไรเดอร์คนอื่น" aria-label="คืนงาน"><i class="bi bi-arrow-counterclockwise"></i></button>
+        </div>
+      {% endif %}
+    {% else %}
+      <button class="btn btn-primary btn-lg btn-icon" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "accept"}'
+              hx-target="#rider-jobs" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-hand-thumbs-up"></i>รับงานนี้</button>
+    {% endif %}
+  </div>
+</article>

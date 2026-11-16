@@ -1,0 +1,279 @@
+/* ==========================================================================
+   TMPP theme — ต่อยอดจาก Bootstrap 5.3.8
+   ที่มา: หน้าตาเว็บเซ้งร้านด่วน (header ขาว, สีหลักชมพู, ปุ่มสั่งสีเขียว, การ์ดมุมโค้ง)
+   กฎ: สีพื้นเรียบเท่านั้น ห้าม gradient ห้ามอิโมจิ
+   เปลี่ยนสีทั้งเว็บได้ที่ตัวแปรใน :root ชุดแรกที่เดียว
+   ========================================================================== */
+
+/* ---- ฟอนต์ (ไฟล์มาจาก scripts/fetch_vendor.sh ถ้ายังไม่มี เบราว์เซอร์จะใช้ฟอนต์ระบบแทน) ---- */
+@font-face { font-family: 'Noto Sans Thai'; font-weight: 400; font-display: swap; src: url('../vendor/fonts/noto-sans-thai-400.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans Thai'; font-weight: 500; font-display: swap; src: url('../vendor/fonts/noto-sans-thai-500.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans Thai'; font-weight: 600; font-display: swap; src: url('../vendor/fonts/noto-sans-thai-600.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans Thai'; font-weight: 700; font-display: swap; src: url('../vendor/fonts/noto-sans-thai-700.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans Thai'; font-weight: 800; font-display: swap; src: url('../vendor/fonts/noto-sans-thai-800.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 400; font-display: swap; src: url('../vendor/fonts/plus-jakarta-sans-400.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 500; font-display: swap; src: url('../vendor/fonts/plus-jakarta-sans-500.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 600; font-display: swap; src: url('../vendor/fonts/plus-jakarta-sans-600.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 700; font-display: swap; src: url('../vendor/fonts/plus-jakarta-sans-700.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 800; font-display: swap; src: url('../vendor/fonts/plus-jakarta-sans-800.woff2') format('woff2'); }
+
+/* ---- ตัวแปรแบรนด์ ---- */
+:root {
+  --tm-brand: #e11d74;          /* ชมพูหลัก: โลโก้ ลิงก์ ปุ่มรอง */
+  --tm-brand-hover: #be125a;
+  --tm-brand-soft: #fff1f4;     /* พื้นอ่อนของสีหลัก */
+  --tm-brand-line: #fecdd6;
+  --tm-action: #00c274;         /* เขียว: ปุ่มหลักที่ต้องการให้กด (สั่งเลย, ยืนยัน) */
+  --tm-action-hover: #00a863;
+  --tm-accent: #ff6b00;         /* ส้ม: แจ้งเตือน ป้ายใหม่ */
+  --tm-ink: #111827;            /* ตัวอักษรหลัก / เมนูที่เลือกใน console */
+  --tm-muted: #6b7280;
+  --tm-bg: #fcfcfa;             /* พื้นหลังหน้าเว็บ */
+  --tm-surface: #ffffff;
+  --tm-line: #e5e7eb;
+  --tm-radius-sm: .625rem;
+  --tm-radius: 1rem;
+  --tm-radius-lg: 1.5rem;
+  --tm-shadow: 0 1px 2px rgba(17, 24, 39, .06);
+  --tm-header-h: 3.75rem;
+  --tm-bottom-nav-h: 4rem;
+
+  /* ส่งต่อให้ Bootstrap */
+  --bs-body-font-family: 'Plus Jakarta Sans', 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --bs-body-bg: var(--tm-bg);
+  --bs-body-color: var(--tm-ink);
+  --bs-primary: #e11d74;
+  --bs-primary-rgb: 225, 29, 116;
+  --bs-success: #00c274;
+  --bs-success-rgb: 0, 194, 116;
+  --bs-link-color: var(--tm-brand);
+  --bs-link-color-rgb: 225, 29, 116;
+  --bs-link-hover-color: var(--tm-brand-hover);
+  --bs-link-hover-color-rgb: 190, 18, 90;
+  --bs-border-color: var(--tm-line);
+  --bs-border-radius: var(--tm-radius-sm);
+  --bs-border-radius-lg: var(--tm-radius);
+  --bs-border-radius-xl: var(--tm-radius-lg);
+  --bs-focus-ring-color: rgba(225, 29, 116, .25);
+}
+
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+main { flex: 1 0 auto; }
+h1, h2, h3, h4, .fw-black { letter-spacing: -.01em; }
+.fw-black { font-weight: 800 !important; }
+.text-brand { color: var(--tm-brand) !important; }
+.text-action { color: var(--tm-action) !important; }
+.text-accent { color: var(--tm-accent) !important; }
+.text-muted-tm { color: var(--tm-muted) !important; }
+.bg-brand-soft { background: var(--tm-brand-soft) !important; }
+.small-xs { font-size: .75rem; }
+.min-w-0 { min-width: 0; }
+[x-cloak] { display: none !important; }  /* Alpine: ซ่อนจนกว่า Alpine จะโหลดเสร็จ */
+/* คอลัมน์ของ grid หดได้ ไม่ขยายตามตารางกว้าง (ให้ตารางเลื่อนในการ์ดแทนหน้าเลื่อนทั้งหน้า) */
+.d-grid { grid-template-columns: minmax(0, 1fr); }
+.font-mono-num { font-variant-numeric: tabular-nums; }
+
+/* ---- ปุ่ม ---- */
+.btn { --bs-btn-font-weight: 700; --bs-btn-border-radius: var(--tm-radius-sm); }
+.btn-primary {
+  --bs-btn-bg: var(--tm-brand); --bs-btn-border-color: var(--tm-brand);
+  --bs-btn-hover-bg: var(--tm-brand-hover); --bs-btn-hover-border-color: var(--tm-brand-hover);
+  --bs-btn-active-bg: var(--tm-brand-hover); --bs-btn-active-border-color: var(--tm-brand-hover);
+  --bs-btn-disabled-bg: var(--tm-brand); --bs-btn-disabled-border-color: var(--tm-brand);
+}
+.btn-action {
+  --bs-btn-color: #fff; --bs-btn-bg: var(--tm-action); --bs-btn-border-color: var(--tm-action);
+  --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--tm-action-hover); --bs-btn-hover-border-color: var(--tm-action-hover);
+  --bs-btn-active-color: #fff; --bs-btn-active-bg: var(--tm-action-hover); --bs-btn-active-border-color: var(--tm-action-hover);
+  --bs-btn-disabled-color: #fff; --bs-btn-disabled-bg: var(--tm-action); --bs-btn-disabled-border-color: var(--tm-action);
+}
+.btn-ink {
+  --bs-btn-color: #fff; --bs-btn-bg: var(--tm-ink); --bs-btn-border-color: var(--tm-ink);
+  --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--tm-brand); --bs-btn-hover-border-color: var(--tm-brand);
+  --bs-btn-active-color: #fff; --bs-btn-active-bg: var(--tm-brand-hover); --bs-btn-active-border-color: var(--tm-brand-hover);
+}
+.btn-soft {
+  --bs-btn-color: var(--tm-brand); --bs-btn-bg: var(--tm-brand-soft); --bs-btn-border-color: var(--tm-brand-line);
+  --bs-btn-hover-color: var(--tm-brand-hover); --bs-btn-hover-bg: #ffe4e8; --bs-btn-hover-border-color: var(--tm-brand-line);
+  --bs-btn-active-color: var(--tm-brand-hover); --bs-btn-active-bg: #ffe4e8; --bs-btn-active-border-color: var(--tm-brand-line);
+}
+.btn-outline-ink {
+  --bs-btn-color: var(--tm-ink); --bs-btn-bg: #fff; --bs-btn-border-color: var(--tm-line);
+  --bs-btn-hover-color: var(--tm-brand); --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: var(--tm-brand-line);
+  --bs-btn-active-color: var(--tm-brand); --bs-btn-active-bg: var(--tm-brand-soft); --bs-btn-active-border-color: var(--tm-brand-line);
+}
+.btn-pill { --bs-btn-border-radius: 999px; }
+.btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
+
+/* ---- การ์ด ---- */
+.card-tm {
+  background: var(--tm-surface);
+  border: 1px solid var(--tm-line);
+  border-radius: var(--tm-radius-lg);
+  box-shadow: var(--tm-shadow);
+}
+.card-tm-body { padding: 1.25rem; }
+.stat-card { padding: 1.25rem; }
+.stat-card .stat-label { font-size: .7rem; font-weight: 700; color: var(--tm-muted); }
+.stat-card .stat-value { font-size: 1.85rem; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.stat-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+
+/* การ์ดเมนูอาหาร */
+.menu-card { overflow: hidden; display: flex; flex-direction: column; height: 100%; }
+.menu-card .menu-thumb { aspect-ratio: 4 / 3; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; }
+.menu-card .menu-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.menu-card .price { font-weight: 800; color: var(--tm-brand); font-variant-numeric: tabular-nums; }
+
+/* ---- ป้าย (badge/pill) ---- */
+.tm-pill {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .3rem .75rem; border-radius: 999px;
+  font-size: .75rem; font-weight: 700; border: 1px solid transparent; white-space: nowrap;
+  text-decoration: none;
+}
+a.tm-pill-muted:hover { border-color: var(--tm-brand-line); color: var(--tm-brand); }
+.tm-pill-brand  { background: var(--tm-brand-soft); color: var(--tm-brand-hover); border-color: var(--tm-brand-line); }
+.tm-pill-action { background: var(--tm-action); color: #fff; }
+.tm-pill-accent { background: var(--tm-accent); color: #fff; }
+.tm-pill-ink    { background: var(--tm-ink); color: #fff; }
+.tm-pill-muted  { background: #f3f4f6; color: #374151; border-color: var(--tm-line); }
+
+/* สถานะออเดอร์: พื้นอ่อน + ตัวอักษรเข้ม สีเรียบ */
+.status-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .6rem; border-radius: 999px; font-size: .72rem; font-weight: 700; border: 1px solid; white-space: nowrap; }
+.status-pending_payment { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+.status-payment_review  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.status-paid            { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.status-preparing       { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.status-ready           { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+.status-delivering      { background: var(--tm-brand-soft); color: var(--tm-brand-hover); border-color: var(--tm-brand-line); }
+.status-completed       { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+.status-cancelled       { background: #f3f4f6; color: #4b5563; border-color: #e5e7eb; }
+
+/* ---- Header ---- */
+.tm-header {
+  position: sticky; top: 0; z-index: 1030;
+  height: var(--tm-header-h);
+  background: #fff; border-bottom: 1px solid var(--tm-line);
+}
+.tm-header .container-xl { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.tm-brand { display: inline-flex; align-items: center; gap: .55rem; text-decoration: none; }
+.tm-brand img { width: 36px; height: 36px; }
+.tm-brand .tm-brand-name { font-size: 1.2rem; font-weight: 800; color: var(--tm-brand); line-height: 1; }
+.tm-brand .tm-brand-tag { font-size: .68rem; color: var(--tm-muted); line-height: 1.2; }
+.tm-nav-link { color: #374151; font-weight: 600; font-size: .9rem; text-decoration: none; }
+.tm-nav-link:hover, .tm-nav-link.active { color: var(--tm-brand); }
+
+/* แถบย่อยใต้ header (เหมือนแถบ pill ของธีมต้นแบบ) */
+.tm-subbar { background: #fff; border-bottom: 1px solid var(--tm-line); }
+.tm-subbar .scroller { display: flex; gap: .5rem; overflow-x: auto; padding: .55rem 0; scrollbar-width: none; }
+.tm-subbar .scroller::-webkit-scrollbar { display: none; }
+
+/* ---- แถบเมนูล่าง (มือถือ) ---- */
+.tm-bottom-nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1030;
+  height: calc(var(--tm-bottom-nav-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #fff; border-top: 1px solid var(--tm-line);
+  display: flex; align-items: stretch; justify-content: space-around;
+}
+.tm-bottom-nav a {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem;
+  font-size: .68rem; font-weight: 600; color: #4b5563; text-decoration: none; position: relative;
+}
+.tm-bottom-nav a .bi { font-size: 1.25rem; line-height: 1; }
+.tm-bottom-nav a.active { color: var(--tm-brand); }
+.tm-bottom-nav .nav-count {
+  position: absolute; top: .45rem; left: calc(50% + .35rem);
+  min-width: 1.1rem; height: 1.1rem; padding: 0 .3rem; border-radius: 999px;
+  background: var(--tm-accent); color: #fff; font-size: .62rem; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.has-bottom-nav { padding-bottom: calc(var(--tm-bottom-nav-h) + env(safe-area-inset-bottom)); }
+@media (min-width: 768px) {
+  .tm-bottom-nav { display: none; }
+  .has-bottom-nav { padding-bottom: 0; }
+}
+
+/* ---- Footer ---- */
+.tm-footer { background: var(--tm-ink); color: #d1d5db; font-size: .85rem; }
+.tm-footer a { color: #d1d5db; text-decoration: none; }
+.tm-footer a:hover { color: #fff; }
+.tm-footer .tm-footer-brand { color: #fb7185; font-weight: 800; font-size: 1.15rem; }
+
+/* ---- Console (หลังบ้านเจ้าของร้าน) ---- */
+.console-shell { display: flex; flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+.console-sidebar {
+  width: 100%; background: #fff; border: 1px solid var(--tm-line); border-radius: var(--tm-radius-lg);
+  padding: .75rem; box-shadow: var(--tm-shadow);
+}
+.console-sidebar .group-label { font-size: .65rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .06em; padding: .5rem .75rem .25rem; }
+.console-sidebar .nav-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .25rem; }
+.console-link {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .6rem .75rem; border-radius: var(--tm-radius); text-decoration: none;
+  font-size: .8rem; font-weight: 700; color: #4b5563;
+}
+.console-link:hover { background: #f3f4f6; color: var(--tm-ink); }
+.console-link.active { background: var(--tm-ink); color: #fff; }
+.console-link .bi { color: var(--tm-brand); font-size: 1rem; }
+.console-link.active .bi { color: #fb7185; }
+.console-link .count { background: var(--tm-accent); color: #fff; border-radius: 999px; font-size: .65rem; font-weight: 800; padding: .05rem .45rem; }
+.console-main { width: 100%; min-width: 0; }
+.console-topbar { background: var(--tm-ink); color: #fff; }
+@media (min-width: 992px) {
+  .console-shell { flex-direction: row; }
+  .console-sidebar { width: 15rem; flex-shrink: 0; position: sticky; top: 1.25rem; max-height: calc(100dvh - 2.5rem); overflow-y: auto; }
+  .console-sidebar .nav-grid { display: block; }
+  .console-sidebar .nav-grid > * + * { margin-top: .2rem; }
+  /* กินพื้นที่ที่เหลือจาก sidebar เท่านั้น (ถ้าเป็น 100% จะล้นจอด้านขวา) */
+  .console-main { width: auto; flex: 1 1 0; }
+}
+
+/* ---- ตาราง ---- */
+.table-tm { --bs-table-bg: transparent; font-size: .85rem; margin: 0; }
+.table-tm thead th { font-size: .7rem; font-weight: 700; color: var(--tm-muted); text-transform: uppercase; letter-spacing: .04em; border-bottom-width: 1px; white-space: nowrap; }
+.table-tm td { vertical-align: middle; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ---- ฟอร์ม ---- */
+.form-control, .form-select { border-radius: var(--tm-radius-sm); padding: .6rem .85rem; }
+.form-control:focus, .form-select:focus { border-color: var(--tm-brand-line); box-shadow: 0 0 0 .2rem rgba(225, 29, 116, .15); }
+.form-label { font-size: .8rem; font-weight: 700; color: #374151; }
+
+/* ---- ข้อความแจ้ง (flash) ---- */
+.alert { border-radius: var(--tm-radius); font-size: .9rem; font-weight: 500; }
+
+/* ---- HTMX: แสดงตัวโหลดเฉพาะตอนกำลังส่งคำขอ ---- */
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline-block; }
+
+/* ---- เคารพการตั้งค่าลดการเคลื่อนไหวของผู้ใช้ ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ---- จอครัว (KDS) ---- */
+.kds-col-title { font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; }
+.kds-dot { width: .7rem; height: .7rem; border-radius: 999px; display: inline-block; }
+.kds-count { background: #f3f4f6; border-radius: 999px; padding: 0 .55rem; font-size: .8rem; }
+.kds-empty { border: 1px dashed var(--tm-line); border-radius: var(--tm-radius-lg); padding: 1.5rem; text-align: center; color: var(--tm-muted); font-size: .85rem; }
+.kds-ticket { border-left: 6px solid var(--tm-line); }
+.kds-ticket.kds-paid { border-left-color: var(--tm-accent); }
+.kds-ticket.kds-preparing { border-left-color: var(--tm-ink); }
+.kds-ticket.kds-ready { border-left-color: var(--tm-action); }
+.kds-ticket.kds-late { box-shadow: 0 0 0 2px #dc2626; }
+.kds-timer { font-size: .8rem; font-weight: 700; color: var(--tm-muted); white-space: nowrap; }
+.kds-timer.is-late { color: #dc2626; }
+.kds-items li { padding: .35rem 0; border-bottom: 1px dashed var(--tm-line); font-size: 1.05rem; }
+.kds-items li:last-child { border-bottom: 0; }
+.kds-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 1.9rem; height: 1.9rem; margin-right: .4rem;
+  border-radius: .5rem; background: var(--tm-ink); color: #fff; font-weight: 800; font-variant-numeric: tabular-nums; }
+.kds-sub { font-size: .85rem; color: #374151; padding-left: 2.3rem; }
+.kds-note { font-size: .85rem; color: #b45309; font-weight: 700; padding-left: 2.3rem; }
+.kds-order-note { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: var(--tm-radius-sm); padding: .45rem .7rem; font-size: .9rem; font-weight: 600; }

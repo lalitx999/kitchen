@@ -1,0 +1,35 @@
+# สำหรับพัฒนาบนเครื่อง: รันเฉพาะฐานข้อมูลกับ Redis ส่วน Django รันด้วย venv
+# ไฟล์ production อยู่ที่ deploy/docker-compose.prod.yml (M10)
+name: tmpp
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?ตั้ง POSTGRES_DB ใน .env}
+      POSTGRES_USER: ${POSTGRES_USER:?ตั้ง POSTGRES_USER ใน .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ตั้ง POSTGRES_PASSWORD ใน .env}
+    ports:
+      # ผูกกับ 127.0.0.1 เท่านั้น คนในวง Wi-Fi เดียวกันต่อเข้ามาไม่ได้
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - tmpp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - tmpp_redis:/data
+
+volumes:
+  # ชื่อ volume ใหม่ แยกจากระบบเดิมทั้งหมด (D1: เริ่มฐานข้อมูลใหม่)
+  tmpp_pgdata:
+  tmpp_redis:

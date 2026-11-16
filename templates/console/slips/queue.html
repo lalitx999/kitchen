@@ -1,0 +1,74 @@
+{% extends "layouts/console.html" %}
+{% load humanize %}
+{% block console_title %}ตรวจสลิป{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4">
+  <div>
+    <h1 class="h4 fw-black mb-0">ตรวจสลิป</h1>
+    <div class="small text-muted-tm">สลิปที่ระบบตรวจอัตโนมัติไม่ได้ (EasySlip ใช้ไม่ได้ / ยังไม่ตั้งบัญชีร้าน) จะมารอที่นี่ · เปิดแอปธนาคารเช็คยอดเข้าก่อนกดอนุมัติ</div>
+  </div>
+
+  {% if queue %}
+    <div class="row g-3">
+      {% for slip in queue %}
+        <div class="col-12 col-lg-6">
+          <div class="card-tm h-100 d-flex flex-column flex-sm-row overflow-hidden">
+            <a href="{% url 'payments:slip_image' slip.pk %}" target="_blank" rel="noopener" class="d-block bg-light flex-shrink-0" style="width: 100%; max-width: 220px;">
+              <img src="{% url 'payments:slip_image' slip.pk %}" alt="สลิป {{ slip.order.order_number }}" class="w-100 h-100 object-fit-contain" style="max-height: 320px;" loading="lazy">
+            </a>
+            <div class="p-3 d-flex flex-column gap-2 flex-grow-1 min-w-0">
+              <div class="d-flex align-items-center justify-content-between gap-2">
+                <a href="{% url 'console:order_detail' slip.order.pk %}" class="fw-black font-mono-num text-reset">{{ slip.order.order_number }}</a>
+                <span class="status-badge {% if slip.status == 'PROCESSING' %}status-preparing{% else %}status-payment_review{% endif %}">{{ slip.get_status_display }}</span>
+              </div>
+              <div class="fs-4 fw-black text-brand font-mono-num">฿{{ slip.order.total|floatformat:"2"|intcomma }}</div>
+              <div class="small">{{ slip.order.recipient_name }} · {{ slip.order.recipient_phone }}</div>
+              <div class="small-xs text-muted-tm">ส่งเมื่อ {{ slip.created_at|date:"j M H:i" }} · ครั้งที่ {{ slip.attempt_no }}</div>
+              {% if slip.reason %}<div class="small-xs text-muted-tm">{{ slip.reason }}</div>{% endif %}
+
+              <form method="post" action="{% url 'console:slip_approve' slip.pk %}" class="mt-auto d-grid gap-2"
+                    onsubmit="return confirm('ยืนยันว่าเงิน {{ slip.order.total }} บาท เข้าบัญชีร้านแล้ว?');">
+                {% csrf_token %}
+                <input name="trans_ref" class="form-control form-control-sm" maxlength="64" placeholder="เลขอ้างอิงในสลิป (ไม่บังคับ กันสลิปซ้ำ)">
+                <button class="btn btn-action btn-sm btn-icon"><i class="bi bi-check-lg"></i>เงินเข้าแล้ว อนุมัติ</button>
+              </form>
+              <form method="post" action="{% url 'console:slip_reject' slip.pk %}" class="d-flex gap-2">
+                {% csrf_token %}
+                <input name="reason" class="form-control form-control-sm" maxlength="255" required placeholder="เหตุผล (ลูกค้าเห็น)">
+                <button class="btn btn-outline-ink btn-sm text-nowrap">ไม่ผ่าน</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card-tm card-tm-body text-center py-5">
+      <i class="bi bi-check2-circle fs-1 text-action"></i>
+      <div class="fw-bold mt-2">ไม่มีสลิปรอตรวจ</div>
+    </div>
+  {% endif %}
+
+  {% if recent %}
+    <div class="card-tm">
+      <div class="p-3 border-bottom fw-black">ตรวจล่าสุด</div>
+      <div class="table-scroll">
+        <table class="table table-tm">
+          <tbody>
+            {% for slip in recent %}
+              <tr>
+                <td class="text-muted-tm small text-nowrap">{{ slip.reviewed_at|date:"j M H:i" }}</td>
+                <td class="fw-bold font-mono-num"><a href="{% url 'console:order_detail' slip.order.pk %}" class="text-reset">{{ slip.order.order_number }}</a></td>
+                <td><span class="status-badge {% if slip.status == 'APPROVED' %}status-paid{% else %}status-cancelled{% endif %}">{{ slip.get_status_display }}</span></td>
+                <td class="small">{{ slip.get_review_source_display }}{% if slip.reviewed_by %} · {{ slip.reviewed_by.full_name }}{% endif %}</td>
+                <td class="small text-muted-tm">{{ slip.reason }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

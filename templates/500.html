@@ -1,0 +1,19 @@
+{% load static %}<!DOCTYPE html>
+{# หน้านี้ Django render โดยไม่มี context (ไม่มี user/SITE_NAME) จึงไม่ extends layout #}
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบขัดข้องชั่วคราว</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-5.3.8/css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/tmpp.css' %}">
+</head>
+<body>
+  <main class="container py-5 text-center">
+    <img src="{% static 'img/logo-mark.svg' %}" alt="" width="56" height="56">
+    <h1 class="h4 fw-black mt-3">ระบบขัดข้องชั่วคราว</h1>
+    <p class="text-muted-tm">ลองใหม่อีกครั้งในอีกสักครู่ ถ้ายังไม่ได้ให้โทรสั่งที่ร้านโดยตรง</p>
+    <a href="/" class="btn btn-action btn-pill px-4">กลับหน้าร้าน</a>
+  </main>
+</body>
+</html>

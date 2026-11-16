@@ -1,0 +1,35 @@
+{# บอร์ดครัว 3 คอลัมน์ (จอใหญ่) / แท็บ (มือถือ) · ถูกแทนที่ทุก 5 วินาที #}
+{{ new_order_ids|json_script:"kds-new-ids" }}
+
+<nav class="d-flex d-lg-none gap-2 mb-3" aria-label="สถานะออเดอร์">
+  <button type="button" class="tm-pill flex-fill justify-content-center py-2" :class="tab === 'new' ? 'tm-pill-accent' : 'tm-pill-muted'" @click="tab = 'new'">ใหม่ {{ new_orders|length }}</button>
+  <button type="button" class="tm-pill flex-fill justify-content-center py-2" :class="tab === 'preparing' ? 'tm-pill-ink' : 'tm-pill-muted'" @click="tab = 'preparing'">กำลังทำ {{ preparing_orders|length }}</button>
+  <button type="button" class="tm-pill flex-fill justify-content-center py-2" :class="tab === 'ready' ? 'tm-pill-action' : 'tm-pill-muted'" @click="tab = 'ready'">พร้อมส่ง {{ ready_orders|length }}</button>
+</nav>
+
+<div class="row g-3">
+  <section class="col-12 col-lg-4 kds-col" :class="tab === 'new' ? '' : 'd-none d-lg-block'">
+    <h2 class="kds-col-title"><span class="kds-dot" style="background: var(--tm-accent)"></span>ใหม่ <span class="kds-count">{{ new_orders|length }}</span></h2>
+    {% for order in new_orders %}{% include "orders/kitchen/_ticket.html" %}{% empty %}
+      <div class="kds-empty">ไม่มีออเดอร์ใหม่</div>
+    {% endfor %}
+  </section>
+
+  <section class="col-12 col-lg-4 kds-col" :class="tab === 'preparing' ? '' : 'd-none d-lg-block'">
+    <h2 class="kds-col-title"><span class="kds-dot" style="background: var(--tm-ink)"></span>กำลังทำ <span class="kds-count">{{ preparing_orders|length }}</span></h2>
+    {% for order in preparing_orders %}{% include "orders/kitchen/_ticket.html" %}{% empty %}
+      <div class="kds-empty">ยังไม่มีออเดอร์ที่กำลังทำ</div>
+    {% endfor %}
+  </section>
+
+  <section class="col-12 col-lg-4 kds-col" :class="tab === 'ready' ? '' : 'd-none d-lg-block'">
+    <h2 class="kds-col-title"><span class="kds-dot" style="background: var(--tm-action)"></span>รอไรเดอร์รับ <span class="kds-count">{{ ready_orders|length }}</span></h2>
+    {% for order in ready_orders %}{% include "orders/kitchen/_ticket.html" %}{% empty %}
+      <div class="kds-empty">ยังไม่มีอาหารรอส่ง</div>
+    {% endfor %}
+    {% if out_orders %}
+      <div class="small text-muted-tm mt-3"><i class="bi bi-scooter me-1"></i>ออกจากร้านแล้ว:
+        {% for o in out_orders %}<span class="font-mono-num">{{ o.order_number }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+    {% endif %}
+  </section>
+</div>

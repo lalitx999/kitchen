@@ -1,0 +1,26 @@
+{# ปุ่ม Google Sign-In: แสดงเฉพาะเมื่อตั้ง GOOGLE_CLIENT_ID แล้ว #}
+{# สคริปต์ของ Google ต้องโหลดจาก accounts.google.com (ข้อยกเว้นเรื่อง CDN เหมือน Maps/Firebase) #}
+{% if google_client_id %}
+<form method="post" action="{% url 'accounts:google' %}" id="google-login-form" class="d-none">
+  {% csrf_token %}
+  <input type="hidden" name="credential" id="google-credential">
+  <input type="hidden" name="next" value="{{ next }}">
+</form>
+<div id="g_id_onload" data-client_id="{{ google_client_id }}" data-callback="tmppGoogleCallback"
+     data-auto_prompt="false" data-ux_mode="popup"></div>
+<div class="d-flex justify-content-center">
+  <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline"
+       data-text="continue_with" data-size="large" data-locale="th" data-width="320"></div>
+</div>
+<script>
+  // Google ส่ง ID token มาที่ callback -> ใส่ในฟอร์มที่มี CSRF token แล้วส่งให้เซิร์ฟเวอร์ตรวจ
+  function tmppGoogleCallback(response) {
+    document.getElementById('google-credential').value = response.credential;
+    document.getElementById('google-login-form').submit();
+  }
+</script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<div class="d-flex align-items-center gap-2 my-4 text-muted-tm small">
+  <hr class="flex-grow-1 m-0"><span>หรือใช้อีเมล</span><hr class="flex-grow-1 m-0">
+</div>
+{% endif %}

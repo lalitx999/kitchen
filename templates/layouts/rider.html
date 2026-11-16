@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{# หน้าไรเดอร์: ออกแบบให้ใช้มือเดียวบนมือถือ ปุ่มใหญ่ ไม่มี footer #}
+
+{% block title %}ไรเดอร์ — {{ SITE_NAME }}{% endblock %}
+{% block body_class %}rider-app{% endblock %}
+
+{% block layout %}
+<header class="tm-header">
+  <div class="container-xl">
+    <a href="{% block app_home %}{% url 'delivery:rider_home' %}{% endblock %}" class="tm-brand">
+      <img src="{% static 'img/logo-mark.svg' %}" alt="" width="36" height="36">
+      <span class="d-flex flex-column">
+        <span class="tm-brand-name">{{ SITE_NAME }}</span>
+        <span class="tm-brand-tag">{% block app_label %}ไรเดอร์{% endblock %}</span>
+      </span>
+    </a>
+    <div class="d-flex align-items-center gap-2">
+      {% include "components/_bell.html" %}
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+        <button type="submit" class="btn btn-outline-ink btn-sm btn-icon"><i class="bi bi-box-arrow-right"></i><span>ออก</span></button>
+      </form>
+    </div>
+  </div>
+</header>
+
+{% include "components/_messages.html" %}
+
+<main class="container-xl py-3" style="max-width: 640px;">
+  {% block content %}{% endblock %}
+</main>
+{% endblock %}

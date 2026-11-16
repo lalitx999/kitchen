@@ -1,0 +1,81 @@
+{% extends "layouts/console.html" %}
+{% load humanize %}
+{% block console_title %}{% if item %}แก้ไขเมนู{% else %}เพิ่มเมนู{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4" style="max-width: 860px;">
+  <div>
+    <a href="{% url 'console:menu' %}" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i>เมนูทั้งหมด</a>
+    <h1 class="h4 fw-black mt-2 mb-0">{% if item %}{{ item.name }}{% else %}เพิ่มเมนู{% endif %}</h1>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="card-tm card-tm-body p-4" novalidate>
+    {% csrf_token %}
+    {% include "components/_form_errors.html" %}
+    <div class="row g-3">
+      {% include "components/_field.html" with field=form.name wrapper_class="col-12 col-md-8" %}
+      {% include "components/_field.html" with field=form.price wrapper_class="col-12 col-md-4" %}
+      {% include "components/_field.html" with field=form.description wrapper_class="col-12" %}
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="id_category">{{ form.category.label }}</label>
+        <select name="category" id="id_category" class="form-select">
+          <option value="">ไม่มีหมวด</option>
+          {% for value, label in form.category.field.choices %}{% if value %}
+            <option value="{{ value }}" {% if form.category.value|stringformat:'s' == value|stringformat:'s' %}selected{% endif %}>{{ label }}</option>
+          {% endif %}{% endfor %}
+        </select>
+      </div>
+      {% include "components/_field.html" with field=form.sort_order wrapper_class="col-6 col-md-3" %}
+      <div class="col-6 col-md-3 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" role="switch" name="is_available" id="id_is_available" {% if form.is_available.value %}checked{% endif %}>
+          <label class="form-check-label fw-bold small" for="id_is_available">มีขาย</label>
+        </div>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="id_image">{{ form.image.label }}</label>
+        {% if item.image %}
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <img src="{{ item.image.url }}" alt="" width="96" height="72" class="rounded-3 object-fit-cover">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="remove_image" id="id_remove_image"><label class="form-check-label small" for="id_remove_image">ลบรูปนี้</label></div>
+          </div>
+        {% endif %}
+        <input type="file" name="image" id="id_image" accept="image/jpeg,image/png,image/webp" class="form-control{% if form.image.errors %} is-invalid{% endif %}">
+        {% for e in form.image.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        <div class="form-text small-xs">{{ form.image.help_text }}</div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">{% if item %}บันทึก{% else %}เพิ่มเมนู{% endif %}</button>
+  </form>
+
+  {% if item %}
+    <section class="card-tm card-tm-body p-4">
+      <h2 class="h6 fw-black mb-1">ตัวเลือกเสริม</h2>
+      <div class="small text-muted-tm mb-3">ลูกค้าเลือกได้หลายอย่าง เช่น ไข่ดาว +10, พิเศษ +15</div>
+      {% if item.options.all %}
+        <ul class="list-group mb-3">
+          {% for option in item.options.all %}
+            <li class="list-group-item d-flex align-items-center justify-content-between">
+              <span>{{ option.name }} <span class="text-muted-tm small">{% if option.extra_price %}+฿{{ option.extra_price|floatformat:"-2" }}{% else %}ฟรี{% endif %}</span></span>
+              <form method="post" action="{% url 'console:menu_option_delete' item.pk option.pk %}">{% csrf_token %}
+                <button class="btn btn-sm btn-outline-ink" aria-label="ลบตัวเลือก"><i class="bi bi-x-lg"></i></button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <form method="post" action="{% url 'console:menu_option_add' item.pk %}" class="row g-2">
+        {% csrf_token %}
+        <div class="col-12 col-sm"><input name="name" class="form-control" placeholder="ชื่อตัวเลือก" maxlength="80" required></div>
+        <div class="col-6 col-sm-3"><input name="extra_price" type="number" min="0" step="0.01" value="0" class="form-control" aria-label="ราคาเพิ่ม"></div>
+        <div class="col-6 col-sm-auto"><button class="btn btn-action w-100">เพิ่มตัวเลือก</button></div>
+      </form>
+    </section>
+
+    <form method="post" action="{% url 'console:menu_item_delete' item.pk %}" onsubmit="return confirm('ลบเมนู {{ item.name|escapejs }}? (ถ้าแค่หมดชั่วคราว ให้ปิด มีขาย แทน)');">
+      {% csrf_token %}
+      <button class="btn btn-outline-ink btn-sm text-danger btn-icon"><i class="bi bi-trash"></i>ลบเมนูนี้</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

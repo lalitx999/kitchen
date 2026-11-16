@@ -1,0 +1,63 @@
+{% extends "layouts/console.html" %}
+{% block console_title %}ไรเดอร์และพนักงาน{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4" x-data="{ open: {{ form_open|yesno:'true,false' }} }">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+      <h1 class="h4 fw-black mb-0">ไรเดอร์และพนักงาน</h1>
+      <div class="small text-muted-tm">สร้างบัญชีให้ไรเดอร์และครัว ทุกการแก้ไขถูกบันทึกไว้</div>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm btn-icon" @click="open = !open">
+      <i class="bi" :class="open ? 'bi-x-lg' : 'bi-person-plus'"></i><span x-text="open ? 'ปิดฟอร์ม' : 'เพิ่มบัญชี'">เพิ่มบัญชี</span>
+    </button>
+  </div>
+
+  <div class="card-tm card-tm-body p-4" x-show="open" x-cloak>
+    <h2 class="h6 fw-black mb-3">เพิ่มบัญชีใหม่</h2>
+    <form method="post" novalidate x-data="{ role: '{{ form.role.value|default:'RIDER' }}' }">
+      {% csrf_token %}
+      {% include "components/_form_errors.html" %}
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="{{ form.role.id_for_label }}">{{ form.role.label }}</label>
+          <select name="{{ form.role.html_name }}" id="{{ form.role.id_for_label }}" class="form-select" x-model="role">
+            {% for value, label in form.role.field.choices %}
+              <option value="{{ value }}" {% if form.role.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% include "components/_field.html" with field=form.full_name wrapper_class="col-12 col-md-4" %}
+        {% include "components/_field.html" with field=form.phone wrapper_class="col-12 col-md-4" %}
+        {% include "components/_field.html" with field=form.email wrapper_class="col-12 col-md-6" %}
+        {% include "components/_field.html" with field=form.password wrapper_class="col-12 col-md-6" %}
+        <div class="col-12 col-md-6" x-show="role === 'RIDER'">
+          {% include "components/_field.html" with field=form.vehicle_plate wrapper_class="" %}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-action mt-3">สร้างบัญชี</button>
+    </form>
+  </div>
+
+  <div class="card-tm">
+    {% if staff_accounts %}
+    <div class="table-scroll">
+      <table class="table table-tm table-hover">
+        <thead><tr><th>ชื่อ</th><th>ตำแหน่ง</th><th>เบอร์</th><th>ทะเบียน</th><th>สถานะ</th><th>เข้าล่าสุด</th><th></th></tr></thead>
+        <tbody>
+          {% for staff in staff_accounts %}
+            {% include "console/_staff_row.html" %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+      <i class="bi bi-person-badge fs-1 text-muted-tm"></i>
+      <div class="fw-bold mt-2">ยังไม่มีบัญชีไรเดอร์หรือครัว</div>
+      <div class="small text-muted-tm">กด "เพิ่มบัญชี" เพื่อสร้างบัญชีให้น้องไรเดอร์</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

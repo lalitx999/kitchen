@@ -1,0 +1,3 @@
+{# อัปเดตตัวเลขบนไอคอนตะกร้าทั้ง header และแถบล่าง (HTMX out-of-band swap) #}
+<span id="cart-count-header" hx-swap-oob="true" class="badge rounded-pill text-bg-light text-dark">{{ cart_count }}</span>
+<span id="cart-count-nav" hx-swap-oob="true" class="nav-count{% if not cart_count %} d-none{% endif %}">{{ cart_count }}</span>

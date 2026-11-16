@@ -1,0 +1,101 @@
+{% extends "layouts/customer.html" %}
+{% load static humanize %}
+{% block title %}จัดส่งและทวนออเดอร์ — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4" style="max-width: 960px;">
+  <a href="{% url 'orders:cart' %}" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i>กลับไปตะกร้า</a>
+  <h1 class="h4 fw-black mt-2 mb-3">จัดส่งและทวนออเดอร์</h1>
+
+  <form method="post" id="checkout-form" novalidate>
+    {% csrf_token %}
+    {% include "components/_form_errors.html" %}
+    {{ form.latitude }}{{ form.longitude }}
+    <div class="row g-4">
+      <div class="col-12 col-lg-7 d-grid gap-4 align-content-start">
+        <section class="card-tm card-tm-body p-4">
+          <h2 class="h6 fw-black mb-3"><i class="bi bi-geo-alt text-brand me-2"></i>ตำแหน่งจัดส่ง</h2>
+
+          {% if saved_addresses %}
+            <div class="small fw-bold text-muted-tm mb-2">ที่อยู่ที่เคยใช้</div>
+            <div class="d-grid gap-2 mb-3">
+              {% for addr in saved_addresses %}
+                <button type="button" class="btn btn-outline-ink text-start small"
+                        data-saved-address data-lat="{{ addr.location.y|stringformat:'f' }}" data-lng="{{ addr.location.x|stringformat:'f' }}"
+                        data-text="{{ addr.address_text }}" data-note="{{ addr.note }}">
+                  <i class="bi bi-clock-history me-1"></i>{{ addr.address_text|truncatechars:70 }}
+                </button>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if google_maps_api_key %}
+            <div id="address-map" class="rounded-4 border mb-2" style="height: 260px;" aria-label="แผนที่ปักหมุด"></div>
+            <div class="small text-muted-tm mb-2">ลากหมุดหรือแตะบนแผนที่ให้ตรงบ้าน</div>
+          {% endif %}
+
+          <button type="button" class="btn btn-soft w-100 btn-icon" id="use-my-location">
+            <span class="spinner-border spinner-border-sm d-none" id="locating"></span><i class="bi bi-crosshair"></i>ใช้ตำแหน่งปัจจุบัน
+          </button>
+          <div class="small mt-2" id="location-status" role="status">
+            {% if form.latitude.value %}<span class="text-action"><i class="bi bi-check-circle me-1"></i>ปักหมุดแล้ว</span>
+            {% else %}<span class="text-muted-tm">ยังไม่ได้ปักหมุด · ต้องเปิดตำแหน่ง (GPS) ของเบราว์เซอร์</span>{% endif %}
+          </div>
+
+          <div id="quote-box" class="mt-3"
+               hx-post="{% url 'orders:checkout_quote' %}" hx-trigger="tmpp:location from:body" hx-swap="innerHTML"
+               hx-include="#id_latitude, #id_longitude"></div>
+        </section>
+
+        <section class="card-tm card-tm-body p-4">
+          <h2 class="h6 fw-black mb-3"><i class="bi bi-person text-brand me-2"></i>ผู้รับ</h2>
+          <div class="row g-3">
+            {% include "components/_field.html" with field=form.recipient_name wrapper_class="col-12 col-md-6" %}
+            {% include "components/_field.html" with field=form.recipient_phone wrapper_class="col-12 col-md-6" %}
+            <div class="col-12">
+              <label class="form-label" for="id_address_text">{{ form.address_text.label }}</label>
+              <textarea name="address_text" id="id_address_text" rows="2" maxlength="500" required
+                        class="form-control{% if form.address_text.errors %} is-invalid{% endif %}" placeholder="บ้านเลขที่ ซอย ถนน หมู่บ้าน">{{ form.address_text.value|default:"" }}</textarea>
+              {% for e in form.address_text.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            {% include "components/_field.html" with field=form.address_note wrapper_class="col-12" %}
+            {% include "components/_field.html" with field=form.note wrapper_class="col-12" %}
+          </div>
+        </section>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <section class="card-tm card-tm-body p-4 sticky-lg-top" style="top: calc(var(--tm-header-h) + 1rem); z-index: 1;">
+          <h2 class="h6 fw-black mb-3"><i class="bi bi-receipt text-brand me-2"></i>ทวนออเดอร์</h2>
+          <ul class="list-unstyled d-grid gap-2 small mb-3">
+            {% for line in cart.lines %}
+              <li class="d-flex justify-content-between gap-2">
+                <span class="min-w-0">{{ line.qty }} x {{ line.item.name }}{% if line.options %}<span class="d-block text-muted-tm">{% for o in line.options %}{{ o.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% endif %}{% if line.note %}<span class="d-block text-muted-tm">{{ line.note }}</span>{% endif %}</span>
+                <span class="font-mono-num text-nowrap">฿{{ line.line_total|floatformat:"-2"|intcomma }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+          <div class="border-top pt-3 d-grid gap-1">
+            <div class="d-flex justify-content-between"><span class="text-muted-tm">ค่าอาหาร</span><span class="font-mono-num">฿{{ cart.subtotal|floatformat:"-2"|intcomma }}</span></div>
+            <div id="quote-summary" class="d-flex justify-content-between"><span class="text-muted-tm">ค่าส่ง</span><span class="text-muted-tm">รอปักหมุด</span></div>
+          </div>
+          <div class="small text-muted-tm mt-3"><i class="bi bi-qr-code me-1"></i>ขั้นต่อไป: จ่ายด้วย QR พร้อมเพย์ แล้วแนบสลิป</div>
+          <button type="submit" class="btn btn-action btn-lg w-100 mt-3" {% if not shop.accepting %}disabled{% endif %}>ยืนยันสั่งอาหาร</button>
+          {% if not shop.accepting %}<div class="small text-danger mt-2">{{ shop.reason }}</div>{% endif %}
+        </section>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/checkout.js' %}" defer></script>
+{% if google_maps_api_key %}
+  {# Google Maps โหลดเฉพาะหน้านี้ (ลดค่าใช้จ่าย) #}
+  <script>
+    window.TMPP_SHOP = {% if shop_location %}{ lat: {{ shop_location.y|stringformat:'f' }}, lng: {{ shop_location.x|stringformat:'f' }} }{% else %}null{% endif %};
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key|urlencode }}&callback=tmppInitAddressMap&loading=async" defer></script>
+{% endif %}
+{% endblock %}

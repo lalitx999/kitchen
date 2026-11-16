@@ -1,0 +1,56 @@
+{% extends "layouts/console.html" %}
+{% block console_title %}ข้อมูลร้าน{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4" style="max-width: 860px;">
+  <div>
+    <h1 class="h4 fw-black mb-0">ข้อมูลร้าน</h1>
+    <div class="small text-muted-tm">แสดงบนหน้าร้าน และใช้คิดระยะส่ง</div>
+  </div>
+
+  {% include "console/_shop_switch.html" %}
+
+  <form method="post" class="card-tm card-tm-body p-4" novalidate>
+    {% csrf_token %}
+    {% include "components/_form_errors.html" %}
+    <div class="row g-3">
+      {% include "components/_field.html" with field=form.name wrapper_class="col-12 col-md-7" %}
+      {% include "components/_field.html" with field=form.phone wrapper_class="col-12 col-md-5" %}
+      <div class="col-12">
+        <label class="form-label" for="id_address">{{ form.address.label }}</label>
+        <textarea name="address" id="id_address" rows="2" class="form-control">{{ form.address.value|default:"" }}</textarea>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="id_coordinates">{{ form.coordinates.label }}</label>
+        <div class="input-group">
+          <input type="text" name="coordinates" id="id_coordinates" class="form-control{% if form.coordinates.errors or form.non_field_errors %} is-invalid{% endif %}"
+                 value="{{ form.coordinates.value|default:'' }}" placeholder="13.756331, 100.501765" inputmode="decimal">
+          <button type="button" class="btn btn-outline-ink btn-icon" id="shop-use-location"><i class="bi bi-crosshair"></i><span class="d-none d-sm-inline">ใช้ตำแหน่งเครื่องนี้</span></button>
+        </div>
+        {% for e in form.coordinates.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+        <div class="form-text small-xs" id="shop-location-help">{{ form.coordinates.help_text }}</div>
+        {% if branch.location %}
+          <a class="small" target="_blank" rel="noopener" href="https://www.google.com/maps?q={{ branch.location.y|stringformat:'f' }},{{ branch.location.x|stringformat:'f' }}"><i class="bi bi-box-arrow-up-right me-1"></i>ตรวจพิกัดบน Google Maps</a>
+        {% endif %}
+      </div>
+      {% include "components/_field.html" with field=form.opens_at wrapper_class="col-6 col-md-3" %}
+      {% include "components/_field.html" with field=form.closes_at wrapper_class="col-6 col-md-3" %}
+      <div class="col-12 small text-muted-tm">เว้นเวลาเปิด-ปิดว่าง = ใช้สวิตช์เปิด/ปิดรับออเดอร์อย่างเดียว · ปิดข้ามเที่ยงคืนได้ เช่น 17:00 - 02:00</div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
+  </form>
+</div>
+<script>
+  // ใช้ตอนเจ้าของยืนอยู่ที่ร้าน: เอาพิกัดจาก GPS ของเครื่องมาใส่ช่อง
+  document.getElementById('shop-use-location').addEventListener('click', function () {
+    var help = document.getElementById('shop-location-help');
+    if (!navigator.geolocation) { help.textContent = 'เบราว์เซอร์นี้หาตำแหน่งไม่ได้'; return; }
+    help.textContent = 'กำลังหาตำแหน่ง...';
+    navigator.geolocation.getCurrentPosition(function (p) {
+      document.getElementById('id_coordinates').value = p.coords.latitude.toFixed(6) + ', ' + p.coords.longitude.toFixed(6);
+      help.textContent = 'ได้ตำแหน่งแล้ว (คลาดเคลื่อน ±' + Math.round(p.coords.accuracy) + ' ม.) กดบันทึก';
+    }, function () { help.textContent = 'หาตำแหน่งไม่ได้: อนุญาตตำแหน่งในเบราว์เซอร์ หรือคัดลอกพิกัดจาก Google Maps มาวาง'; },
+    { enableHighAccuracy: true, timeout: 15000 });
+  });
+</script>
+{% endblock %}

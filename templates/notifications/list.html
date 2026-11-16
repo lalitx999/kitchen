@@ -1,0 +1,44 @@
+{% extends layout_template|default:"layouts/customer.html" %}
+{% load tmpp_tags %}
+{% block title %}แจ้งเตือน — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4" style="max-width: 720px;">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h1 class="h4 fw-black mb-0">แจ้งเตือน</h1>
+    <div class="d-flex gap-2">
+      {% include "components/_push_button.html" %}
+      {% if unread_notifications %}
+        <form method="post" action="{% url 'notifications:read_all' %}">{% csrf_token %}
+          <button class="btn btn-outline-ink btn-sm">อ่านทั้งหมดแล้ว</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+  {% if not push_config %}
+    <div class="alert alert-light border small"><i class="bi bi-info-circle me-1"></i>แจ้งเตือนเด้งบนมือถือยังไม่เปิดใช้ (ร้านยังไม่ได้ตั้งค่า) · แจ้งเตือนทั้งหมดยังดูได้ที่หน้านี้</div>
+  {% endif %}
+
+  {% if notifications %}
+    <div class="card-tm">
+      {% for n in notifications %}
+        <a href="{% url 'notifications:open' n.pk %}" class="d-flex gap-3 p-3 text-reset text-decoration-none {% if not forloop.last %}border-bottom{% endif %} {% if not n.read_at %}bg-brand-soft{% endif %}">
+          <i class="bi {% if n.kind|slice:':4' == 'job.' %}bi-scooter{% elif n.kind|slice:':5' == 'slip.' %}bi-qr-code-scan{% elif n.kind == 'kitchen.new' %}bi-fire{% elif n.kind == 'order.cancelled' %}bi-x-circle{% else %}bi-bag-check{% endif %} fs-5 text-brand"></i>
+          <div class="flex-grow-1 min-w-0">
+            <div class="d-flex justify-content-between gap-2">
+              <span class="fw-bold">{{ n.title }}</span>
+              <span class="small-xs text-muted-tm text-nowrap">{{ n.created_at|ago_th }}</span>
+            </div>
+            <div class="small text-muted-tm">{{ n.body }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card-tm card-tm-body text-center py-5">
+      <i class="bi bi-bell fs-1 text-muted-tm"></i>
+      <div class="small text-muted-tm mt-2">ยังไม่มีแจ้งเตือน</div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

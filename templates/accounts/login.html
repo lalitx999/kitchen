@@ -1,0 +1,22 @@
+{% extends "layouts/auth.html" %}
+{% block title %}เข้าสู่ระบบ — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<h1 class="h4 fw-black mb-1">เข้าสู่ระบบ</h1>
+<p class="small text-muted-tm mb-4">ลูกค้า ครัว ไรเดอร์ และเจ้าของร้าน ใช้หน้านี้หน้าเดียว</p>
+
+{% include "accounts/_google_button.html" %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {% include "components/_form_errors.html" %}
+  {% include "components/_field.html" with field=form.email %}
+  {% include "components/_field.html" with field=form.password wrapper_class="mb-4" %}
+  <button type="submit" class="btn btn-action btn-lg w-100">เข้าสู่ระบบ</button>
+</form>
+
+<p class="small text-center text-muted-tm mt-4 mb-0">
+  ยังไม่มีบัญชี? <a href="{% url 'accounts:register' %}" class="fw-bold">สมัครสมาชิก</a>
+</p>
+{% endblock %}

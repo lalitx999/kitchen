@@ -1,0 +1,31 @@
+{% extends "layouts/customer.html" %}
+{% load humanize %}
+{% block title %}ออเดอร์ของฉัน — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4" style="max-width: 760px;">
+  <h1 class="h4 fw-black mb-3">ออเดอร์ของฉัน</h1>
+
+  {% if not active_orders and not past_orders %}
+    <div class="card-tm card-tm-body text-center py-5">
+      <i class="bi bi-receipt fs-1 text-muted-tm"></i>
+      <div class="fw-bold mt-2">ยังไม่มีออเดอร์</div>
+      <a href="{% url 'core:home' %}#menu" class="btn btn-action btn-pill mt-3">ไปเลือกเมนู</a>
+    </div>
+  {% endif %}
+
+  {% if active_orders %}
+    <h2 class="h6 fw-black text-muted-tm mb-2">กำลังดำเนินการ</h2>
+    <div class="d-grid gap-2 mb-4">
+      {% for order in active_orders %}{% include "orders/_order_row.html" %}{% endfor %}
+    </div>
+  {% endif %}
+
+  {% if past_orders %}
+    <h2 class="h6 fw-black text-muted-tm mb-2">ที่ผ่านมา</h2>
+    <div class="d-grid gap-2">
+      {% for order in past_orders %}{% include "orders/_order_row.html" %}{% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

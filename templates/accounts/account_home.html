@@ -1,0 +1,67 @@
+{% extends "layouts/customer.html" %}
+{% block title %}บัญชีของฉัน — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-black fs-4" style="width:56px;height:56px;background:var(--tm-brand);">{{ user.full_name|slice:":1" }}</span>
+    <div class="min-w-0">
+      <h1 class="h4 fw-black mb-0 text-truncate">{{ user.full_name }}</h1>
+      <div class="small text-muted-tm text-truncate">{{ user.email }}</div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-lg-7">
+      <div class="card-tm card-tm-body p-4">
+        <h2 class="h6 fw-black mb-3"><i class="bi bi-person-vcard text-brand me-2"></i>ข้อมูลผู้รับ</h2>
+        {% if not user.phone %}
+          <div class="alert alert-warning py-2 small"><i class="bi bi-telephone me-1"></i>ยังไม่มีเบอร์โทร ไรเดอร์ต้องใช้โทรหาตอนไปส่ง กรุณาเพิ่มก่อนสั่งอาหาร</div>
+        {% endif %}
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% include "components/_form_errors.html" %}
+          <div class="row g-3">
+            {% include "components/_field.html" with field=form.full_name wrapper_class="col-12 col-md-6" %}
+            {% include "components/_field.html" with field=form.phone wrapper_class="col-12 col-md-6" %}
+          </div>
+          <button type="submit" class="btn btn-action mt-3">บันทึก</button>
+        </form>
+      </div>
+
+      <div class="card-tm card-tm-body p-4 mt-4">
+        <h2 class="h6 fw-black mb-3"><i class="bi bi-geo-alt text-brand me-2"></i>ที่อยู่จัดส่ง</h2>
+        <div class="text-center py-3">
+          <i class="bi bi-pin-map fs-2 text-muted-tm"></i>
+          <div class="small text-muted-tm mt-2">ยังไม่มีที่อยู่ จะบันทึกให้อัตโนมัติตอนปักหมุดสั่งอาหารครั้งแรก</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+      <div class="card-tm card-tm-body p-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="h6 fw-black mb-0"><i class="bi bi-receipt text-brand me-2"></i>ออเดอร์ล่าสุด</h2>
+        </div>
+        <div class="text-center py-3">
+          <i class="bi bi-bag fs-2 text-muted-tm"></i>
+          <div class="small text-muted-tm mt-2">ยังไม่มีออเดอร์</div>
+          <a href="{% url 'core:home' %}#menu" class="btn btn-action btn-pill btn-sm mt-3">ไปเลือกเมนู</a>
+        </div>
+      </div>
+
+      <div class="card-tm card-tm-body p-4 mt-4">
+        <h2 class="h6 fw-black mb-3"><i class="bi bi-shield-lock text-brand me-2"></i>การเข้าสู่ระบบ</h2>
+        <ul class="list-unstyled small d-grid gap-2 mb-3">
+          <li class="d-flex justify-content-between"><span class="text-muted-tm">อีเมล</span><span class="text-truncate ms-2">{{ user.email }}</span></li>
+          <li class="d-flex justify-content-between"><span class="text-muted-tm">Google</span><span>{% if user.google_sub %}<span class="tm-pill tm-pill-action">เชื่อมแล้ว</span>{% else %}<span class="tm-pill tm-pill-muted">ยังไม่เชื่อม</span>{% endif %}</span></li>
+        </ul>
+        {% if push_config %}<div class="d-grid mb-2">{% include "components/_push_button.html" %}</div>{% endif %}
+        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+          <button type="submit" class="btn btn-outline-ink w-100 btn-icon"><i class="bi bi-box-arrow-right"></i>ออกจากระบบ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

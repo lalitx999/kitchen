@@ -1,0 +1,24 @@
+{% extends "layouts/auth.html" %}
+{% block title %}สมัครสมาชิก — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<h1 class="h4 fw-black mb-1">สมัครสมาชิก</h1>
+<p class="small text-muted-tm mb-4">สมัครครั้งเดียว สั่งครั้งต่อไปไม่ต้องกรอกชื่อและเบอร์ใหม่</p>
+
+{% include "accounts/_google_button.html" %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% include "components/_form_errors.html" %}
+  {% include "components/_field.html" with field=form.full_name %}
+  {% include "components/_field.html" with field=form.email %}
+  {% include "components/_field.html" with field=form.phone %}
+  {% include "components/_field.html" with field=form.password1 %}
+  {% include "components/_field.html" with field=form.password2 wrapper_class="mb-4" %}
+  <button type="submit" class="btn btn-action btn-lg w-100">สมัครสมาชิก</button>
+</form>
+
+<p class="small text-center text-muted-tm mt-4 mb-0">
+  มีบัญชีแล้ว? <a href="{% url 'accounts:login' %}" class="fw-bold">เข้าสู่ระบบ</a>
+</p>
+{% endblock %}

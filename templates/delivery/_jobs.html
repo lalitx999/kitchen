@@ -1,0 +1,28 @@
+{# รายการงาน: โหลดใหม่ทุก 5 วินาที · id งานใหม่ส่งให้ JS เล่นเสียง #}
+<script type="application/json" id="rider-available-ids">[{% for job in available_jobs %}"{{ job.pk }}"{% if not forloop.last %},{% endif %}{% endfor %}]</script>
+<span id="rider-delivering" data-active="{% for job in my_jobs %}{% if job.status == 'DELIVERING' %}1{% endif %}{% endfor %}" hidden></span>
+
+<section class="mb-3">
+  <h2 class="h6 fw-black mb-2"><i class="bi bi-box-seam text-brand me-2"></i>งานของฉัน <span class="text-muted-tm fw-normal">({{ my_jobs|length }})</span></h2>
+  {% for job in my_jobs %}
+    {% include "delivery/_job_card.html" with mine=True %}
+  {% empty %}
+    <div class="card-tm card-tm-body text-center py-4">
+      <i class="bi bi-inbox fs-2 text-muted-tm"></i>
+      <div class="small text-muted-tm mt-1">ยังไม่มีงาน{% if profile.is_online %} รับงานใหม่ด้านล่างได้เลย{% endif %}</div>
+    </div>
+  {% endfor %}
+</section>
+
+<section>
+  <h2 class="h6 fw-black mb-2"><i class="bi bi-bell text-accent me-2"></i>งานใหม่ <span class="text-muted-tm fw-normal">({{ available_jobs|length }})</span></h2>
+  {% if not profile.is_online %}
+    <div class="card-tm card-tm-body small text-muted-tm">กด "เริ่มรับงาน" เพื่อดูงานใหม่</div>
+  {% else %}
+    {% for job in available_jobs %}
+      {% include "delivery/_job_card.html" with mine=False %}
+    {% empty %}
+      <div class="card-tm card-tm-body small text-muted-tm text-center py-3">ยังไม่มีงานใหม่ จะมีเสียงเตือนเมื่อมีงานเข้า</div>
+    {% endfor %}
+  {% endif %}
+</section>

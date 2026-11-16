@@ -1,0 +1,62 @@
+{% extends "layouts/console.html" %}
+{% load humanize %}
+{% block console_title %}{{ customer.full_name }}{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4">
+  <div>
+    <a href="{% url 'console:customers' %}" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i>ลูกค้าทั้งหมด</a>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+      <h1 class="h4 fw-black mb-0">{{ customer.full_name }}</h1>
+      {% if customer.is_active %}<span class="status-badge status-completed">ใช้งานได้</span>{% else %}<span class="status-badge status-cancelled">ปิดบัญชี</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-lg-4">
+      <section class="card-tm card-tm-body p-4">
+        <ul class="list-unstyled small d-grid gap-2 mb-3">
+          <li class="d-flex justify-content-between gap-2"><span class="text-muted-tm">อีเมล</span><span class="text-truncate">{{ customer.email }}</span></li>
+          <li class="d-flex justify-content-between"><span class="text-muted-tm">เบอร์</span>{% if customer.phone %}<a href="tel:{{ customer.phone }}">{{ customer.phone }}</a>{% else %}<span>-</span>{% endif %}</li>
+          <li class="d-flex justify-content-between"><span class="text-muted-tm">สมัครเมื่อ</span><span>{{ customer.created_at|date:"j M Y" }}</span></li>
+          <li class="d-flex justify-content-between"><span class="text-muted-tm">Google</span><span>{% if customer.google_sub %}เชื่อมแล้ว{% else %}-{% endif %}</span></li>
+        </ul>
+        <form method="post" action="{% url 'console:customer_toggle_active' customer.pk %}"
+              onsubmit="return confirm('{% if customer.is_active %}ปิดบัญชีลูกค้านี้? จะสั่งอาหารและล็อกอินไม่ได้{% else %}เปิดบัญชีลูกค้านี้?{% endif %}');">
+          {% csrf_token %}
+          <input type="hidden" name="active" value="{% if customer.is_active %}0{% else %}1{% endif %}">
+          {% if customer.is_active %}
+            <button class="btn btn-outline-ink btn-sm text-danger w-100">ปิดบัญชี (สั่งปลอม / ก่อกวน)</button>
+          {% else %}
+            <button class="btn btn-action btn-sm w-100">เปิดบัญชีคืน</button>
+          {% endif %}
+        </form>
+      </section>
+    </div>
+    <div class="col-12 col-lg-8">
+      <section class="card-tm">
+        <div class="p-3 border-bottom fw-black">ออเดอร์ล่าสุด</div>
+        {% if orders %}
+          <div class="table-scroll">
+            <table class="table table-tm table-hover">
+              <tbody>
+                {% for order in orders %}
+                  <tr>
+                    <td class="fw-bold font-mono-num text-nowrap">{{ order.order_number }}</td>
+                    <td class="small text-muted-tm">{% for item in order.items.all %}{{ item.quantity }}x {{ item.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                    <td class="font-mono-num">฿{{ order.total|floatformat:"0"|intcomma }}</td>
+                    <td>{% include "components/_status_badge.html" %}</td>
+                    <td class="text-end"><a href="{% url 'console:order_detail' order.pk %}" class="btn btn-sm btn-outline-ink">ดู</a></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="small text-muted-tm p-3">ยังไม่เคยสั่ง</div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

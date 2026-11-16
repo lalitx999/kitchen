@@ -1,0 +1,71 @@
+{% load humanize %}
+{# กล่องชำระเงินในหน้าออเดอร์ลูกค้า: แสดงตามสถานะ #}
+{% if order.status == 'PENDING_PAYMENT' %}
+<section class="card-tm card-tm-body p-4 border-2" style="border-color: var(--tm-brand-line) !important;">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h2 class="h6 fw-black mb-0"><i class="bi bi-qr-code text-brand me-2"></i>สแกนจ่าย ฿{{ order.total|floatformat:"2"|intcomma }}</h2>
+    <span class="small text-muted-tm"><i class="bi bi-hourglass-split me-1"></i>จ่ายภายใน {{ deadline|time:"H:i" }} น.</span>
+  </div>
+
+  {% if latest_slip and latest_slip.status == 'REJECTED' %}
+    <div class="alert alert-danger small"><i class="bi bi-x-circle me-1"></i><strong>สลิปก่อนหน้าไม่ผ่าน:</strong> {{ latest_slip.reason }}</div>
+  {% endif %}
+
+  {% if qr_data_uri %}
+    <div class="text-center">
+      <div class="d-inline-block p-2 bg-white border rounded-4">
+        <img src="{{ qr_data_uri }}" alt="QR พร้อมเพย์ ยอด {{ order.total }} บาท" width="232" height="232" class="d-block">
+      </div>
+      <div class="small mt-2">
+        <div class="fw-bold">พร้อมเพย์ {{ promptpay_masked }}{% if account_name %} · {{ account_name }}{% endif %}</div>
+        <div class="text-muted-tm">ยอดถูกใส่ใน QR แล้ว ตรวจชื่อบัญชีก่อนกดโอน</div>
+      </div>
+      <a href="{{ qr_data_uri }}" download="TMPP-{{ order.order_number }}.png" class="btn btn-outline-ink btn-sm btn-icon mt-2"><i class="bi bi-download"></i>บันทึกรูป QR</a>
+    </div>
+  {% else %}
+    <div class="alert alert-warning small">{{ qr_error }} กรุณาโทรหาร้าน</div>
+  {% endif %}
+
+  <hr>
+  {% if remaining_attempts %}
+    <form method="post" action="{% url 'payments:upload_slip' order.pk %}" enctype="multipart/form-data"
+          x-data="{ name: '', busy: false }" @submit="busy = true">
+      {% csrf_token %}
+      <label class="form-label" for="slip-file">โอนแล้ว แนบสลิป</label>
+      <input type="file" name="slip" id="slip-file" accept="image/jpeg,image/png,image/webp" required class="form-control"
+             @change="name = $event.target.files.length ? $event.target.files[0].name : ''">
+      <div class="form-text small-xs">รูปสลิปจากแอปธนาคาร ให้เห็น QR ชัด · ไม่เกิน {{ max_mb }} MB · แนบได้อีก {{ remaining_attempts }} ครั้ง</div>
+      <button type="submit" class="btn btn-action btn-lg w-100 mt-3 btn-icon" :disabled="busy">
+        <span class="spinner-border spinner-border-sm" x-show="busy" x-cloak></span><i class="bi bi-upload" x-show="!busy"></i>ส่งสลิป
+      </button>
+    </form>
+  {% else %}
+    <div class="alert alert-warning small mb-0">แนบสลิปครบจำนวนครั้งแล้ว กรุณาโทรหาร้าน{% if order.branch.phone %} <a href="tel:{{ order.branch.phone }}">{{ order.branch.phone }}</a>{% endif %}</div>
+  {% endif %}
+</section>
+
+{% elif order.status == 'PAYMENT_REVIEW' %}
+<section class="card-tm card-tm-body p-4">
+  <div class="d-flex align-items-center gap-3">
+    <span class="spinner-border text-brand" role="status" aria-hidden="true"></span>
+    <div>
+      <h2 class="h6 fw-black mb-1">กำลังตรวจสลิป</h2>
+      {% if latest_slip.status == 'NEEDS_REVIEW' %}
+        <div class="small text-muted-tm">ร้านกำลังตรวจสลิปของคุณ ปกติไม่เกิน 15 นาที หน้านี้จะอัปเดตเอง</div>
+      {% else %}
+        <div class="small text-muted-tm">ระบบกำลังตรวจกับธนาคาร ใช้เวลาไม่กี่วินาที หน้านี้จะอัปเดตเอง</div>
+      {% endif %}
+    </div>
+  </div>
+  {% if latest_slip %}<a href="{% url 'payments:slip_image' latest_slip.pk %}" target="_blank" rel="noopener" class="small d-inline-block mt-3"><i class="bi bi-image me-1"></i>ดูสลิปที่ส่ง</a>{% endif %}
+</section>
+
+{% elif order.paid_at and order.status != 'CANCELLED' %}
+<section class="card-tm card-tm-body p-4 d-flex align-items-center gap-3">
+  <i class="bi bi-check-circle-fill fs-3 text-action"></i>
+  <div>
+    <div class="fw-black">ชำระเงินแล้ว ฿{{ order.total|floatformat:"2"|intcomma }}</div>
+    <div class="small text-muted-tm">เมื่อ {{ order.paid_at|date:"j M H:i" }} น.</div>
+  </div>
+</section>
+{% endif %}
