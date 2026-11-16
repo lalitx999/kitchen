@@ -4,6 +4,7 @@ django-htmx>=1.21
 psycopg[binary]>=3.2
 redis>=5.0
 celery>=5.4
+packaging>=24.0           # kombu (Celery กับ Redis) ต้องใช้ แต่ไม่ได้ประกาศเป็น dependency เอง
 Pillow>=11.0
 requests>=2.32
 google-auth>=2.36          # ตรวจ ID token ของ Google Sign-In ฝั่งเซิร์ฟเวอร์
