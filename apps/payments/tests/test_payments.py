@@ -128,6 +128,42 @@ def test_check_rejects_wrong_amount_wrong_account_and_duplicate():
     assert slip_checks.check_against_order(good_slip('100'), expected_total=Decimal('100.00'), trans_ref_used=never_used) == Decimal('100.00')
 
 
+def test_kshop_promptpay_id_matches_bank_qr_and_slip(settings):
+    """รูปแบบเดียวกับร้าน: QR K SHOP (พร้อมเพย์ 15 หลัก) + บัญชีกสิกร + ชื่อร้านไม่มีคำนำหน้า"""
+    settings.PROMPTPAY_ID = '004999000012345'
+    settings.SHOP_ACCOUNT_NAMES = ['ทีเอ็มทดสอบร้าน']
+    payload = promptpay_service.build_payload(settings.PROMPTPAY_ID, Decimal('1'))
+    # ส่วนผู้รับต้องตรงกับ QR ที่แอปธนาคารออกให้ร้านทุกตัวอักษร
+    assert '29390016A0000006770101110315004999000012345' in payload
+    slip = good_slip('1', receiver_names=['ทีเอ็มทดสอบร้าน'])
+    assert slip_checks.check_against_order(slip, expected_total=Decimal('1.00'), trans_ref_used=lambda r: False) == Decimal('1.00')
+    # ผ่านได้ด้วยรหัสพร้อมเพย์อย่างเดียวก็ได้ ถ้าธนาคารไม่แสดงเลขบัญชี
+    by_proxy = good_slip('1', receiver_names=['ทีเอ็มทดสอบร้าน'], receiver_accounts=['004999000012345'], receiver_bank_code='')
+    assert slip_checks.check_against_order(by_proxy, expected_total=Decimal('1.00'), trans_ref_used=lambda r: False)
+
+
+def test_easyslip_request_sends_no_match_flags():
+    """ตรวจบัญชี/ยอด/สลิปซ้ำเองทั้งหมด -> ไม่ให้ EasySlip ปฏิเสธแทน (กัน retry แล้วโดนว่าสลิปซ้ำ)"""
+    ok = mock.Mock(status_code=200, json=lambda: {'success': True, 'data': {'rawSlip': {'transRef': 'T1'}}})
+    with mock.patch.object(easyslip_client.requests, 'post', return_value=ok) as post:
+        easyslip_client.verify(b'img', filename='s.png', content_type='image/png', expected_amount=Decimal('1'), remark='TM-1')
+    sent = post.call_args.kwargs['data']
+    assert sent == {'remark': 'TM-1'}
+    assert post.call_args.kwargs['headers'] == {'Authorization': 'Bearer test-key'}
+
+
+@pytest.mark.parametrize('body,problem', [
+    ({'success': False, 'error': {'code': 'SLIP_NOT_FOUND'}}, True),
+    ({'status': 404, 'message': 'slip_not_found', 'data': {}}, True),   # รูปแบบในหน้า error codes
+    ({'success': False, 'error': {'code': 'QUOTA_EXCEEDED'}}, False),  # โควต้าหมด = ส่งเจ้าของตรวจ
+])
+def test_easyslip_error_envelopes(body, problem):
+    resp = mock.Mock(status_code=404 if problem else 403, json=lambda: body)
+    expected = easyslip_client.SlipProblem if problem else easyslip_client.ProviderUnavailable
+    with mock.patch.object(easyslip_client.requests, 'post', return_value=resp), pytest.raises(expected):
+        easyslip_client.verify(b'img', filename='s.png', content_type='image/png', expected_amount=Decimal('1'))
+
+
 def test_check_refuses_auto_approve_when_shop_not_configured(settings):
     settings.SHOP_BANK_ACCOUNT, settings.PROMPTPAY_ID = '', ''
     with pytest.raises(slip_checks.ShopNotConfigured):

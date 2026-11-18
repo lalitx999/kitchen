@@ -31,6 +31,7 @@ SLIP_PROBLEM_MESSAGES = {
     'IMAGE_SIZE_TOO_LARGE': 'รูปสลิปใหญ่เกิน 4 MB',
     'DUPLICATE_SLIP': 'สลิปนี้ถูกใช้ไปแล้ว',
 }
+# เอกสาร V2 ใช้ 2 รูปแบบ: {"error": {"code": "SLIP_NOT_FOUND"}} และ {"message": "slip_not_found"} -> แปลงเป็นตัวใหญ่ก่อนเทียบ
 
 
 @dataclass
@@ -83,7 +84,11 @@ def verify(image_bytes: bytes, *, filename: str, content_type: str, expected_amo
             settings.EASYSLIP_API_URL,
             headers={'Authorization': f'Bearer {api_key}'},
             files={'image': (filename, image_bytes, content_type)},
-            data={'checkDuplicate': 'true', 'matchAccount': 'true', 'matchAmount': str(expected_amount), 'remark': remark[:255]},
+            # ไม่ส่ง checkDuplicate / matchAccount / matchAmount: ตรวจเองทั้งหมดใน slip_checks
+            # - matchAccount ต้องลงทะเบียนบัญชีผ่าน Bank Accounts API ก่อน ไม่งั้นได้ account_not_match ทุกใบ
+            # - checkDuplicate นับทุกครั้งที่เรียก ถ้า task รันซ้ำ (retry) สลิปจริงจะโดนตีว่าใช้ซ้ำ
+            #   กันสลิปซ้ำด้วย trans_ref ที่อนุมัติแล้ว + sha256 ของรูปแทน (idempotent)
+            data={'remark': remark[:255]} if remark else {},
             timeout=settings.EASYSLIP_TIMEOUT_SECONDS,
         )
     except requests.RequestException as exc:
