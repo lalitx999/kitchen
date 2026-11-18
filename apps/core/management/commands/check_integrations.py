@@ -54,6 +54,9 @@ class Command(BaseCommand):
             self.line(None, 'service account', 'ว่าง: ไม่ส่ง push (ยังเห็นแจ้งเตือนในเว็บ)')
         elif not os.path.isfile(path):
             self.line(False, 'service account', f'ไม่พบไฟล์ {path}')
+        elif not os.access(path, os.R_OK):
+            # มักเกิดจาก scp ด้วย root แล้วไฟล์เป็นของ root สิทธิ์ 600 แต่แอปในคอนเทนเนอร์รันด้วย uid 1000
+            self.line(False, 'service account', 'อ่านไฟล์ไม่ได้: บน server รัน chown 1000:1000 secrets/<ไฟล์> && chmod 400 secrets/<ไฟล์>')
         else:
             self.line(True, 'service account', 'พบไฟล์')
             if online:

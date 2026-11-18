@@ -41,6 +41,8 @@ def _messaging():
     if not os.path.isfile(path):
         # ตั้ง path ไว้แต่ยังไม่ได้วางไฟล์บน server -> ข้ามการส่ง ไม่ให้ task พัง
         raise PushNotConfigured(f'ไม่พบไฟล์ service account ที่ {path}')
+    if not os.access(path, os.R_OK):
+        raise PushNotConfigured(f'อ่านไฟล์ service account ไม่ได้ (สิทธิ์ไฟล์) ที่ {path}')
     import firebase_admin
     from firebase_admin import credentials, messaging
 

@@ -257,3 +257,20 @@ def test_ago_th_filter():
     assert ago_th(now - timedelta(minutes=5)) == '5 นาทีที่แล้ว'
     assert ago_th(now - timedelta(hours=2)) == '2 ชม.ที่แล้ว'
     assert ago_th(now - timedelta(days=3)) == '3 วันที่แล้ว'
+
+
+@pytest.mark.django_db
+def test_unreadable_service_account_is_treated_as_not_configured(customer, settings, tmp_path):
+    import os
+    secret = tmp_path / 'sa.json'
+    secret.write_text('{}')
+    secret.chmod(0o000)
+    settings.FIREBASE_CREDENTIALS_PATH = str(secret)
+    try:
+        if os.access(secret, os.R_OK):
+            pytest.skip('รันด้วยสิทธิ์ที่อ่านได้ทุกไฟล์ (root)')
+        DeviceToken.objects.create(user=customer, token='t')
+        n = Notification.objects.create(user=customer, kind='x', title='t', body='b')
+        assert notify_service.send_push([n.pk]) == 0  # ไม่ raise PermissionError
+    finally:
+        secret.chmod(0o600)

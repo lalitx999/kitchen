@@ -17,12 +17,16 @@
 
 ---
 
-## 1. Firebase (มีแล้วจากโปรเจกต์เดิม)
-เตรียมไว้บน Mac แล้ว 2 ไฟล์ใน `~/.config/tmpp/` (สิทธิ์ 600): `firebase-service-account.json` และ `server-firebase.env`
+## 1. Firebase — โปรเจกต์ `rider-a9729`
+18/11: ย้ายจากโปรเจกต์ระบบเดิม (`lucidsoci`) มาใช้ `rider-a9729` ที่เปิด Blaze และมีคีย์ Maps อยู่แล้ว → แผนที่ + แจ้งเตือน + บิลอยู่โปรเจกต์เดียว
+(ทำได้โดยไม่เสียอะไรเพราะฐานข้อมูลใหม่ ยังไม่มี DeviceToken · ค่าฝั่งเว็บ/VAPID ต้องมาจากโปรเจกต์เดียวกับ service account ไม่งั้น FCM ปฏิเสธ)
+เตรียมไว้บน Mac แล้ว 2 ไฟล์ใน `~/.config/tmpp/` (สิทธิ์ 600): `firebase-service-account.json` และ `server-firebase.env` · ชุดเก่าเก็บใน `old-lucidsoci/`
 1. ส่งขึ้น server (รันบน Mac):
    `scp ~/.config/tmpp/firebase-service-account.json root@177.202.247.183:/root/kitchen/secrets/`
    `scp ~/.config/tmpp/server-firebase.env root@177.202.247.183:/root/firebase.env`
 2. บน server: `python3 deploy/set_env.py --from-file /root/firebase.env` (รวมค่าแล้วลบไฟล์ให้)
+   และให้ผู้ใช้ `app` (uid 1000) ในคอนเทนเนอร์อ่านไฟล์ได้: `chown 1000:1000 secrets/firebase-service-account.json && chmod 400 secrets/firebase-service-account.json`
+   (เจอแล้ว 18/11: scp ด้วย root ได้ไฟล์ของ root สิทธิ์ 600 → แอปอ่านไม่ได้ `PermissionError`)
 3. ตรวจใน Google Cloud Console (โปรเจกต์เดียวกับ Firebase) > APIs & Services > Credentials > **Browser key (auto created by Firebase)**: ถ้าตั้ง "Website restrictions" ไว้ ต้องเพิ่ม `https://tmth-th.com/*`
 4. Firebase Console > Project settings > Cloud Messaging: **Firebase Cloud Messaging API (V1)** ต้องเป็น Enabled
 
