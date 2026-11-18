@@ -116,6 +116,7 @@ def checkout(request):
         'form': form,
         'saved_addresses': order_selector.saved_addresses(user),
         'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
+        'google_maps_map_id': settings.GOOGLE_MAPS_MAP_ID,
         'shop_location': context['branch'].location if context['branch'] else None,
     })
     return render(request, 'orders/checkout.html', context)

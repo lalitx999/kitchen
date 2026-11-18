@@ -142,6 +142,8 @@ LOGIN_LOCKOUT_SECONDS = env.int('LOGIN_LOCKOUT_SECONDS', default=15 * 60)
 
 # Google Sign-In: Client ID จาก Google Cloud Console (ว่าง = ซ่อนปุ่ม Google)
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
+# ค่าเริ่มต้นของ Django (same-origin) บล็อก popup ของ Google Sign-In ไม่ให้ส่งผลกลับมา -> ปุ่ม Google กดแล้วเงียบ
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
 # ---------------------------------------------------------------------------
 # ภาษา / เวลา
@@ -200,6 +202,8 @@ CART_MAX_LINES = 30
 
 # Google Maps JavaScript API (ว่าง = ไม่แสดงแผนที่ ลูกค้าใช้ปุ่ม "ใช้ตำแหน่งปัจจุบัน" แทน)
 GOOGLE_MAPS_API_KEY = env('GOOGLE_MAPS_API_KEY', default='')
+# Map ID จาก Google Cloud > Map Management (หมุดแบบใหม่ต้องมี) · ว่าง = ใช้ DEMO_MAP_ID ของ Google (ใช้ทดสอบได้)
+GOOGLE_MAPS_MAP_ID = env('GOOGLE_MAPS_MAP_ID', default='')
 
 # ---------------------------------------------------------------------------
 # ชำระเงิน: QR พร้อมเพย์ + ตรวจสลิปด้วย EasySlip V2

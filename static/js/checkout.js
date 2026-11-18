@@ -65,7 +65,7 @@
     var { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
     var start = latInput.value ? { lat: Number(latInput.value), lng: Number(lngInput.value) } : window.TMPP_SHOP;
     if (!start) { el.innerHTML = '<div class="p-3 small text-muted-tm">ร้านยังไม่ได้ตั้งพิกัด</div>'; return; }
-    map = new Map(el, { center: start, zoom: 16, mapId: 'DEMO_MAP_ID', streetViewControl: false, mapTypeControl: false });
+    map = new Map(el, { center: start, zoom: 16, mapId: window.TMPP_MAP_ID || 'DEMO_MAP_ID', streetViewControl: false, mapTypeControl: false });
     marker = new AdvancedMarkerElement({ map: map, position: start, gmpDraggable: true, title: 'ตำแหน่งจัดส่ง' });
     marker.addListener('dragend', function () { setLocation(marker.position.lat, marker.position.lng, 'หมุดบนแผนที่'); });
     map.addListener('click', function (e) { setLocation(e.latLng.lat(), e.latLng.lng(), 'หมุดบนแผนที่'); });

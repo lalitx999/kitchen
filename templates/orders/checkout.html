@@ -94,6 +94,7 @@
 {% if google_maps_api_key %}
   {# Google Maps โหลดเฉพาะหน้านี้ (ลดค่าใช้จ่าย) #}
   <script>
+    window.TMPP_MAP_ID = '{{ google_maps_map_id|escapejs }}';
     window.TMPP_SHOP = {% if shop_location %}{ lat: {{ shop_location.y|stringformat:'f' }}, lng: {{ shop_location.x|stringformat:'f' }} }{% else %}null{% endif %};
   </script>
   <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key|urlencode }}&callback=tmppInitAddressMap&loading=async" defer></script>
