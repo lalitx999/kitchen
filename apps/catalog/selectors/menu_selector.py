@@ -91,6 +91,9 @@ def _within_hours(opens_at: time | None, closes_at: time | None, now: time) -> b
 def shop_status(branch: Branch | None, at: datetime | None = None) -> ShopStatus:
     if branch is None:
         return ShopStatus(False, 'ร้านยังไม่ได้ตั้งค่า')
+    if not branch.is_active:
+        # สาขาที่ซ่อนจากลูกค้า สั่งไม่ได้แม้สวิตช์เปิดรับออเดอร์จะเปิดค้างไว้
+        return ShopStatus(False, 'สาขานี้ยังไม่เปิดให้ลูกค้าสั่ง')
     if branch.location is None:
         return ShopStatus(False, 'ร้านยังไม่ได้ตั้งพิกัด จึงยังคิดค่าส่งไม่ได้')
     if not branch.is_open:
