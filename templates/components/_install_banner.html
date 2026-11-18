@@ -1,0 +1,13 @@
+{% comment %}
+ชวนติดตั้งแอปบนหน้าจอโฮม: Android กดติดตั้งได้ทันที (beforeinstallprompt) · iPhone บอกวิธีเพิ่มเอง
+ไม่แสดงถ้าเปิดจากแอปที่ติดตั้งแล้ว หรือกดปิดไว้ไม่เกิน 14 วัน (app.js จัดการ)
+{% endcomment %}
+<div class="install-banner d-none" data-install-banner role="region" aria-label="ติดตั้งแอป">
+  <img src="{% load static %}{% static 'img/icon-192.png' %}" alt="" width="44" height="44">
+  <div class="flex-grow-1 min-w-0">
+    <div class="fw-bold">ติดตั้งแอป {{ SITE_NAME }}</div>
+    <div class="small text-muted-tm" data-install-text>เปิดเร็ว เต็มจอ รับแจ้งเตือนออเดอร์</div>
+  </div>
+  <button type="button" class="btn btn-action btn-sm rounded-pill fw-bold d-none" data-install-accept>ติดตั้ง</button>
+  <button type="button" class="btn btn-link btn-sm text-muted-tm p-1" data-install-dismiss aria-label="ปิด"><i class="bi bi-x-lg"></i></button>
+</div>

@@ -88,3 +88,69 @@ document.addEventListener('tmpp:cart-changed', function () {
   var body = document.getElementById('cart-body');
   if (body && window.htmx) htmx.ajax('GET', body.dataset.refreshUrl, { target: '#cart-body', swap: 'outerHTML' });
 });
+
+/* ---------------------------------------------------------------- แบบแอป (PWA) */
+(function () {
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (standalone) document.documentElement.classList.add('is-standalone');
+
+  // service worker: หน้า "ไม่มีอินเทอร์เน็ต" + รับแจ้งเตือน (ไฟล์เดียวกับ Firebase ต้องอยู่ที่ root)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' }).catch(function () { /* ไม่รองรับก็ใช้เว็บได้ปกติ */ });
+    });
+  }
+
+  // แถบโหลดด้านบน: เปลี่ยนหน้า (ลิงก์/ฟอร์ม) และ HTMX ที่ใช้เวลานานเกิน 150ms
+  var bar = document.getElementById('tm-progress');
+  var timer = null, pending = 0;
+  function start() { pending++; clearTimeout(timer); timer = setTimeout(function () { if (bar) bar.classList.add('is-active'); }, 150); }
+  function done() { pending = Math.max(0, pending - 1); if (pending) return; clearTimeout(timer); if (bar) bar.classList.remove('is-active'); }
+  document.addEventListener('htmx:beforeRequest', function (e) {
+    // polling ทุก 5 วิ ไม่ต้องโชว์แถบ (ไม่ได้เกิดจากการกด)
+    var trig = e.detail.requestConfig && e.detail.requestConfig.triggeringEvent;
+    if (trig) start();
+  });
+  document.addEventListener('htmx:afterRequest', function (e) {
+    var trig = e.detail.requestConfig && e.detail.requestConfig.triggeringEvent;
+    if (trig) done();
+  });
+  window.addEventListener('beforeunload', function () { if (bar) bar.classList.add('is-active'); });
+  window.addEventListener('pageshow', function () { pending = 0; if (bar) bar.classList.remove('is-active'); });
+
+  // ชวนติดตั้งแอป
+  var KEY = 'tmpp-install-dismissed';
+  function dismissedRecently() {
+    try { var t = parseInt(localStorage.getItem(KEY) || '0', 10); return Date.now() - t < 14 * 86400000; } catch (e) { return false; }
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    var banner = document.querySelector('[data-install-banner]');
+    if (!banner || standalone || dismissedRecently()) return;
+    var accept = banner.querySelector('[data-install-accept]');
+    var text = banner.querySelector('[data-install-text]');
+    banner.querySelector('[data-install-dismiss]').addEventListener('click', function () {
+      banner.classList.add('d-none');
+      try { localStorage.setItem(KEY, String(Date.now())); } catch (e) { /* ไม่จำก็ได้ */ }
+    });
+    var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      text.innerHTML = 'กด <i class="bi bi-box-arrow-up"></i> แชร์ แล้วเลือก "เพิ่มไปยังหน้าจอโฮม"';
+      banner.classList.remove('d-none');
+      return;
+    }
+    window.addEventListener('beforeinstallprompt', function (event) {
+      event.preventDefault();
+      var promptEvent = event;
+      accept.classList.remove('d-none');
+      banner.classList.remove('d-none');
+      accept.onclick = function () {
+        promptEvent.prompt();
+        promptEvent.userChoice.finally(function () { banner.classList.add('d-none'); });
+      };
+    });
+  });
+  window.addEventListener('appinstalled', function () {
+    var banner = document.querySelector('[data-install-banner]');
+    if (banner) banner.classList.add('d-none');
+  });
+})();

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_safe, require_POST
@@ -74,7 +75,9 @@ def service_worker(request):
     ถึงจะรับ push ได้ทุกหน้า · ใส่ค่าฝั่งเว็บ (เปิดเผยได้) จาก settings
     """
     config = notification_selector.push_config()
-    body = render_to_string('notifications/firebase-messaging-sw.js', {'config': config})
+    body = render_to_string('notifications/firebase-messaging-sw.js', {
+        'config': config, 'offline_icon': static('img/icon-192.png'),
+    })
     response = HttpResponse(body, content_type='application/javascript; charset=utf-8')
     response['Service-Worker-Allowed'] = '/'
     return response

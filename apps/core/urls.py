@@ -7,6 +7,7 @@ app_name = 'core'
 urlpatterns = [
     path('', views.home, name='home'),
     path('start/', views.app_start, name='start'),
+    path('offline/', views.offline, name='offline'),
     path('branches/', views.branch_picker, name='branches'),
     path('branches/<uuid:branch_id>/', views.select_branch, name='select_branch'),
     path('healthz/', views.healthz, name='healthz'),

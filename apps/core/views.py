@@ -70,6 +70,12 @@ def app_start(request):
 
 
 @require_safe
+def offline(request):
+    """หน้า "ไม่มีอินเทอร์เน็ต" ที่ service worker เก็บไว้ในเครื่อง แสดงเมื่อเปิดแอปตอนเน็ตหลุด"""
+    return render(request, 'core/offline.html')
+
+
+@require_safe
 @never_cache
 def healthz(request):
     status = check_dependencies()

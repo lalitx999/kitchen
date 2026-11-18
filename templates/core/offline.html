@@ -1,0 +1,26 @@
+{% load static %}<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ไม่มีอินเทอร์เน็ต — {{ SITE_NAME }}</title>
+  <style>
+    /* หน้านี้ถูกเก็บไว้ในเครื่อง (service worker) ใช้ตอนไม่มีเน็ต จึงใส่ CSS ในไฟล์เดียว */
+    :root { --brand: #e11d74; --ink: #111827; --muted: #6b7280; --bg: #ffffff; }
+    body { margin: 0; min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--ink);
+           font-family: 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; box-sizing: border-box; text-align: center; }
+    img { width: 72px; height: 72px; border-radius: 18px; }
+    h1 { font-size: 1.25rem; margin: 16px 0 6px; }
+    p { color: var(--muted); margin: 0 0 20px; line-height: 1.6; }
+    button { border: 0; background: var(--brand); color: #fff; font-size: 1rem; font-weight: 700; padding: 12px 28px; border-radius: 999px; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="{% static 'img/icon-192.png' %}" alt="">
+    <h1>ไม่มีอินเทอร์เน็ต</h1>
+    <p>ตรวจ Wi-Fi หรือเน็ตมือถือ แล้วลองใหม่<br>ออเดอร์ที่สั่งไว้แล้วไม่หาย</p>
+    <button type="button" onclick="location.reload()">ลองใหม่</button>
+  </main>
+</body>
+</html>

@@ -13,6 +13,7 @@
 
 {% block content %}
 <div x-data="{ tab: 'new', showMenu: false }">
+  <div class="mb-3">{% include "components/_install_banner.html" %}</div>
   <button type="button" data-sound-banner class="alert alert-warning d-flex align-items-center gap-2 w-100 text-start mb-3 border-0">
     <i class="bi bi-volume-mute fs-4"></i>
     <span><span class="fw-bold d-block">เสียงยังไม่เปิด แตะตรงนี้</span><span class="small">ทุกครั้งที่เปิดแอป ต้องแตะหน้าจอ 1 ครั้ง ถึงจะมีเสียงเตือนออเดอร์ใหม่ (กฎของเบราว์เซอร์) · ปิดโหมดเงียบของมือถือด้วย</span></span>

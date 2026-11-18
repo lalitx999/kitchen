@@ -4,7 +4,7 @@
   "start_url": "/start/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#fcfcfa",
+  "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "lang": "th",
   "icons": [
@@ -21,10 +21,53 @@
       "purpose": "any"
     },
     {
-      "src": "/static/img/logo-mark.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "/static/img/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/start/",
+  "description": "สั่งอาหาร TMPP ส่งถึงบ้าน จ่ายด้วย QR พร้อมเพย์",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "portrait",
+  "dir": "ltr",
+  "categories": [
+    "food",
+    "shopping"
+  ],
+  "shortcuts": [
+    {
+      "name": "สั่งอาหาร",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/static/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "ตะกร้า",
+      "url": "/cart/",
+      "icons": [
+        {
+          "src": "/static/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "ออเดอร์ของฉัน",
+      "url": "/orders/",
+      "icons": [
+        {
+          "src": "/static/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

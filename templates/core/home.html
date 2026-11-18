@@ -19,6 +19,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="container-xl pt-3">{% include "components/_install_banner.html" %}</div>
 {% if user.is_authenticated and user.is_customer %}
 <section class="container-xl pt-4">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 px-md-4 rounded-4 bg-brand-soft border" style="border-color: var(--tm-brand-line) !important;">

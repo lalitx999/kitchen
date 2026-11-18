@@ -376,3 +376,32 @@ a.tm-pill-muted:hover { border-color: var(--tm-brand-line); color: var(--tm-bran
 .coupon-chip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: .1rem; max-width: 14rem; padding: .5rem .75rem; border: 1px dashed var(--tm-brand); border-radius: var(--tm-radius-sm); background: var(--tm-brand-soft); color: var(--tm-ink); text-align: left; }
 .coupon-chip.is-locked { border-color: var(--tm-line); background: var(--tm-surface); color: var(--tm-muted); }
 .coupon-code { display: inline-block; padding: .15rem .55rem; border: 1px dashed var(--tm-brand); border-radius: var(--tm-radius-sm); background: var(--tm-brand-soft); color: var(--tm-brand); font-weight: 800; letter-spacing: .03em; }
+
+/* ================================================================ แบบแอป (PWA) */
+html { -webkit-tap-highlight-color: transparent; }
+/* เปลี่ยนหน้าแบบเฟดนุ่มๆ (เบราว์เซอร์ที่รองรับ View Transitions) */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
+/* กดแล้วยุบนิดหน่อย ให้รู้สึกเหมือนปุ่มในแอป */
+.btn, .tm-bottom-nav a, .menu-card-open, .sheet-step, .cart-qty-circle, .suggest-add { touch-action: manipulation; }
+.btn:active:not(:disabled), .menu-card-open:active, .tm-bottom-nav a:active, .sheet-step:active, .suggest-add:active { transform: scale(.97); }
+.btn, .tm-bottom-nav, .tm-brand, .sheet-chip, .tm-pill { -webkit-user-select: none; user-select: none; }
+/* iPhone ซูมหน้าเมื่อแตะช่องที่ตัวอักษรเล็กกว่า 16px */
+@media (max-width: 767.98px) { input.form-control, select.form-select, textarea.form-control { font-size: 16px; } }
+
+/* เปิดจากแอปบนหน้าจอโฮม: ไม่เด้งเกินขอบ ไม่มี footer เว็บ เผื่อขอบจอมน */
+.is-standalone body { overscroll-behavior-y: none; }
+.is-standalone .tm-footer { display: none; }
+.is-standalone .tm-header { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+
+/* แถบโหลดด้านบน */
+#tm-progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--tm-brand); z-index: 2000; opacity: 0; transition: width .4s ease, opacity .2s; pointer-events: none; }
+#tm-progress.is-active { width: 85%; opacity: 1; transition: width 8s cubic-bezier(.1, .7, .1, 1), opacity .1s; }
+
+/* ชวนติดตั้งแอป */
+.install-banner { display: flex; align-items: center; gap: .75rem; padding: .75rem 1rem; border: 1px solid var(--tm-line); border-radius: var(--tm-radius); background: var(--tm-surface); box-shadow: var(--tm-shadow); }
+.install-banner.d-none { display: none !important; }
+.install-banner img { border-radius: .75rem; flex: none; }
+
+/* แถบล่างแบบแอป: ไอคอนเด่นขึ้นเมื่อเลือก */
+.tm-bottom-nav a.active i { transform: translateY(-1px); }

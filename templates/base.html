@@ -11,6 +11,11 @@
   <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
   <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="TMPP">
+  {# default = แถบสถานะพื้นขาว เนื้อหาเริ่มใต้แถบ (ไม่ทับ header) #}
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
 
   {# ไฟล์ทั้งหมดอยู่ในเครื่อง ไม่โหลดจาก CDN (CLAUDE.md กฎหน้าเว็บ) #}
   <link rel="stylesheet" href="{% static 'vendor/bootstrap-5.3.8/css/bootstrap.min.css' %}">
@@ -25,6 +30,8 @@
 </head>
 {# hx-headers: ทุก request ของ HTMX แนบ CSRF token ไปด้วย ไม่ต้องใส่เองทีละฟอร์ม #}
 <body class="{% block body_class %}{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  {# แถบโหลดบางๆ ด้านบน (แบบแอป) ระหว่างเปลี่ยนหน้า/โหลด HTMX · app.js เป็นคนเปิดปิด #}
+  <div id="tm-progress" aria-hidden="true"></div>
   {% block layout %}
     {% block content %}{% endblock %}
   {% endblock %}
