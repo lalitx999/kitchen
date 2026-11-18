@@ -27,26 +27,71 @@ def test_console_creates_main_branch_on_first_visit(owner_client):
     assert not branch.is_open and branch.location is None
 
 
+RATES = {'delivery_base_km': '3', 'delivery_base_fare': '30', 'rider_base_fare': '25',
+         'delivery_per_km_fare': '6', 'rider_per_km_fare': '5', 'max_delivery_km': '15'}
+
+
+def _shop_post(client, **fields):
+    data = {'name': 'TMPP สาขาหลัก', **RATES, **fields}
+    return client.post(reverse('console:shop'), data)
+
+
 @pytest.mark.django_db
-def test_shop_settings_saves_coordinates_and_audits(owner_client):
+def test_shop_settings_saves_maps_link_and_audits(owner_client):
     owner_client.get(reverse('console:shop'))
-    response = owner_client.post(reverse('console:shop'), {
-        'name': 'TMPP สาขาหลัก', 'phone': '081-111-1111', 'address': 'ถนนทดสอบ',
-        'coordinates': '13.756331, 100.501765', 'opens_at': '10:00', 'closes_at': '21:00',
-    })
+    link = 'https://www.google.com/maps/place/TMPP/@13.7500,100.5000,17z/data=!3m1!4b1!4m6!3m5!1s0x0:0x0!8m2!3d13.756331!4d100.501765'
+    response = _shop_post(owner_client, phone='081-111-1111', address='ถนนทดสอบ', maps_link=link,
+                          opens_at='10:00', closes_at='21:00')
     assert response.status_code == 302
     branch = Branch.objects.get()
-    assert round(branch.location.y, 6) == 13.756331 and branch.phone == '0811111111'
+    # ใช้หมุดสถานที่ (!3d!4d) ไม่ใช่จุดกึ่งกลางจอ (@)
+    assert round(branch.location.y, 6) == 13.756331 and round(branch.location.x, 6) == 100.501765
+    assert branch.maps_url == link and branch.phone == '0811111111'
     assert AuditLog.objects.filter(action='branch.update').exists()
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('coords', ['abc', '0, 0', '95, 100', '13.7'])
-def test_shop_settings_rejects_bad_coordinates(owner_client, coords):
+def test_shop_settings_accepts_raw_coordinates_and_builds_link(owner_client):
     owner_client.get(reverse('console:shop'))
-    response = owner_client.post(reverse('console:shop'), {'name': 'X', 'coordinates': coords})
+    _shop_post(owner_client, maps_link='13.756331, 100.501765')
+    branch = Branch.objects.get()
+    assert branch.maps_url == 'https://www.google.com/maps?q=13.756331,100.501765'
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('link', ['abc', '0, 0', '95, 100', 'https://evil.example.com/maps/@13.7,100.5,17z',
+                                  'https://www.google.com/maps/place/TMPP'])
+def test_shop_settings_rejects_bad_maps_input(owner_client, link):
+    owner_client.get(reverse('console:shop'))
+    response = _shop_post(owner_client, maps_link=link)
     assert response.status_code == 200
     assert Branch.objects.get().location is None
+
+
+@pytest.mark.django_db
+def test_shop_settings_rider_cannot_earn_more_than_customer_pays(owner_client):
+    owner_client.get(reverse('console:shop'))
+    response = _shop_post(owner_client, rider_base_fare='35')
+    assert response.status_code == 200 and 'ไรเดอร์ได้มากกว่า' in response.content.decode()
+    _shop_post(owner_client, delivery_base_fare='40', rider_base_fare='32')
+    branch = Branch.objects.get()
+    assert (branch.delivery_base_fare, branch.rider_base_fare) == (Decimal('40'), Decimal('32'))
+
+
+@pytest.mark.django_db
+def test_shop_settings_uploads_and_removes_images(owner_client, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    owner_client.get(reverse('console:shop'))
+    _shop_post(owner_client, cover_image=_png((80, 30)), storefront_image=_png())
+    branch = Branch.objects.get()
+    assert branch.cover_image and branch.storefront_image
+    old = tmp_path / branch.cover_image.name
+    assert old.exists()
+    _shop_post(owner_client, remove_cover_image='on')
+    branch.refresh_from_db()
+    assert not branch.cover_image and branch.storefront_image
+    home = owner_client.get(reverse('core:home')).content.decode()
+    assert branch.storefront_image.url in home
 
 
 @pytest.mark.django_db

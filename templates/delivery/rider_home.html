@@ -8,8 +8,8 @@
       <div class="small text-muted-tm">สวัสดี</div>
       <h1 class="h5 fw-black mb-0 text-truncate">{{ user.full_name }}</h1>
     </div>
-    <button type="button" id="rider-sound" class="btn btn-primary btn-sm btn-icon" aria-pressed="false">
-      <i class="bi bi-volume-mute"></i><span>เปิดเสียง</span>
+    <button type="button" data-sound-toggle class="btn btn-primary btn-sm btn-icon" aria-pressed="false" aria-label="เปิดเสียง">
+      <i class="bi bi-volume-mute"></i><span data-sound-label>เปิดเสียง</span>
     </button>
   </div>
 
@@ -36,10 +36,11 @@
   </section>
 </div>
 
-<audio id="rider-bell" src="{% static 'sounds/bell-rider.mp3' %}" preload="auto"></audio>
+<audio data-sound="rider" src="{% static 'sounds/bell-rider.mp3' %}" preload="auto"></audio>
 <div id="rider-config" data-location-url="{% url 'delivery:rider_location' %}" data-online="{{ profile.is_online|yesno:'1,0' }}" hidden></div>
 {% endblock %}
 
 {% block extra_body %}
+<script src="{% static 'js/sound.js' %}" defer></script>
 <script src="{% static 'js/rider.js' %}" defer></script>
 {% endblock %}

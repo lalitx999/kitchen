@@ -6,7 +6,6 @@ import math
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
-from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 
@@ -51,19 +50,41 @@ def distance_km(branch: Branch, point: Point) -> Decimal:
     return (Decimal(str(meters)) / 1000).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
 
 
-def quote_for_distance(km: Decimal) -> DeliveryQuote:
-    extra_km = max(Decimal('0'), km - settings.DELIVERY_BASE_DISTANCE_KM)
+def quote_for_distance(km: Decimal, branch: Branch) -> DeliveryQuote:
+    """อัตราค่าส่งตั้งที่ร้าน (Console > ข้อมูลร้าน) · ลูกค้าจ่าย fee, ไรเดอร์ได้ rider_fee, ส่วนต่างเป็นของร้าน"""
+    extra_km = max(Decimal('0'), km - branch.delivery_base_km)
     # กม.ที่เกินปัดขึ้นเป็นจำนวนเต็ม (เกิน 0.2 กม. ก็คิด 1 กม.) เหมือนระบบเดิม
     extra_units = Decimal(math.ceil(extra_km))
-    fee = settings.DELIVERY_BASE_FARE + extra_units * settings.DELIVERY_PER_KM_FARE
-    rider_fee = settings.RIDER_BASE_EARNING + extra_units * settings.RIDER_PER_KM_EARNING
+    fee = branch.delivery_base_fare + extra_units * branch.delivery_per_km_fare
+    rider_fee = branch.rider_base_fare + extra_units * branch.rider_per_km_fare
     return DeliveryQuote(
         distance_km=km,
         fee=fee.quantize(TWO_PLACES),
         rider_fee=rider_fee.quantize(TWO_PLACES),
-        within_range=km <= settings.MAX_DELIVERY_DISTANCE_KM,
+        within_range=km <= branch.max_delivery_km,
     )
 
 
 def quote_delivery(branch: Branch, point: Point) -> DeliveryQuote:
-    return quote_for_distance(distance_km(branch, point))
+    return quote_for_distance(distance_km(branch, point), branch)
+
+
+@dataclass(frozen=True)
+class FeeRow:
+    km: int
+    fee: Decimal
+    rider_fee: Decimal
+
+    @property
+    def shop_fee(self) -> Decimal:
+        return self.fee - self.rider_fee
+
+
+def fee_table(branch: Branch) -> list[FeeRow]:
+    """ตัวอย่างค่าส่งทุก 1 กม. ให้เจ้าของเห็นว่าใครได้เท่าไร (หน้าข้อมูลร้าน)"""
+    rows = []
+    top = int(min(branch.max_delivery_km, Decimal('15')))
+    for km in range(1, max(top, 1) + 1):
+        q = quote_for_distance(Decimal(km), branch)
+        rows.append(FeeRow(km=km, fee=q.fee, rider_fee=q.rider_fee))
+    return rows

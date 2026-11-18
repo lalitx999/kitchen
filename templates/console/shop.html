@@ -5,51 +5,104 @@
 <div class="d-grid gap-4" style="max-width: 860px;">
   <div>
     <h1 class="h4 fw-black mb-0">ข้อมูลร้าน</h1>
-    <div class="small text-muted-tm">แสดงบนหน้าร้าน และใช้คิดระยะส่ง</div>
+    <div class="small text-muted-tm">แสดงบนหน้าร้าน ใช้คิดระยะส่ง และใช้นำทางไรเดอร์มารับอาหาร</div>
   </div>
 
   {% include "console/_shop_switch.html" %}
 
-  <form method="post" class="card-tm card-tm-body p-4" novalidate>
+  <form method="post" enctype="multipart/form-data" class="d-grid gap-4" novalidate>
     {% csrf_token %}
     {% include "components/_form_errors.html" %}
-    <div class="row g-3">
-      {% include "components/_field.html" with field=form.name wrapper_class="col-12 col-md-7" %}
-      {% include "components/_field.html" with field=form.phone wrapper_class="col-12 col-md-5" %}
-      <div class="col-12">
-        <label class="form-label" for="id_address">{{ form.address.label }}</label>
-        <textarea name="address" id="id_address" rows="2" class="form-control">{{ form.address.value|default:"" }}</textarea>
-      </div>
-      <div class="col-12">
-        <label class="form-label" for="id_coordinates">{{ form.coordinates.label }}</label>
-        <div class="input-group">
-          <input type="text" name="coordinates" id="id_coordinates" class="form-control{% if form.coordinates.errors or form.non_field_errors %} is-invalid{% endif %}"
-                 value="{{ form.coordinates.value|default:'' }}" placeholder="13.756331, 100.501765" inputmode="decimal">
-          <button type="button" class="btn btn-outline-ink btn-icon" id="shop-use-location"><i class="bi bi-crosshair"></i><span class="d-none d-sm-inline">ใช้ตำแหน่งเครื่องนี้</span></button>
+
+    {# ---- 1. ข้อมูลติดต่อ ---- #}
+    <section class="card-tm card-tm-body p-4">
+      <h2 class="h6 fw-black mb-3"><i class="bi bi-shop me-1"></i>ข้อมูลร้าน</h2>
+      <div class="row g-3">
+        {% include "components/_field.html" with field=form.name wrapper_class="col-12 col-md-7" %}
+        {% include "components/_field.html" with field=form.phone wrapper_class="col-12 col-md-5" %}
+        <div class="col-12">
+          <label class="form-label" for="id_address">{{ form.address.label }} <span class="text-muted-tm fw-normal">(ไม่บังคับ)</span></label>
+          <textarea name="address" id="id_address" rows="2" class="form-control">{{ form.address.value|default:"" }}</textarea>
         </div>
-        {% for e in form.coordinates.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
-        <div class="form-text small-xs" id="shop-location-help">{{ form.coordinates.help_text }}</div>
-        {% if branch.location %}
-          <a class="small" target="_blank" rel="noopener" href="https://www.google.com/maps?q={{ branch.location.y|stringformat:'f' }},{{ branch.location.x|stringformat:'f' }}"><i class="bi bi-box-arrow-up-right me-1"></i>ตรวจพิกัดบน Google Maps</a>
-        {% endif %}
+        <div class="col-12">
+          <label class="form-label" for="id_maps_link">{{ form.maps_link.label }}</label>
+          <div class="input-group">
+            <input type="text" name="maps_link" id="id_maps_link" class="form-control{% if form.maps_link.errors %} is-invalid{% endif %}"
+                   value="{{ form.maps_link.value|default:'' }}" placeholder="https://maps.app.goo.gl/..." inputmode="url" autocomplete="off">
+            <button type="button" class="btn btn-outline-ink btn-icon" id="shop-use-location" title="ใช้ตำแหน่ง GPS ของเครื่องนี้ (ตอนอยู่ที่ร้าน)">
+              <i class="bi bi-crosshair"></i><span class="d-none d-sm-inline">ใช้ตำแหน่งเครื่องนี้</span>
+            </button>
+          </div>
+          {% for e in form.maps_link.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          <div class="form-text small-xs" id="shop-location-help">{{ form.maps_link.help_text }}</div>
+          {% if branch.location %}
+            <div class="d-flex flex-wrap gap-3 mt-1 small">
+              <span class="text-muted-tm"><i class="bi bi-geo-alt me-1"></i>พิกัดที่ใช้คิดค่าส่ง: <span class="font-mono-num">{{ branch.location.y|floatformat:6 }}, {{ branch.location.x|floatformat:6 }}</span></span>
+              <a target="_blank" rel="noopener" href="https://www.google.com/maps?q={{ branch.location.y|stringformat:'f' }},{{ branch.location.x|stringformat:'f' }}"><i class="bi bi-box-arrow-up-right me-1"></i>เปิดดูบน Google Maps</a>
+            </div>
+          {% else %}
+            <div class="small text-danger mt-1"><i class="bi bi-exclamation-circle me-1"></i>ยังไม่มีพิกัดร้าน: ยังเปิดรับออเดอร์ไม่ได้ เพราะคิดค่าส่งไม่ได้</div>
+          {% endif %}
+        </div>
+        {% include "components/_field.html" with field=form.opens_at wrapper_class="col-6 col-md-3" %}
+        {% include "components/_field.html" with field=form.closes_at wrapper_class="col-6 col-md-3" %}
+        <div class="col-12 small text-muted-tm">เว้นเวลาเปิด-ปิดว่าง = ใช้สวิตช์เปิด/ปิดรับออเดอร์อย่างเดียว · ปิดข้ามเที่ยงคืนได้ เช่น 17:00 - 02:00</div>
       </div>
-      {% include "components/_field.html" with field=form.opens_at wrapper_class="col-6 col-md-3" %}
-      {% include "components/_field.html" with field=form.closes_at wrapper_class="col-6 col-md-3" %}
-      <div class="col-12 small text-muted-tm">เว้นเวลาเปิด-ปิดว่าง = ใช้สวิตช์เปิด/ปิดรับออเดอร์อย่างเดียว · ปิดข้ามเที่ยงคืนได้ เช่น 17:00 - 02:00</div>
-    </div>
-    <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
+    </section>
+
+    {# ---- 2. รูป ---- #}
+    <section class="card-tm card-tm-body p-4">
+      <h2 class="h6 fw-black mb-3"><i class="bi bi-images me-1"></i>รูปร้าน</h2>
+      <div class="row g-4">
+        {% include "console/_shop_image.html" with field=form.cover_image current=branch.cover_image remove="remove_cover_image" shape="cover" wrapper_class="col-12" %}
+        {% include "console/_shop_image.html" with field=form.storefront_image current=branch.storefront_image remove="remove_storefront_image" shape="front" wrapper_class="col-12 col-md-6" %}
+      </div>
+    </section>
+
+    {# ---- 3. ค่าส่ง ---- #}
+    <section class="card-tm card-tm-body p-4">
+      <h2 class="h6 fw-black mb-1"><i class="bi bi-scooter me-1"></i>ค่าส่งและส่วนแบ่งไรเดอร์</h2>
+      <div class="small text-muted-tm mb-3">ลูกค้าจ่ายค่าส่ง · ไรเดอร์ได้ส่วนหนึ่ง · ส่วนต่างเป็นของร้าน · กม.ที่เกินปัดขึ้นเต็ม กม. (เกิน 0.2 กม. คิด 1 กม.)</div>
+      <div class="row g-3">
+        {% include "components/_field.html" with field=form.delivery_base_km wrapper_class="col-6 col-md-4" %}
+        {% include "components/_field.html" with field=form.delivery_base_fare wrapper_class="col-6 col-md-4" %}
+        {% include "components/_field.html" with field=form.rider_base_fare wrapper_class="col-6 col-md-4" %}
+        {% include "components/_field.html" with field=form.max_delivery_km wrapper_class="col-6 col-md-4" %}
+        {% include "components/_field.html" with field=form.delivery_per_km_fare wrapper_class="col-6 col-md-4" %}
+        {% include "components/_field.html" with field=form.rider_per_km_fare wrapper_class="col-6 col-md-4" %}
+      </div>
+
+      <details class="mt-2">
+        <summary class="small fw-bold">ตารางค่าส่งตามระยะ (ตามค่าที่บันทึกไว้)</summary>
+        <div class="table-responsive mt-2">
+          <table class="table table-sm align-middle mb-0 small">
+            <thead><tr><th>ระยะ</th><th class="text-end">ลูกค้าจ่าย</th><th class="text-end">ไรเดอร์ได้</th><th class="text-end">ร้านได้</th></tr></thead>
+            <tbody>
+              {% for row in fee_examples %}
+                <tr><td>{{ row.km }} กม.</td>
+                  <td class="text-end font-mono-num">฿{{ row.fee|floatformat:"-2" }}</td>
+                  <td class="text-end font-mono-num">฿{{ row.rider_fee|floatformat:"-2" }}</td>
+                  <td class="text-end font-mono-num">฿{{ row.shop_fee|floatformat:"-2" }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <div><button type="submit" class="btn btn-primary btn-lg">บันทึกข้อมูลร้าน</button></div>
   </form>
 </div>
 <script>
-  // ใช้ตอนเจ้าของยืนอยู่ที่ร้าน: เอาพิกัดจาก GPS ของเครื่องมาใส่ช่อง
+  // ใช้ตอนเจ้าของยืนอยู่ที่ร้าน: เอาพิกัดจาก GPS มาใส่ช่อง (ระบบสร้างลิงก์ Google Maps ให้ตอนบันทึก)
   document.getElementById('shop-use-location').addEventListener('click', function () {
     var help = document.getElementById('shop-location-help');
     if (!navigator.geolocation) { help.textContent = 'เบราว์เซอร์นี้หาตำแหน่งไม่ได้'; return; }
     help.textContent = 'กำลังหาตำแหน่ง...';
     navigator.geolocation.getCurrentPosition(function (p) {
-      document.getElementById('id_coordinates').value = p.coords.latitude.toFixed(6) + ', ' + p.coords.longitude.toFixed(6);
+      document.getElementById('id_maps_link').value = p.coords.latitude.toFixed(6) + ', ' + p.coords.longitude.toFixed(6);
       help.textContent = 'ได้ตำแหน่งแล้ว (คลาดเคลื่อน ±' + Math.round(p.coords.accuracy) + ' ม.) กดบันทึก';
-    }, function () { help.textContent = 'หาตำแหน่งไม่ได้: อนุญาตตำแหน่งในเบราว์เซอร์ หรือคัดลอกพิกัดจาก Google Maps มาวาง'; },
+    }, function () { help.textContent = 'หาตำแหน่งไม่ได้: อนุญาตตำแหน่งในเบราว์เซอร์ หรือวางลิงก์จาก Google Maps แทน'; },
     { enableHighAccuracy: true, timeout: 15000 });
   });
 </script>

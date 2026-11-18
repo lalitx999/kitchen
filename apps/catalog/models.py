@@ -2,6 +2,7 @@
 ร้าน (สาขา) และเมนู
 ตอนนี้มีสาขาเดียว แต่ออกแบบให้เมนูผูกกับสาขา เพิ่มสาขาได้โดยไม่ต้องแก้โครงสร้าง
 """
+import uuid
 from decimal import Decimal
 
 from django.contrib.gis.db import models as gis_models
@@ -11,12 +12,37 @@ from django.db import models
 from apps.core.models import UUIDModel
 
 
+def branch_image_path(instance, filename):
+    # ชื่อไฟล์สุ่มใหม่ทุกครั้ง: เปลี่ยนรูปแล้ว cache ของ Caddy/เบราว์เซอร์ไม่ค้างรูปเก่า
+    ext = filename.rsplit('.', 1)[-1].lower()
+    return f'branch/{instance.id}/{uuid.uuid4().hex[:12]}.{ext}'
+
+
+def _baht(default, label):
+    return models.DecimalField(label, max_digits=7, decimal_places=2, default=Decimal(default),
+                               validators=[MinValueValidator(Decimal('0'))])
+
+
 class Branch(UUIDModel):
     name = models.CharField('ชื่อร้าน/สาขา', max_length=120)
     phone = models.CharField('เบอร์ร้าน', max_length=10, blank=True)
     address = models.TextField('ที่อยู่ร้าน', blank=True)
+    # เจ้าของวางลิงก์ Google Maps -> ระบบดึงพิกัดมาเก็บใน location
+    maps_url = models.URLField('ลิงก์ Google Maps', max_length=500, blank=True)
     # พิกัดจริงของร้าน ใช้คิดระยะส่ง ไม่มีพิกัด = ยังเปิดรับออเดอร์ไม่ได้ (ไม่มีพิกัดสำรอง)
     location = gis_models.PointField(srid=4326, null=True, blank=True)
+    storefront_image = models.ImageField('ภาพหน้าร้าน', upload_to=branch_image_path, blank=True)
+    cover_image = models.ImageField('ภาพปกร้าน', upload_to=branch_image_path, blank=True)
+
+    # ค่าส่ง: ลูกค้าจ่าย / ไรเดอร์ได้ ส่วนต่าง = ร้านได้ · ตั้งต่อสาขา (รองรับหลายสาขาในอนาคต)
+    delivery_base_km = models.DecimalField('ระยะเหมา (กม.)', max_digits=5, decimal_places=2, default=Decimal('3'),
+                                           validators=[MinValueValidator(Decimal('0'))])
+    delivery_base_fare = _baht('30', 'ค่าส่งช่วงเหมา')
+    delivery_per_km_fare = _baht('6', 'ค่าส่งต่อ กม. ถัดไป')
+    rider_base_fare = _baht('25', 'ไรเดอร์ได้ช่วงเหมา')
+    rider_per_km_fare = _baht('5', 'ไรเดอร์ได้ต่อ กม. ถัดไป')
+    max_delivery_km = models.DecimalField('ส่งไกลสุด (กม.)', max_digits=5, decimal_places=2, default=Decimal('15'),
+                                          validators=[MinValueValidator(Decimal('0'))])
     opens_at = models.TimeField('เวลาเปิด', null=True, blank=True)
     closes_at = models.TimeField('เวลาปิด', null=True, blank=True)
     # สวิตช์ที่เจ้าของ/ครัวกดเองได้ทันที เช่น ของหมด ปิดก่อนเวลา

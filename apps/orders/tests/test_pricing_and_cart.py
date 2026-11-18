@@ -4,6 +4,8 @@ from decimal import Decimal
 import pytest
 from django.urls import reverse
 
+from apps.catalog.models import Branch
+
 from apps.orders.services import cart_service, pricing_service
 
 from .conftest import SHOP_LAT, SHOP_LNG
@@ -17,15 +19,23 @@ from .conftest import SHOP_LAT, SHOP_LNG
     ('7.40', '60.00', '50.00'),   # เกิน 4.4 -> 5 กม.
 ])
 def test_delivery_fee_formula(km, fee, rider):
-    quote = pricing_service.quote_for_distance(Decimal(km))
+    quote = pricing_service.quote_for_distance(Decimal(km), Branch())
     assert quote.fee == Decimal(fee)
     assert quote.rider_fee == Decimal(rider)
     assert quote.within_range
 
 
-def test_over_max_distance_is_out_of_range(settings):
-    settings.MAX_DELIVERY_DISTANCE_KM = Decimal('15')
-    assert not pricing_service.quote_for_distance(Decimal('15.01')).within_range
+def test_over_max_distance_is_out_of_range():
+    assert not pricing_service.quote_for_distance(Decimal('15.01'), Branch(max_delivery_km=Decimal('15'))).within_range
+
+
+def test_rates_come_from_branch_and_shop_keeps_the_difference():
+    # 3 กม.แรก 30 (ไรเดอร์ 25 ร้าน 5) · กม.ถัดไป 6 (ไรเดอร์ 5 ร้าน 1)
+    rows = {r.km: r for r in pricing_service.fee_table(Branch())}
+    assert (rows[3].fee, rows[3].rider_fee, rows[3].shop_fee) == (Decimal('30.00'), Decimal('25.00'), Decimal('5.00'))
+    assert (rows[5].fee, rows[5].rider_fee, rows[5].shop_fee) == (Decimal('42.00'), Decimal('35.00'), Decimal('7.00'))
+    custom = Branch(delivery_base_fare=Decimal('40'), rider_base_fare=Decimal('30'))
+    assert pricing_service.quote_for_distance(Decimal('2'), custom).fee == Decimal('40.00')
 
 
 @pytest.mark.django_db

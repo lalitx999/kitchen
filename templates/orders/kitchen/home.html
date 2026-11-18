@@ -3,9 +3,10 @@
 
 {% block header_actions %}
   {# เบราว์เซอร์ไม่ให้เล่นเสียงจนกว่าผู้ใช้จะกดอะไรสักอย่าง จึงต้องมีปุ่มเปิดเสียงทุกครั้งที่เปิดจอ #}
-  {% include "components/_push_button.html" %}
-  <button type="button" id="kds-sound" class="btn btn-primary btn-sm btn-icon" aria-pressed="false">
-    <i class="bi bi-volume-mute"></i><span>เปิดเสียง</span>
+  {# บน header เหลือแค่ไอคอนในจอเล็ก ข้อความเต็มอยู่ใน title/aria-label (push.js อัปเดตให้) #}
+  {% include "components/_push_button.html" with label_class="d-none d-xl-inline" %}
+  <button type="button" data-sound-toggle class="btn btn-primary btn-sm btn-icon" aria-pressed="false" aria-label="เปิดเสียง">
+    <i class="bi bi-volume-mute"></i><span data-sound-label class="d-none d-sm-inline">เปิดเสียง</span>
   </button>
 {% endblock %}
 
@@ -36,9 +37,10 @@
   </div>
 </div>
 
-<audio id="kds-bell" src="{% static 'sounds/bell-order.mp3' %}" preload="auto"></audio>
+<audio data-sound="order" src="{% static 'sounds/bell-order.mp3' %}" preload="auto"></audio>
 {% endblock %}
 
 {% block extra_body %}
+<script src="{% static 'js/sound.js' %}" defer></script>
 <script src="{% static 'js/kitchen.js' %}" defer></script>
 {% endblock %}

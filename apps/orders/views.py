@@ -134,7 +134,7 @@ def checkout_quote(request):
     except pricing_service.InvalidLocation as exc:
         error = str(exc)
     return render(request, 'orders/_quote.html', {**context, 'quote': quote, 'error': error,
-                                                  'max_km': settings.MAX_DELIVERY_DISTANCE_KM})
+                                                  'max_km': context['branch'].max_delivery_km if context['branch'] else None})
 
 
 # --------------------------------------------------------------------------- ออเดอร์ของฉัน
@@ -173,11 +173,14 @@ def order_tracking(request, order_id):
 @customer_required
 @require_safe
 def order_status(request, order_id):
-    """HTMX polling: ถ้าสถานะเปลี่ยน สั่งให้หน้าโหลดใหม่ (ข้อมูลหลายส่วนเปลี่ยนพร้อมกัน)"""
+    """
+    HTMX polling: ถ้าสถานะเปลี่ยน ส่ง event ให้หน้าเว็บเล่นเสียงแจ้งลูกค้า แล้วโหลดหน้าใหม่
+    (ข้อมูลหลายส่วนเปลี่ยนพร้อมกัน) · ไม่มี JS ก็ยังโหลดใหม่ได้ด้วย HX-Refresh ตอนเสียงปิด
+    """
     order = order_selector.get_customer_order_status(request.user, order_id)
     if order.status != request.GET.get('current'):
         response = HttpResponse(status=204)
-        response['HX-Refresh'] = 'true'
+        response['HX-Trigger'] = 'tmpp-order-changed'
         return response
     return HttpResponse(status=204)
 

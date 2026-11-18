@@ -1,5 +1,5 @@
 {% extends "layouts/customer.html" %}
-{% load humanize %}
+{% load humanize static %}
 {% block title %}ออเดอร์ {{ order.order_number }} — {{ SITE_NAME }}{% endblock %}
 
 {% block content %}
@@ -10,6 +10,7 @@
     {# ถามสถานะทุก 10 วิ เฉพาะตอนแท็บเปิดอยู่ ถ้าเปลี่ยน -> โหลดหน้าใหม่ #}
     <div hx-get="{% url 'orders:status' order.pk %}?current={{ order.status }}"
          hx-trigger="every 10s [document.visibilityState === 'visible']" hx-swap="none"></div>
+    <audio data-sound="customer" src="{% static 'sounds/bell-customer.mp3' %}" preload="auto"></audio>
   {% endif %}
 
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 mb-3">
@@ -78,4 +79,18 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_body %}
+{% if order.is_active %}
+<script src="{% static 'js/sound.js' %}" defer></script>
+<script>
+  // สถานะออเดอร์เปลี่ยน: เล่นเสียงแจ้ง (ถ้าเคยแตะหน้าจอแล้ว เบราว์เซอร์จึงยอมให้ดัง) แล้วโหลดหน้าใหม่
+  document.body.addEventListener('tmpp-order-changed', function () {
+    var reload = function () { window.location.reload(); };
+    if (!window.TmppSound || !window.TmppSound.enabled()) { reload(); return; }
+    window.TmppSound.play('customer').then(function (ok) { setTimeout(reload, ok ? 1800 : 0); });
+  });
+</script>
+{% endif %}
 {% endblock %}

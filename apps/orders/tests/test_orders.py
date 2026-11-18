@@ -137,9 +137,9 @@ def test_customer_cannot_cancel_after_paid(customer_client, order):
 @pytest.mark.django_db
 def test_status_poll_asks_refresh_only_when_changed(customer_client, order):
     url = reverse('orders:status', args=[order.pk])
-    assert 'HX-Refresh' not in customer_client.get(url, {'current': 'PENDING_PAYMENT'})
+    assert 'HX-Trigger' not in customer_client.get(url, {'current': 'PENDING_PAYMENT'})
     order_service.transition_order(order, OrderStatus.PAID)
-    assert customer_client.get(url, {'current': 'PENDING_PAYMENT'})['HX-Refresh'] == 'true'
+    assert customer_client.get(url, {'current': 'PENDING_PAYMENT'})['HX-Trigger'] == 'tmpp-order-changed'
 
 
 # --------------------------------------------------------------------------- state machine

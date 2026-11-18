@@ -1,4 +1,3 @@
-import re
 from decimal import Decimal
 
 from django import forms
@@ -8,32 +7,48 @@ from apps.core.validators import normalize_thai_phone, validate_thai_phone
 
 MAX_IMAGE_BYTES = 3 * 1024 * 1024
 ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'WEBP'}
-_COORDS = re.compile(r'^\s*(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$')
 
 
-def parse_coordinates(value: str) -> tuple[Decimal, Decimal] | None:
-    """รับ "13.7563, 100.5018" (คัดลอกจาก Google Maps คลิกขวาที่หมุด) คืน (lat, lng)"""
-    if not value or not value.strip():
-        return None
-    match = _COORDS.match(value)
-    if not match:
-        raise ValidationError('รูปแบบพิกัดต้องเป็น "ละติจูด, ลองจิจูด" เช่น 13.7563, 100.5018')
-    lat, lng = Decimal(match.group(1)), Decimal(match.group(2))
-    if not (-90 <= lat <= 90 and -180 <= lng <= 180) or (lat == 0 and lng == 0):
-        raise ValidationError('พิกัดไม่ถูกต้อง')
-    return lat, lng
+def validate_upload_image(image):
+    """รูปที่อัปโหลด: ไม่เกิน 3 MB และเป็น JPG/PNG/WEBP จริง (ImageField ตรวจด้วย Pillow แล้วว่าเป็นรูป)"""
+    if not image:
+        return image
+    if image.size > MAX_IMAGE_BYTES:
+        raise ValidationError('รูปใหญ่เกิน 3 MB')
+    fmt = getattr(getattr(image, 'image', None), 'format', None)
+    if fmt not in ALLOWED_IMAGE_FORMATS:
+        raise ValidationError('รองรับเฉพาะ JPG, PNG, WEBP')
+    return image
+
+
+def _money(label, help_text=''):
+    return forms.DecimalField(label=label, min_value=Decimal('0'), max_value=Decimal('9999'), max_digits=7,
+                              decimal_places=2, help_text=help_text)
 
 
 class BranchForm(forms.Form):
     name = forms.CharField(label='ชื่อร้าน', max_length=120)
     phone = forms.CharField(label='เบอร์ร้าน', max_length=20, required=False)
     address = forms.CharField(label='ที่อยู่ร้าน', widget=forms.Textarea(attrs={'rows': 2}), required=False)
-    coordinates = forms.CharField(
-        label='พิกัดร้าน', required=False,
-        help_text='เปิด Google Maps คลิกขวาที่ร้าน แล้วกดตัวเลขพิกัดเพื่อคัดลอกมาวาง หรือกดปุ่มใช้ตำแหน่งเครื่องนี้ตอนอยู่ที่ร้าน',
+    maps_link = forms.CharField(
+        label='ลิงก์ Google Maps ของร้าน', required=False, max_length=600,
+        help_text='เปิด Google Maps กดค้างที่ร้านจนมีหมุดแดง กด "แชร์" แล้วคัดลอกลิงก์มาวาง (วางตัวเลขพิกัดก็ได้)',
     )
     opens_at = forms.TimeField(label='เวลาเปิด', required=False, widget=forms.TimeInput(attrs={'type': 'time'}))
     closes_at = forms.TimeField(label='เวลาปิด', required=False, widget=forms.TimeInput(attrs={'type': 'time'}))
+    storefront_image = forms.ImageField(label='ภาพหน้าร้าน', required=False, help_text='JPG / PNG / WEBP ไม่เกิน 3 MB')
+    remove_storefront_image = forms.BooleanField(label='ลบภาพหน้าร้าน', required=False)
+    cover_image = forms.ImageField(label='ภาพปกร้าน', required=False, help_text='แนวนอน เช่น 1600 x 600 · ไม่เกิน 3 MB')
+    remove_cover_image = forms.BooleanField(label='ลบภาพปก', required=False)
+
+    delivery_base_km = forms.DecimalField(label='ระยะเหมา (กม.)', min_value=Decimal('0'), max_value=Decimal('50'),
+                                          max_digits=5, decimal_places=2)
+    delivery_base_fare = _money('ลูกค้าจ่าย (ช่วงเหมา)')
+    rider_base_fare = _money('ไรเดอร์ได้ (ช่วงเหมา)')
+    delivery_per_km_fare = _money('ลูกค้าจ่าย / กม. ถัดไป')
+    rider_per_km_fare = _money('ไรเดอร์ได้ / กม. ถัดไป')
+    max_delivery_km = forms.DecimalField(label='ส่งไกลสุด (กม.)', min_value=Decimal('1'), max_value=Decimal('100'),
+                                         max_digits=5, decimal_places=2)
 
     def clean_phone(self):
         phone = normalize_thai_phone(self.cleaned_data['phone'])
@@ -41,12 +56,34 @@ class BranchForm(forms.Form):
             validate_thai_phone(phone)
         return phone
 
+    def clean_maps_link(self):
+        from .services.maps_link_service import InvalidMapsLink, parse_maps_input
+        try:
+            self.cleaned_maps = parse_maps_input(self.cleaned_data.get('maps_link', ''))
+        except InvalidMapsLink as exc:
+            raise ValidationError(str(exc)) from exc
+        return self.cleaned_data.get('maps_link', '')
+
+    def clean_storefront_image(self):
+        return validate_upload_image(self.cleaned_data.get('storefront_image'))
+
+    def clean_cover_image(self):
+        return validate_upload_image(self.cleaned_data.get('cover_image'))
+
     def clean(self):
         cleaned = super().clean()
-        coords = parse_coordinates(cleaned.get('coordinates', ''))
-        cleaned['latitude'], cleaned['longitude'] = coords if coords else (None, None)
+        maps = getattr(self, 'cleaned_maps', None)
+        cleaned['maps_url'], cleaned['latitude'], cleaned['longitude'] = maps if maps else ('', None, None)
         if bool(cleaned.get('opens_at')) != bool(cleaned.get('closes_at')):
             self.add_error('closes_at', 'ใส่ทั้งเวลาเปิดและเวลาปิด หรือเว้นว่างทั้งคู่')
+        # ไรเดอร์ได้มากกว่าที่ลูกค้าจ่ายไม่ได้ (ร้านจะขาดทุนค่าส่ง)
+        for rider_key, fare_key in (('rider_base_fare', 'delivery_base_fare'), ('rider_per_km_fare', 'delivery_per_km_fare')):
+            rider, fare = cleaned.get(rider_key), cleaned.get(fare_key)
+            if rider is not None and fare is not None and rider > fare:
+                self.add_error(rider_key, 'ไรเดอร์ได้มากกว่าที่ลูกค้าจ่ายไม่ได้')
+        base_km, max_km = cleaned.get('delivery_base_km'), cleaned.get('max_delivery_km')
+        if base_km is not None and max_km is not None and max_km < base_km:
+            self.add_error('max_delivery_km', 'ต้องไม่น้อยกว่าระยะเหมา')
         return cleaned
 
 
@@ -69,16 +106,7 @@ class MenuItemForm(forms.Form):
         return self.cleaned_data.get('sort_order') or 0
 
     def clean_image(self):
-        image = self.cleaned_data.get('image')
-        if not image:
-            return image
-        if image.size > MAX_IMAGE_BYTES:
-            raise ValidationError('รูปใหญ่เกิน 3 MB')
-        # ImageField ตรวจด้วย Pillow แล้วว่าเป็นรูปจริง เช็คชนิดไฟล์เพิ่ม กันไฟล์แปลกๆ เช่น SVG/GIF
-        fmt = getattr(getattr(image, 'image', None), 'format', None)
-        if fmt not in ALLOWED_IMAGE_FORMATS:
-            raise ValidationError('รองรับเฉพาะ JPG, PNG, WEBP')
-        return image
+        return validate_upload_image(self.cleaned_data.get('image'))
 
 
 class CategoryForm(forms.Form):

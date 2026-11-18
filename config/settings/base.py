@@ -188,15 +188,8 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # ---------------------------------------------------------------------------
-# ค่าส่ง (บาท / กม.) — ลูกค้าจ่าย 30 บาท 3 กม.แรก เกินคิดกม.ละ 6 · ไรเดอร์ได้ 25 + กม.ละ 5
-# ระยะทางคิดแบบเส้นตรงจากร้านถึงหมุดลูกค้า (PostGIS) ปัดเศษกม.ที่เกินขึ้น
+# ตะกร้า · อัตราค่าส่งย้ายไปตั้งที่ร้านใน Console > ข้อมูลร้าน (Branch.delivery_*/rider_*)
 # ---------------------------------------------------------------------------
-DELIVERY_BASE_FARE = Decimal(env('DELIVERY_BASE_FARE', default='30'))
-DELIVERY_BASE_DISTANCE_KM = Decimal(env('DELIVERY_BASE_DISTANCE_KM', default='3'))
-DELIVERY_PER_KM_FARE = Decimal(env('DELIVERY_PER_KM_FARE', default='6'))
-RIDER_BASE_EARNING = Decimal(env('RIDER_BASE_EARNING', default='25'))
-RIDER_PER_KM_EARNING = Decimal(env('RIDER_PER_KM_EARNING', default='5'))
-MAX_DELIVERY_DISTANCE_KM = Decimal(env('MAX_DELIVERY_DISTANCE_KM', default='15'))
 CART_MAX_QUANTITY_PER_LINE = 20
 CART_MAX_LINES = 30
 

@@ -16,6 +16,7 @@
       btn.dataset.state = state;
       var label = btn.querySelector('[data-push-label]');
       if (label) label.textContent = text;
+      btn.title = text; btn.setAttribute('aria-label', text);
       btn.disabled = state === 'on' || state === 'busy' || state === 'unsupported';
       btn.classList.toggle('btn-primary', state === 'off');
       btn.classList.toggle('btn-outline-ink', state !== 'off');

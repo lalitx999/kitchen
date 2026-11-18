@@ -40,14 +40,29 @@
 {% endif %}
 
 <section class="container-xl pt-4">
-  <div class="card-tm card-tm-body p-4">
+  <div class="card-tm overflow-hidden">
+    {% if branch.cover_image %}
+      <div class="shop-cover"><img src="{{ branch.cover_image.url }}" alt="ภาพปกร้าน {{ branch.name }}" fetchpriority="high"></div>
+    {% endif %}
+    <div class="card-tm-body p-4">
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
-      <div class="min-w-0">
+      <div class="d-flex align-items-start gap-3 min-w-0">
+        {% if branch.storefront_image %}
+          <img src="{{ branch.storefront_image.url }}" alt="หน้าร้าน {{ branch.name }}" class="shop-front-thumb{% if branch.cover_image %} is-overlap{% endif %}" width="88" height="88" loading="lazy">
+        {% endif %}
+        <div class="min-w-0">
         <h1 class="h3 fw-black mb-1">{% if branch %}{{ branch.name }}{% else %}{{ SITE_NAME }}{% endif %}</h1>
         <div class="small text-muted-tm d-flex flex-wrap gap-3">
           {% if branch.opens_at %}<span><i class="bi bi-clock me-1"></i>{{ branch.opens_at|time:"H:i" }} - {{ branch.closes_at|time:"H:i" }} น.</span>{% endif %}
           {% if branch.phone %}<a href="tel:{{ branch.phone }}" class="text-muted-tm text-decoration-none"><i class="bi bi-telephone me-1"></i>{{ branch.phone }}</a>{% endif %}
           <span><i class="bi bi-qr-code me-1"></i>จ่ายด้วย QR พร้อมเพย์</span>
+        </div>
+        {% if branch.address %}
+          <div class="small text-muted-tm mt-1"><i class="bi bi-geo-alt me-1"></i>{{ branch.address }}
+            {% if branch.maps_url %}<a href="{{ branch.maps_url }}" target="_blank" rel="noopener" class="ms-1 text-nowrap">ดูแผนที่</a>{% endif %}</div>
+        {% elif branch.maps_url %}
+          <div class="small mt-1"><a href="{{ branch.maps_url }}" target="_blank" rel="noopener"><i class="bi bi-geo-alt me-1"></i>ดูแผนที่ร้าน</a></div>
+        {% endif %}
         </div>
       </div>
       {% if shop.accepting %}
@@ -59,6 +74,7 @@
     {% if not shop.accepting %}
       <div class="alert alert-warning small mb-0 mt-3"><i class="bi bi-info-circle me-1"></i>{{ shop.reason }} · ดูเมนูและใส่ตะกร้าไว้ก่อนได้</div>
     {% endif %}
+    </div>
   </div>
 </section>
 

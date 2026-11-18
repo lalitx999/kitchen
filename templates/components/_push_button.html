@@ -1,6 +1,6 @@
 {# ปุ่มเปิดแจ้งเตือน: แสดงเมื่อตั้งค่า Firebase ครบเท่านั้น · สถานะปุ่มอัปเดตโดย static/js/push.js #}
 {% if push_config %}
-<button type="button" class="btn btn-primary btn-sm btn-icon {{ extra_class }}" data-push-enable data-state="off">
-  <i class="bi bi-bell"></i><span data-push-label>เปิดการแจ้งเตือน</span>
+<button type="button" class="btn btn-primary btn-sm btn-icon {{ extra_class }}" data-push-enable data-state="off" title="เปิดการแจ้งเตือน" aria-label="เปิดการแจ้งเตือน">
+  <i class="bi bi-bell"></i><span data-push-label class="{{ label_class }}">เปิดการแจ้งเตือน</span>
 </button>
 {% endif %}

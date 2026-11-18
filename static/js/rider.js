@@ -112,26 +112,25 @@
     if (document.visibilityState === 'visible' && watchId !== null) { wakeLock = null; keepScreenOn(); send(true); }
   });
 
-  // ---------------------------------------------------------------- เสียงงานใหม่
-  var bell = document.getElementById('rider-bell');
-  var soundBtn = document.getElementById('rider-sound');
-  var soundOn = false;
+  // ---------------------------------------------------------------- เสียงงานใหม่ (sound.js)
+  // เหมือนระบบเดิม: มีงานรอรับ -> เสียงดังวนจนกว่าจะกดรับงาน หรือไม่มีงานเหลือ
+  var sound = window.TmppSound;
   function readIds() {
     var el = document.getElementById('rider-available-ids');
     try { return el ? JSON.parse(el.textContent) : []; } catch (e) { return []; }
   }
   var known = new Set(readIds());
-
-  function setSound(on) {
-    soundOn = on;
-    soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    soundBtn.classList.toggle('btn-primary', !on);
-    soundBtn.classList.toggle('btn-outline-ink', on);
-    soundBtn.innerHTML = on ? '<i class="bi bi-volume-up"></i><span>เสียงเปิดอยู่</span>' : '<i class="bi bi-volume-mute"></i><span>เปิดเสียง</span>';
+  var ringing = false;
+  function updateRing(fresh) {
+    var waiting = readIds().length > 0;
+    if (waiting && (fresh || !ringing)) { sound.play('rider', { loop: true }).then(function (ok) { ringing = ok; }); }
+    else if (!waiting && ringing) { sound.stop('rider'); ringing = false; }
   }
-  soundBtn.addEventListener('click', function () {
-    if (soundOn) { setSound(false); return; }
-    bell.play().then(function () { bell.pause(); bell.currentTime = 0; setSound(true); }).catch(function () { setSound(false); });
+  sound.onChange(function (on) { if (on) updateRing(false); else ringing = false; });
+  // กดรับงาน -> หยุดเสียงทันที ไม่ต้องรอบอร์ดโหลดใหม่
+  document.body.addEventListener('htmx:beforeRequest', function (event) {
+    var vals = (event.detail.elt && event.detail.elt.getAttribute('hx-vals')) || '';
+    if (vals.indexOf('"accept"') !== -1) { sound.stop('rider'); ringing = false; }
   });
 
   document.body.addEventListener('htmx:afterSettle', function (event) {
@@ -141,7 +140,7 @@
       var ids = readIds();
       var fresh = ids.filter(function (x) { return !known.has(x); });
       known = new Set(ids);
-      if (fresh.length && soundOn) { bell.currentTime = 0; bell.play().catch(function () {}); }
+      updateRing(fresh.length > 0);
       fillProofForms();
     }
   });

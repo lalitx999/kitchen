@@ -15,7 +15,7 @@
         <span class="tm-brand-tag">จอครัว</span>
       </span>
     </a>
-    <div class="d-flex align-items-center gap-2">
+    <div class="tm-header-actions">
       {% block header_actions %}{% endblock %}
       {% include "components/_bell.html" %}
       {% if user.is_owner %}<a href="{% url 'console:overview' %}" class="btn btn-outline-ink btn-sm btn-icon"><i class="bi bi-grid-1x2"></i><span class="d-none d-md-inline">Console</span></a>{% endif %}
