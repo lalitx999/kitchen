@@ -12,4 +12,5 @@ urlpatterns = [
     path('jobs/<uuid:order_id>/complete/', views.rider_complete, name='rider_complete'),
     path('location/', views.rider_location, name='rider_location'),
     path('proofs/<uuid:order_id>/photo/', views.delivery_proof_photo, name='proof_photo'),
+    path('proofs/<uuid:order_id>/photo/<int:index>/', views.delivery_proof_photo, name='proof_photo_n'),
 ]

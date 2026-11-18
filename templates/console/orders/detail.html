@@ -67,7 +67,7 @@
           <div class="fw-bold">{{ order.rider.full_name }}</div>
           <div class="small text-muted-tm">รับงาน {{ order.rider_assigned_at|date:"H:i" }}{% if order.picked_up_at %} · รับอาหาร {{ order.picked_up_at|date:"H:i" }}{% endif %}{% if order.completed_at %} · ส่งถึง {{ order.completed_at|date:"H:i" }}{% endif %}</div>
           {% if order.delivery_proof %}
-            <a class="small" href="{% url 'delivery:proof_photo' order.pk %}" target="_blank" rel="noopener"><i class="bi bi-image me-1"></i>รูปหลักฐานการส่ง</a>
+            {% include "components/_proof_photos.html" %}
             {% if order.delivery_proof.distance_to_customer_m is not None %}<div class="small-xs text-muted-tm">กดส่งห่างจากหมุดลูกค้า {{ order.delivery_proof.distance_to_customer_m }} ม.</div>{% endif %}
           {% endif %}
         {% else %}

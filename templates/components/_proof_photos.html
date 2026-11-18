@@ -1,0 +1,13 @@
+{# รูปหลักฐานการส่ง 1-4 รูป: ภาพย่อ แตะเพื่อเปิดรูปเต็ม (ไฟล์ส่วนตัว ผ่าน view ที่ตรวจสิทธิ์) #}
+{% with photos=order.delivery_proof.photos.all %}
+{% if photos %}
+  <div class="small fw-bold mt-2 mb-1"><i class="bi bi-images me-1"></i>รูปตอนส่ง {{ photos|length }} รูป</div>
+  <div class="proof-thumbs">
+    {% for p in photos %}
+      <a href="{% url 'delivery:proof_photo_n' order.pk forloop.counter0 %}" target="_blank" rel="noopener" aria-label="รูปตอนส่งรูปที่ {{ forloop.counter }}">
+        <img src="{% url 'delivery:proof_photo_n' order.pk forloop.counter0 %}" alt="" loading="lazy" width="88" height="88">
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endwith %}

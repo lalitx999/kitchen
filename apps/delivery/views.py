@@ -95,7 +95,7 @@ def rider_complete(request, order_id):
     try:
         if order is None:
             raise job_service.JobError('ไม่พบงาน')
-        job_service.complete(order, request.user, photo=request.FILES.get('photo'),
+        job_service.complete(order, request.user, photos=request.FILES.getlist('photos'),
                              latitude=request.POST.get('latitude'), longitude=request.POST.get('longitude'))
     except job_service.JobError as exc:
         messages.error(request, str(exc))
@@ -123,14 +123,14 @@ def rider_location(request):
 
 @require_safe
 @never_cache
-def delivery_proof_photo(request, order_id):
+def delivery_proof_photo(request, order_id, index=0):
     """รูปหลักฐานการส่ง: เจ้าของร้าน, ลูกค้าเจ้าของออเดอร์, ไรเดอร์คนส่ง เท่านั้น"""
     user = request.user
     if not user.is_authenticated:
         return redirect('accounts:login')
-    proof = job_selector.get_proof_for_viewer(user, order_id)
-    if proof is None:
+    photo = job_selector.get_proof_photo_for_viewer(user, order_id, index)
+    if photo is None:
         raise Http404
-    response = FileResponse(proof.photo.open('rb'))
+    response = FileResponse(photo.photo.open('rb'))
     response['Cache-Control'] = 'private, no-store'
     return response

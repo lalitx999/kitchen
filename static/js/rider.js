@@ -147,3 +147,32 @@
 
   syncWithStatus();
 })();
+
+/* ย่อรูปหลักฐานก่อนส่ง: รูปกล้องมือถือ 3-8 MB -> JPEG ด้านยาว 1600px (~300 KB) อัปโหลดเร็วบนเน็ตมือถือ
+   ใส่ไฟล์ที่ย่อแล้วกลับเข้าช่องเดิม (DataTransfer) · เบราว์เซอร์ไม่รองรับ = ส่งรูปเดิม (เซิร์ฟเวอร์รับได้ถึง 6 MB) */
+window.tmppCompressImage = function (input) {
+  var file = input.files[0];
+  var MAX_SIDE = 1600;
+  return new Promise(function (resolve) {
+    if (!file || !/^image\//.test(file.type) || typeof DataTransfer === 'undefined') { resolve(file); return; }
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var scale = Math.min(1, MAX_SIDE / Math.max(img.width, img.height));
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (blob) {
+        if (!blob || blob.size >= file.size) { resolve(file); return; }
+        try {
+          var small = new File([blob], 'proof.jpg', { type: 'image/jpeg' });
+          var dt = new DataTransfer(); dt.items.add(small); input.files = dt.files;
+          resolve(small);
+        } catch (e) { resolve(file); }
+      }, 'image/jpeg', 0.82);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+};

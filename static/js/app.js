@@ -38,10 +38,11 @@ document.addEventListener('htmx:afterSwap', function (event) {
 
 /* หยุด polling ของ HTMX เมื่อแท็บถูกซ่อน ลดภาระเซิร์ฟเวอร์และแบตมือถือ
    ใช้คู่กับ hx-trigger="every 5s [document.visibilityState === 'visible']" */
-document.addEventListener('visibilitychange', function () {
-  if (document.visibilityState === 'visible' && window.htmx) {
-    document.querySelectorAll('[data-refresh-on-visible]').forEach(function (el) {
-      htmx.trigger(el, 'refresh');
-    });
-  }
-});
+function tmppRefreshVisible() {
+  if (document.visibilityState !== 'visible' || !window.htmx) return;
+  document.querySelectorAll('[data-refresh-on-visible]').forEach(function (el) { htmx.trigger(el, 'refresh'); });
+}
+document.addEventListener('visibilitychange', tmppRefreshVisible);
+// แอปบนหน้าจอโฮม (iPhone) กลับมาจากพื้นหลังด้วยหน้าเก่าในหน่วยความจำ (bfcache) โดยไม่ยิง visibilitychange
+window.addEventListener('pageshow', function (event) { if (event.persisted) tmppRefreshVisible(); });
+window.addEventListener('focus', tmppRefreshVisible);

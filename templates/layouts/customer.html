@@ -39,6 +39,13 @@
             </li>
           </ul>
         </div>
+        {% if not user.is_customer %}
+          {# มือถือไม่มี dropdown: พนักงานที่หลงมาหน้าร้านต้องกลับหน้าของตัวเองได้ในแตะเดียว #}
+          <a href="{% url 'core:start' %}" class="btn btn-primary btn-sm btn-icon d-sm-none">
+            <i class="bi {% if user.is_rider %}bi-scooter{% elif user.is_owner %}bi-grid-1x2{% else %}bi-fire{% endif %}"></i>
+            <span>{% if user.is_rider %}หน้าไรเดอร์{% elif user.is_owner %}Console{% else %}จอครัว{% endif %}</span>
+          </a>
+        {% endif %}
       {% else %}
         <a href="{% url 'accounts:login' %}" class="btn btn-outline-ink btn-sm d-none d-sm-inline-flex">เข้าสู่ระบบ</a>
       {% endif %}

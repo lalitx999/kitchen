@@ -1,5 +1,6 @@
 /* เสียงแจ้งเตือน (ไฟล์เดียวกับระบบเดิม static/sounds/bell-*.mp3) — ใช้ร่วมกันทุกหน้า
    - เบราว์เซอร์ไม่ให้เล่นเสียงจนกว่าผู้ใช้จะแตะหน้าจอ: แตะตรงไหนก็ได้ 1 ครั้ง = ปลดล็อกเสียง
+   - [data-sound-banner] แถบเตือน "แตะเพื่อเปิดเสียง" แสดงจนกว่าเสียงจะพร้อม (ครัว/ไรเดอร์)
      (เหมือนระบบเดิม) ปุ่ม "เปิดเสียง" ยังมีไว้ให้กดเปิด/ปิดเองได้
    - play(type, {loop}) เล่นครั้งเดียวหรือวนจนกว่าจะ stop(type) เช่น ไรเดอร์มีงานใหม่ดังวนจนกดรับ
    - ปิดเสียงเองแล้วจำไว้ในเครื่อง (localStorage) เปิดหน้าใหม่ไม่ดังขึ้นมาเอง */
@@ -25,28 +26,37 @@
 
   function notify() { listeners.forEach(function (fn) { fn(api.enabled()); }); }
 
+  // iPhone (Safari/แอปบนหน้าจอโฮม) ปลดล็อกเสียง "ทีละไฟล์" และต้องเล่นแบบไม่ปิดเสียง ภายในการแตะจริงเท่านั้น
+  // (เล่นแบบ muted เบราว์เซอร์ยอมเสมอ จึงไม่ได้ปลดล็อกอะไร = สาเหตุที่ครัว/ไรเดอร์ไม่ได้ยินในรอบแรก)
+  // ต้องเรียก play() แบบ synchronous ในตัวจัดการ click/touchend/keydown ห้ามรอ promise อื่นก่อน
   function unlock() {
     if (unlocked) return Promise.resolve(true);
-    var types = Array.prototype.map.call(document.querySelectorAll('audio[data-sound]'), function (el) { return el.dataset.sound; });
-    if (!types.length) types = ['order'];
-    var first = audio(types[0]);
-    first.muted = true;
-    return first.play().then(function () {
-      first.pause(); first.currentTime = 0; first.muted = false;
-      types.forEach(audio);
-      unlocked = true; notify(); return true;
-    }).catch(function () { first.muted = false; return false; });
+    var elements = Array.prototype.slice.call(document.querySelectorAll('audio[data-sound]'));
+    if (!elements.length) elements = [audio('order')];
+    var attempts = elements.map(function (el) {
+      cache[el.dataset.sound || 'order'] = el;
+      el.muted = false;
+      var result;
+      try { result = el.play(); } catch (e) { return Promise.resolve(false); }
+      return Promise.resolve(result).then(function () { el.pause(); el.currentTime = 0; return true; })
+        .catch(function () { return false; });
+    });
+    return Promise.all(attempts).then(function (results) {
+      unlocked = results.every(Boolean);
+      notify();
+      return unlocked;
+    });
   }
 
+  // pointerdown/touchstart บนมือถือไม่นับเป็น "การกด" สำหรับเสียง ต้องเป็น click / touchend / keydown
+  var UNLOCK_EVENTS = ['click', 'touchend', 'keydown'];
   function onFirstInteraction() {
     unlock().then(function (ok) {
       if (!ok) return;
-      document.removeEventListener('pointerdown', onFirstInteraction, true);
-      document.removeEventListener('keydown', onFirstInteraction, true);
+      UNLOCK_EVENTS.forEach(function (name) { document.removeEventListener(name, onFirstInteraction, true); });
     });
   }
-  document.addEventListener('pointerdown', onFirstInteraction, true);
-  document.addEventListener('keydown', onFirstInteraction, true);
+  UNLOCK_EVENTS.forEach(function (name) { document.addEventListener(name, onFirstInteraction, true); });
 
   var api = {
     enabled: function () { return unlocked && !muted; },
@@ -83,7 +93,10 @@
     buttons.forEach(function (btn) {
       btn.addEventListener('click', function () { api.toggle(); });
     });
+    var banners = document.querySelectorAll('[data-sound-banner]');
+    banners.forEach(function (b) { b.addEventListener('click', function () { muted = false; api.setMuted(false); unlock(); }); });
     api.onChange(function (on) {
+      banners.forEach(function (b) { b.classList.toggle('d-none', on); });
       buttons.forEach(function (btn) {
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         btn.setAttribute('aria-label', on ? 'เสียงเปิดอยู่ (กดเพื่อปิด)' : 'เปิดเสียง');

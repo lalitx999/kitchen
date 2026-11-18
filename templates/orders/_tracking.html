@@ -32,7 +32,7 @@
     {% endif %}
   {% elif order.status == 'COMPLETED' %}
     <div class="small text-action fw-bold"><i class="bi bi-check-circle me-1"></i>ส่งถึงแล้ว {{ order.completed_at|date:"H:i" }} น.</div>
-    {% if order.delivery_proof %}<a class="small" href="{% url 'delivery:proof_photo' order.pk %}" target="_blank" rel="noopener"><i class="bi bi-image me-1"></i>ดูรูปตอนส่ง</a>{% endif %}
+    {% include "components/_proof_photos.html" %}
   {% elif order.rider %}
     <div class="small text-muted-tm">ไรเดอร์รับงานแล้ว กำลังรออาหารที่ร้าน</div>
   {% else %}

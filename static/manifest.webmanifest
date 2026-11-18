@@ -1,13 +1,25 @@
 {
   "name": "TMPP สั่งอาหาร",
   "short_name": "TMPP",
-  "start_url": "/",
+  "start_url": "/start/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#fcfcfa",
   "theme_color": "#ffffff",
   "lang": "th",
   "icons": [
+    {
+      "src": "/static/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/static/img/logo-mark.svg",
       "sizes": "any",

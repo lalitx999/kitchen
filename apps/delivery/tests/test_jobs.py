@@ -91,14 +91,15 @@ def test_full_delivery_flow(rider_client, customer_client, customer, menu, setti
     assert order.status == OrderStatus.DELIVERING and order.picked_up_at
 
     response = rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {
-        'photo': photo(), 'latitude': order.delivery_location.y + 0.0001, 'longitude': order.delivery_location.x,
+        'photos': photo(), 'latitude': order.delivery_location.y + 0.0001, 'longitude': order.delivery_location.x,
     })
     assert response.status_code == 302
     order.refresh_from_db()
     proof = DeliveryProof.objects.get(order=order)
     assert order.status == OrderStatus.COMPLETED and order.completed_at
     assert proof.rider == rider_client.user and 5 <= proof.distance_to_customer_m <= 20
-    assert proof.photo.storage.exists(proof.photo.name)
+    first = proof.photos.get()
+    assert first.photo.storage.exists(first.photo.name)
 
 
 @pytest.mark.django_db
@@ -108,7 +109,7 @@ def test_complete_requires_photo(rider_client, customer_client, customer, menu):
     act(rider_client, order, 'pickup')
     rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {})
     rider_client.post(reverse('delivery:rider_complete', args=[order.pk]),
-                      {'photo': SimpleUploadedFile('x.jpg', b'nope', content_type='image/jpeg')})
+                      {'photos': SimpleUploadedFile('x.jpg', b'nope', content_type='image/jpeg')})
     order.refresh_from_db()
     assert order.status == OrderStatus.DELIVERING and not DeliveryProof.objects.exists()
 
@@ -161,7 +162,7 @@ def test_rider_today_summary(rider_client, customer_client, customer, menu):
     order = paid_order(customer_client, customer, menu, status=OrderStatus.READY)
     act(rider_client, order, 'accept')
     act(rider_client, order, 'pickup')
-    rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {'photo': photo()})
+    rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {'photos': photo()})
     summary = job_selector.today_summary(rider_client.user)
     assert summary['jobs'] == 1 and summary['earned'] == order.rider_fee
 
@@ -230,7 +231,7 @@ def test_customer_tracking_only_while_delivering(rider_client, customer_client, 
     assert c.get(url).status_code == 404
 
     # ส่งเสร็จแล้ว ลบตำแหน่งไรเดอร์ (ความเป็นส่วนตัว)
-    rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {'photo': photo()})
+    rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {'photos': photo()})
     assert live_location_service.get(rider_client.user.pk) is None
     assert 'ส่งถึงแล้ว' in customer_client.get(url).content.decode()
 
@@ -252,10 +253,28 @@ def test_proof_photo_access(rider_client, customer_client, customer, menu, owner
     order = paid_order(customer_client, customer, menu, status=OrderStatus.READY)
     act(rider_client, order, 'accept')
     act(rider_client, order, 'pickup')
-    rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {'photo': photo()})
+    rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {'photos': photo()})
     url = reverse('delivery:proof_photo', args=[order.pk])
     assert customer_client.get(url).status_code == 200
     assert owner_client.get(url).status_code == 200
     assert rider_client.get(url).status_code == 200
     assert make_rider('x@example.test').get(url).status_code == 404
     assert Client().get(url).status_code == 302
+    assert customer_client.get(reverse('delivery:proof_photo_n', args=[order.pk, 1])).status_code == 404  # มีแค่รูปเดียว
+
+
+@pytest.mark.django_db
+def test_complete_accepts_up_to_four_photos(rider_client, customer_client, customer, menu):
+    order = paid_order(customer_client, customer, menu, status=OrderStatus.READY)
+    act(rider_client, order, 'accept')
+    act(rider_client, order, 'pickup')
+    url = reverse('delivery:rider_complete', args=[order.pk])
+    rider_client.post(url, {'photos': [photo() for _ in range(5)]})
+    order.refresh_from_db()
+    assert order.status == OrderStatus.DELIVERING  # 5 รูปเกิน ไม่บันทึก
+    rider_client.post(url, {'photos': [photo() for _ in range(3)]})
+    order.refresh_from_db()
+    assert order.status == OrderStatus.COMPLETED
+    assert DeliveryProof.objects.get(order=order).photos.count() == 3
+    page = customer_client.get(reverse('orders:detail', args=[order.pk])).content.decode()
+    assert 'รูปตอนส่ง 3 รูป' in page

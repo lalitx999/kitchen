@@ -30,7 +30,7 @@ def customer_orders(user) -> QuerySet[Order]:
 def get_customer_order(user, order_id) -> Order:
     return get_object_or_404(
         Order.objects.select_related('branch', 'rider', 'rider__rider_profile', 'delivery_proof').prefetch_related(
-            _items_prefetch(),
+            _items_prefetch(), 'delivery_proof__photos',
             Prefetch('status_logs', queryset=OrderStatusLog.objects.only('id', 'order_id', 'to_status', 'created_at')),
         ),
         pk=order_id, customer=user,
@@ -67,7 +67,7 @@ def console_orders(*, status: str | None = None, query: str = '') -> QuerySet[Or
 def get_console_order(order_id) -> Order:
     return get_object_or_404(
         Order.objects.select_related('customer', 'branch', 'rider', 'delivery_proof').prefetch_related(
-            _items_prefetch(), 'slips',
+            _items_prefetch(), 'slips', 'delivery_proof__photos',
             Prefetch('status_logs', queryset=OrderStatusLog.objects.select_related('actor').only(
                 'id', 'order_id', 'from_status', 'to_status', 'note', 'created_at', 'actor__full_name')),
         ),

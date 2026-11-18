@@ -30,7 +30,7 @@ def deliver(rider_client, customer_client, customer, menu):
     order = paid_order(customer_client, customer, menu, status=OrderStatus.READY)
     act(rider_client, order, 'accept')
     act(rider_client, order, 'pickup')
-    rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {'photo': _photo()})
+    rider_client.post(reverse('delivery:rider_complete', args=[order.pk]), {'photos': _photo()})
     order.refresh_from_db()
     assert order.status == OrderStatus.COMPLETED
     return order

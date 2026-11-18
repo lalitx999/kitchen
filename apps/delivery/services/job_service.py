@@ -10,7 +10,7 @@ from apps.core import images
 from apps.orders.models import Order, OrderStatus
 from apps.orders.services import order_service
 
-from ..models import DeliveryProof
+from ..models import MAX_PROOF_PHOTOS, DeliveryProof, DeliveryProofPhoto
 from . import live_location_service
 
 PROOF_MAX_BYTES = 6 * 1024 * 1024   # รูปจากกล้องมือถือใหญ่กว่าสลิป
@@ -51,15 +51,23 @@ def pick_up(order: Order, rider) -> Order:
         raise JobError(str(exc)) from exc
 
 
-def complete(order: Order, rider, *, photo, latitude=None, longitude=None) -> Order:
-    """ส่งสำเร็จต้องมีรูปถ่ายเสมอ (หลักฐานเมื่อลูกค้าบอกว่าไม่ได้รับของ)"""
+def complete(order: Order, rider, *, photos, latitude=None, longitude=None) -> Order:
+    """ส่งสำเร็จต้องมีรูปถ่าย 1-4 รูปเสมอ (หลักฐานเมื่อลูกค้าบอกว่าไม่ได้รับของ)"""
     _require_own(order, rider)
     if order.status != OrderStatus.DELIVERING:
         raise JobError('ออเดอร์นี้ยังไม่ได้อยู่ในสถานะกำลังไปส่ง')
-    try:
-        _data, ext = images.read_uploaded_image(photo, max_bytes=PROOF_MAX_BYTES)
-    except images.InvalidImage as exc:
-        raise JobError(f'รูปหลักฐาน: {exc}') from exc
+    photos = [p for p in (photos or []) if p]
+    if not photos:
+        raise JobError('ถ่ายรูปตอนส่งของอย่างน้อย 1 รูป')
+    if len(photos) > MAX_PROOF_PHOTOS:
+        raise JobError(f'ส่งรูปได้ไม่เกิน {MAX_PROOF_PHOTOS} รูป')
+    checked = []
+    for index, photo in enumerate(photos, start=1):
+        try:
+            _data, ext = images.read_uploaded_image(photo, max_bytes=PROOF_MAX_BYTES)
+        except images.InvalidImage as exc:
+            raise JobError(f'รูปที่ {index}: {exc}') from exc
+        checked.append((photo, ext))
 
     location, distance_m = None, None
     try:
@@ -74,11 +82,14 @@ def complete(order: Order, rider, *, photo, latitude=None, longitude=None) -> Or
                                                             order.delivery_location.y, order.delivery_location.x))
 
     with transaction.atomic():
-        proof = DeliveryProof(order=order, rider=rider, location=location, distance_to_customer_m=distance_m)
-        proof.photo.save(f'proof.{ext}', photo, save=False)
-        proof.save()
+        proof = DeliveryProof.objects.create(order=order, rider=rider, location=location, distance_to_customer_m=distance_m)
+        for index, (photo, ext) in enumerate(checked):
+            row = DeliveryProofPhoto(proof=proof, sort_order=index)
+            row.photo.save(f'proof.{ext}', photo, save=False)
+            row.save()
         try:
-            order = order_service.transition_order(order, OrderStatus.COMPLETED, actor=rider, note='ส่งสำเร็จ (มีรูปหลักฐาน)')
+            order = order_service.transition_order(order, OrderStatus.COMPLETED, actor=rider,
+                                                   note=f'ส่งสำเร็จ (มีรูปหลักฐาน {len(checked)} รูป)')
         except order_service.InvalidTransition as exc:
             raise JobError(str(exc)) from exc
     # ไม่มีงานค้างแล้ว -> ไม่ต้องแสดงตำแหน่งให้ลูกค้าเห็นต่อ (ความเป็นส่วนตัวของไรเดอร์)

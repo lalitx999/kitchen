@@ -74,15 +74,25 @@ def tracking_for_order(order) -> dict:
     }
 
 
-def get_proof_for_viewer(user, order_id):
-    """รูปหลักฐานการส่ง: เจ้าของร้าน, ลูกค้าเจ้าของออเดอร์, ไรเดอร์คนส่ง · คนอื่นได้ None (view ตอบ 404)"""
+def _can_view_proof(user, proof) -> bool:
     from apps.accounts.models import Role
 
-    from ..models import DeliveryProof
+    return user.is_authenticated and (
+        user.role == Role.OWNER or proof.order.customer_id == user.pk or proof.rider_id == user.pk
+    )
 
-    proof = DeliveryProof.objects.select_related('order').filter(order_id=order_id).first()
-    if proof is None or not user.is_authenticated:
+
+def get_proof_photo_for_viewer(user, order_id, index: int = 0):
+    """
+    รูปหลักฐานการส่ง (รูปที่ index): เจ้าของร้าน, ลูกค้าเจ้าของออเดอร์, ไรเดอร์คนส่ง
+    คนอื่น/ไม่มีรูป ได้ None (view ตอบ 404 ไม่บอกว่ามีออเดอร์นี้อยู่)
+    """
+    from ..models import DeliveryProofPhoto
+
+    photo = (
+        DeliveryProofPhoto.objects.select_related('proof__order')
+        .filter(proof__order_id=order_id).order_by('sort_order', 'created_at')[index:index + 1].first()
+    )
+    if photo is None or not _can_view_proof(user, photo.proof):
         return None
-    if user.role == Role.OWNER or proof.order.customer_id == user.pk or proof.rider_id == user.pk:
-        return proof
-    return None
+    return photo

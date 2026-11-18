@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.http import Http404, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_safe
 
+from apps.accounts.services.auth_service import home_url_for
 from apps.catalog.selectors import menu_selector
 
 from .selectors.health_selector import check_dependencies
@@ -20,6 +21,18 @@ def home(request):
         'categories': categories,
         'uncategorized': uncategorized,
     })
+
+
+@require_safe
+@never_cache
+def app_start(request):
+    """
+    หน้าเริ่มของแอปที่ติดตั้งบนหน้าจอโฮม (manifest start_url)
+    ไรเดอร์/ครัว/เจ้าของเปิดแอปแล้วไปหน้าของตัวเองทันที ไม่ค้างที่หน้าร้านของลูกค้า
+    """
+    if request.user.is_authenticated:
+        return redirect(home_url_for(request.user))
+    return redirect('core:home')
 
 
 @require_safe
