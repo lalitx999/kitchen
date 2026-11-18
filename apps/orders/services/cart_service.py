@@ -21,8 +21,13 @@ def _lines(session) -> list[dict]:
     return session.get(SESSION_KEY, {}).get('lines', [])
 
 
-def _save(session, lines: list[dict]) -> None:
-    session[SESSION_KEY] = {'lines': lines}
+def branch_id(session) -> str | None:
+    """ตะกร้า 1 ใบ = เมนูจากสาขาเดียว"""
+    return session.get(SESSION_KEY, {}).get('branch_id')
+
+
+def _save(session, lines: list[dict], branch: str | None = None) -> None:
+    session[SESSION_KEY] = {'lines': lines, 'branch_id': branch or branch_id(session)}
     session.modified = True
 
 
@@ -47,6 +52,9 @@ def add(session, *, item, option_ids: list[str], qty: int, note: str = '') -> No
     note = (note or '').strip()[:120]
 
     lines = _lines(session)
+    if lines and branch_id(session) and branch_id(session) != str(item.branch_id):
+        # เปลี่ยนสาขาแล้วกดเพิ่ม: ของเก่าเป็นของอีกสาขา สั่งรวมกันไม่ได้
+        lines = []
     key = _line_key(str(item.pk), option_ids, note)
     for line in lines:
         if line['key'] == key:
@@ -56,7 +64,7 @@ def add(session, *, item, option_ids: list[str], qty: int, note: str = '') -> No
         if len(lines) >= settings.CART_MAX_LINES:
             raise CartError('ตะกร้าเต็มแล้ว')
         lines.append({'key': key, 'item_id': str(item.pk), 'option_ids': option_ids, 'qty': qty, 'note': note})
-    _save(session, lines)
+    _save(session, lines, branch=str(item.branch_id))
 
 
 def set_quantity(session, key: str, qty: int) -> None:

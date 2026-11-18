@@ -5,7 +5,7 @@
 <div class="d-grid gap-4">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
     <div>
-      <h1 class="h4 fw-black mb-0">เมนูอาหาร</h1>
+      <h1 class="h4 fw-black mb-0">เมนูอาหาร{% if console_branches|length > 1 %} <span class="text-brand">· {{ console_branch.name }}</span>{% endif %}</h1>
       <div class="small text-muted-tm">กด "หมด" เพื่อซ่อนจากหน้าร้านชั่วคราว ไม่ต้องลบ</div>
     </div>
     <a href="{% url 'console:menu_item_create' %}" class="btn btn-primary btn-sm btn-icon"><i class="bi bi-plus-circle"></i>เพิ่มเมนู</a>

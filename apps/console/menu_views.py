@@ -22,7 +22,7 @@ def _audit(request, action, obj, changes=None):
 @owner_required
 @require_safe
 def menu_list(request):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     categories, uncategorized = menu_selector.console_menu(branch)
     return render(request, 'console/menu/list.html', {
         'console_active': 'menu', 'branch': branch, 'categories': categories,
@@ -33,7 +33,7 @@ def menu_list(request):
 @owner_required
 @require_http_methods(['GET', 'POST'])
 def item_create(request):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     categories = menu_selector.category_choices(branch)
     initial = {'category': request.GET.get('category')} if request.GET.get('category') else {}
     form = MenuItemForm(request.POST or None, request.FILES or None, categories=categories, initial=initial)
@@ -51,7 +51,7 @@ def item_create(request):
 @owner_required
 @require_http_methods(['GET', 'POST'])
 def item_edit(request, item_id):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     item = menu_selector.get_branch_item(branch, item_id)
     categories = menu_selector.category_choices(branch)
     if request.method == 'POST':
@@ -77,7 +77,7 @@ def item_edit(request, item_id):
 @require_POST
 def item_toggle(request, item_id):
     """HTMX: ปิด/เปิดขาย แล้วคืนแถวเมนูที่อัปเดต"""
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     item = menu_selector.get_branch_item(branch, item_id)
     available = request.POST.get('available') == '1'
     if menu_service.set_available(item, available=available):
@@ -89,7 +89,7 @@ def item_toggle(request, item_id):
 @owner_required
 @require_POST
 def item_delete(request, item_id):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     item = menu_selector.get_branch_item(branch, item_id)
     name = item.name
     _audit(request, 'menu_item.delete', item, {'name': [name, None]})
@@ -101,7 +101,7 @@ def item_delete(request, item_id):
 @owner_required
 @require_POST
 def option_add(request, item_id):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     item = menu_selector.get_branch_item(branch, item_id)
     form = MenuOptionForm(request.POST)
     if form.is_valid():
@@ -115,7 +115,7 @@ def option_add(request, item_id):
 @owner_required
 @require_POST
 def option_delete(request, item_id, option_id):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     item = menu_selector.get_branch_item(branch, item_id)
     option = menu_service.delete_option(item, option_id)
     if option:
@@ -126,7 +126,7 @@ def option_delete(request, item_id, option_id):
 @owner_required
 @require_POST
 def category_create(request):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     form = CategoryForm(request.POST)
     if form.is_valid():
         try:
@@ -142,7 +142,7 @@ def category_create(request):
 @owner_required
 @require_POST
 def category_update(request, category_id):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     category = menu_selector.get_branch_category(branch, category_id)
     form = CategoryForm(request.POST)
     if form.is_valid():
@@ -159,7 +159,7 @@ def category_update(request, category_id):
 @owner_required
 @require_POST
 def category_delete(request, category_id):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     category = menu_selector.get_branch_category(branch, category_id)
     _audit(request, 'category.delete', category)
     moved = menu_service.delete_category(category)

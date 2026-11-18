@@ -38,7 +38,7 @@
           <tbody>
             {% for order in page.object_list %}
               <tr>
-                <td class="fw-bold font-mono-num text-nowrap">{{ order.order_number }}</td>
+                <td class="fw-bold font-mono-num text-nowrap">{{ order.order_number }}{% if console_branches|length > 1 %}<div class="small-xs text-muted-tm fw-normal">{{ order.branch.name }}</div>{% endif %}</td>
                 <td><div>{{ order.recipient_name }}</div><div class="small-xs text-muted-tm">{{ order.recipient_phone }}</div></td>
                 <td class="font-mono-num text-nowrap">฿{{ order.total|floatformat:"-2"|intcomma }}</td>
                 <td>{% include "components/_status_badge.html" %}</td>

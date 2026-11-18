@@ -8,9 +8,10 @@ def list_staff_accounts() -> QuerySet[User]:
     # ดึง rider_profile มาด้วยใน query เดียว (กัน N+1 ตอนแสดงทะเบียนรถ/สถานะในตาราง)
     return (
         User.objects.filter(role__in=STAFF_ROLES)
-        .select_related('rider_profile')
+        .select_related('rider_profile', 'branch')
         .only(
-            'id', 'email', 'full_name', 'phone', 'role', 'is_active', 'last_login', 'created_at',
+            'id', 'email', 'full_name', 'phone', 'role', 'is_active', 'last_login', 'created_at', 'branch_id',
+            'branch__id', 'branch__name',
             'rider_profile__id', 'rider_profile__vehicle_plate', 'rider_profile__is_online',
         )
         .order_by('role', 'full_name')
@@ -18,7 +19,7 @@ def list_staff_accounts() -> QuerySet[User]:
 
 
 def get_staff_account(user_id) -> User:
-    return get_object_or_404(User.objects.select_related('rider_profile'), pk=user_id, role__in=STAFF_ROLES)
+    return get_object_or_404(User.objects.select_related('rider_profile', 'branch'), pk=user_id, role__in=STAFF_ROLES)
 
 
 def count_users_by_role() -> dict[str, int]:

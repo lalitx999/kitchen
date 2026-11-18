@@ -1,0 +1,23 @@
+{# สลับสาขาที่กำลังจัดการ (เจ้าของร้าน) · ใช้ใน Console และจอครัว
+   branches = ทุกสาขา, current = สาขาปัจจุบัน, dark = ปุ่มบนพื้นเข้ม #}
+{% if branches|length > 1 %}
+<div class="dropdown {{ wrapper_class }}">
+  <button class="btn btn-sm {% if dark %}btn-outline-light{% else %}btn-outline-ink{% endif %} btn-icon dropdown-toggle w-100 justify-content-between" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="สาขาที่กำลังจัดการ">
+    <span class="d-inline-flex align-items-center gap-2 text-truncate"><i class="bi bi-shop"></i><span class="text-truncate">{{ current.name }}</span></span>
+  </button>
+  <ul class="dropdown-menu shadow-sm">
+    {% for b in branches %}
+      <li>
+        <form method="post" action="{% url 'console:branch_switch' b.pk %}">{% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between gap-3{% if b.pk == current.pk %} active{% endif %}">
+            <span>{{ b.name }}</span>{% if not b.is_active %}<span class="small-xs opacity-75">ซ่อนอยู่</span>{% endif %}
+          </button>
+        </form>
+      </li>
+    {% endfor %}
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="{% url 'console:branches' %}"><i class="bi bi-gear me-2"></i>จัดการสาขา</a></li>
+  </ul>
+</div>
+{% endif %}

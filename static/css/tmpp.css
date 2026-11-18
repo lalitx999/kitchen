@@ -302,3 +302,11 @@ a.tm-pill-muted:hover { border-color: var(--tm-brand-line); color: var(--tm-bran
 .proof-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .proof-slot .proof-remove { position: absolute; top: .25rem; right: .25rem; width: 1.75rem; height: 1.75rem; padding: 0; border-radius: 50%; line-height: 1; }
 .proof-slot-empty { display: flex; align-items: center; justify-content: center; color: var(--tm-muted); font-size: 1.25rem; }
+
+/* ---- เลือกสาขา ---- */
+.branch-card { border: 1px solid var(--tm-line); background: var(--tm-surface); color: inherit; }
+.branch-card:hover, .branch-card:focus-visible { border-color: var(--tm-brand); }
+.branch-card.is-current { border: 2px solid var(--tm-brand); }
+.branch-card-cover { aspect-ratio: 8 / 3; background: var(--tm-brand-soft); }
+.branch-card-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-tm.border-brand { border-color: var(--tm-brand) !important; border-width: 2px; }

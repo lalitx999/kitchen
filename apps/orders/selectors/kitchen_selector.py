@@ -12,11 +12,12 @@ RECENT_OUT_MINUTES = 30
 LATE_AFTER_MINUTES = 15
 
 
-def board(now=None) -> dict:
+def board(branch, now=None) -> dict:
+    """ออเดอร์ของสาขาเดียว (แต่ละสาขามีจอครัวของตัวเอง)"""
     now = now or timezone.now()
     items = Prefetch('items', queryset=OrderItem.objects.only('id', 'order_id', 'name', 'quantity', 'options', 'note'))
     orders = list(
-        Order.objects.filter(status__in=KITCHEN_STATUSES)
+        Order.objects.filter(branch=branch, status__in=KITCHEN_STATUSES)
         .select_related('rider')
         .only('id', 'order_number', 'status', 'note', 'paid_at', 'updated_at', 'recipient_name', 'total', 'branch_id',
               'rider__id', 'rider__full_name')
@@ -24,7 +25,8 @@ def board(now=None) -> dict:
         .order_by('paid_at', 'created_at')   # จ่ายก่อนทำก่อน
     )
     out = list(
-        Order.objects.filter(status=OrderStatus.DELIVERING, updated_at__gte=now - timedelta(minutes=RECENT_OUT_MINUTES))
+        Order.objects.filter(branch=branch, status=OrderStatus.DELIVERING,
+                             updated_at__gte=now - timedelta(minutes=RECENT_OUT_MINUTES))
         .only('id', 'order_number', 'updated_at')
         .order_by('-updated_at')[:10]
     )
@@ -43,5 +45,5 @@ def board(now=None) -> dict:
     }
 
 
-def get_kitchen_order(order_id) -> Order | None:
-    return Order.objects.filter(pk=order_id).only('id', 'order_number', 'status').first()
+def get_kitchen_order(order_id, branch) -> Order | None:
+    return Order.objects.filter(pk=order_id, branch=branch).only('id', 'order_number', 'status', 'branch_id').first()

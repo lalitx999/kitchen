@@ -1,0 +1,39 @@
+{% extends "layouts/customer.html" %}
+{# เลือกสาขา: มีมากกว่า 1 สาขาที่เปิดใช้งาน · ตะกร้า 1 ใบ = 1 สาขา #}
+
+{% block title %}เลือกสาขา — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="container-xl py-4" style="max-width: 860px;">
+  <h1 class="h4 fw-black mb-1">เลือกสาขา</h1>
+  <p class="small text-muted-tm mb-3">เลือกสาขาที่ใกล้คุณ ค่าส่งคิดจากระยะทางของสาขาที่เลือก{% if current %} · ตอนนี้: <span class="fw-bold">{{ current.name }}</span>{% endif %}</p>
+
+  <div class="row g-3">
+    {% for branch, shop in branches %}
+      <div class="col-12 col-md-6">
+        <form method="post" action="{% url 'core:select_branch' branch.pk %}" class="h-100">
+          {% csrf_token %}
+          <button type="submit" class="card-tm branch-card w-100 h-100 text-start p-0 overflow-hidden{% if current and current.pk == branch.pk %} is-current{% endif %}">
+            {% if branch.cover_image %}
+              <div class="branch-card-cover"><img src="{{ branch.cover_image.url }}" alt="" loading="lazy"></div>
+            {% endif %}
+            <div class="p-3 d-grid gap-1">
+              <div class="d-flex align-items-start justify-content-between gap-2">
+                <span class="fw-black">{{ branch.name }}</span>
+                {% if shop.accepting %}
+                  <span class="tm-pill tm-pill-action text-nowrap">เปิดรับออเดอร์</span>
+                {% else %}
+                  <span class="tm-pill tm-pill-muted text-nowrap">ปิดอยู่</span>
+                {% endif %}
+              </div>
+              {% if branch.address %}<span class="small text-muted-tm"><i class="bi bi-geo-alt me-1"></i>{{ branch.address }}</span>{% endif %}
+              {% if branch.opens_at %}<span class="small text-muted-tm"><i class="bi bi-clock me-1"></i>{{ branch.opens_at|time:"H:i" }} - {{ branch.closes_at|time:"H:i" }} น.</span>{% endif %}
+              {% if not shop.accepting %}<span class="small-xs text-muted-tm">{{ shop.reason }} · ดูเมนูได้</span>{% endif %}
+            </div>
+          </button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

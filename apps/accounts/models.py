@@ -69,6 +69,10 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField('ใช้งานได้', default=True)
     # is_staff = เข้า Django Admin ได้ (นักพัฒนาเท่านั้น) ไม่เกี่ยวกับพนักงานร้าน
     is_staff = models.BooleanField(default=False)
+    # พนักงานครัวผูกกับ 1 สาขา (เห็นเฉพาะออเดอร์/เมนูสาขานั้น) · ว่าง = สาขาหลัก
+    # เจ้าของเลือกสาขาจาก Console ได้ทุกสาขา · ไรเดอร์ใช้ร่วมกันทุกสาขา จึงไม่ใช้ฟิลด์นี้
+    branch = models.ForeignKey('catalog.Branch', verbose_name='สาขา', null=True, blank=True,
+                               on_delete=models.SET_NULL, related_name='staff')
 
     objects = UserManager()
 
@@ -103,6 +107,10 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     @property
     def is_owner(self) -> bool:
         return self.role == Role.OWNER
+
+    @property
+    def is_kitchen(self) -> bool:
+        return self.role == Role.KITCHEN
 
 
 class CustomerAddress(UUIDModel):

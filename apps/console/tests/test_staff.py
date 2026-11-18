@@ -110,7 +110,7 @@ def test_staff_list_query_count_does_not_grow_with_rows(owner_client, django_ass
         user = User.objects.create_user(email=f'r{i}@example.test', password=PASSWORD, full_name=f'R{i}', role=Role.RIDER)
         rider_service.create_rider_profile(user, vehicle_plate=f'P{i}')
     # session + user + staff list (+ savepoints) — ต้องไม่เพิ่มตามจำนวนไรเดอร์
-    with django_assert_max_num_queries(6):
+    with django_assert_max_num_queries(7):  # +1 รายชื่อสาขาบน sidebar
         response = owner_client.get(reverse('console:staff'))
     assert response.status_code == 200
     assert 'P5' in response.content.decode()

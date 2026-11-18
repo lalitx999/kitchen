@@ -35,6 +35,7 @@
   <div class="console-shell">
     <aside class="console-sidebar" aria-label="เมนูหลังบ้าน">
       {% with active=console_active %}
+      {% include "components/_branch_switcher.html" with branches=console_branches current=console_branch wrapper_class="mb-2" %}
       <div class="group-label">ร้าน</div>
       <nav class="nav-grid">
         <a href="{% url 'console:overview' %}" class="console-link {% if active == 'overview' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-grid-1x2"></i>ภาพรวม</span></a>
@@ -42,6 +43,7 @@
         <a href="{% url 'console:slips' %}" class="console-link {% if active == 'slips' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-qr-code-scan"></i>ตรวจสลิป</span>{% if pending_slip_count %}<span class="count">{{ pending_slip_count }}</span>{% endif %}</a>
         <a href="{% url 'console:menu' %}" class="console-link {% if active == 'menu' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-journal-text"></i>เมนูอาหาร</span></a>
         <a href="{% url 'console:shop' %}" class="console-link {% if active == 'shop' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-shop"></i>ข้อมูลร้าน</span></a>
+        <a href="{% url 'console:branches' %}" class="console-link {% if active == 'branches' %}active{% endif %}"><span class="d-flex align-items-center gap-2"><i class="bi bi-diagram-3"></i>สาขา</span>{% if console_branches|length > 1 %}<span class="count">{{ console_branches|length }}</span>{% endif %}</a>
       </nav>
       <div class="group-label mt-2">คนและเงิน</div>
       <nav class="nav-grid">

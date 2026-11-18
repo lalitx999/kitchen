@@ -88,7 +88,7 @@ def test_unfinished_and_cancelled_jobs_are_not_payable(owner_client, customer_cl
 def test_rider_pay_list_query_count(owner_client, customer_client, customer, menu, django_assert_max_num_queries):
     for i in range(3):
         make_rider(f'r{i}@example.test')
-    with django_assert_max_num_queries(6):
+    with django_assert_max_num_queries(7):  # +1 รายชื่อสาขาบน sidebar
         assert owner_client.get(reverse('console:rider_pay')).status_code == 200
 
 
@@ -125,7 +125,7 @@ def test_customer_endpoints_reject_staff_ids(owner_client):
 def test_customer_list_query_count(owner_client, django_assert_max_num_queries):
     for i in range(5):
         User.objects.create_user(email=f'c{i}@example.test', password='x' * 12, full_name=f'C{i}', role=Role.CUSTOMER)
-    with django_assert_max_num_queries(6):
+    with django_assert_max_num_queries(7):  # +1 รายชื่อสาขาบน sidebar
         assert owner_client.get(reverse('console:customers')).status_code == 200
 
 

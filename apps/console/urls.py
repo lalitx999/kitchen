@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import menu_views, order_views, people_views, shop_views, slip_views, views
+from . import branch_views, menu_views, order_views, people_views, shop_views, slip_views, views
 
 app_name = 'console'
 
@@ -9,8 +9,12 @@ urlpatterns = [
     # พนักงาน
     path('staff/', views.staff_list, name='staff'),
     path('staff/<uuid:user_id>/active/', views.staff_toggle_active, name='staff_toggle_active'),
+    path('staff/<uuid:user_id>/branch/', views.staff_move_branch, name='staff_move_branch'),
     path('staff/<uuid:user_id>/password/', views.staff_password, name='staff_password'),
     # ร้าน
+    path('branches/', branch_views.branch_list, name='branches'),
+    path('branches/<uuid:branch_id>/switch/', branch_views.branch_switch, name='branch_switch'),
+    path('branches/<uuid:branch_id>/active/', branch_views.branch_toggle_active, name='branch_toggle_active'),
     path('shop/', shop_views.shop_settings, name='shop'),
     path('shop/open/', shop_views.shop_toggle_open, name='shop_toggle_open'),
     # เมนู

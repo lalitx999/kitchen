@@ -6,7 +6,15 @@
   </td>
   <td>
     {% if staff.role == 'RIDER' %}<span class="tm-pill tm-pill-brand"><i class="bi bi-scooter"></i>ไรเดอร์</span>
-    {% else %}<span class="tm-pill tm-pill-muted"><i class="bi bi-fire"></i>ครัว</span>{% endif %}
+    {% else %}<span class="tm-pill tm-pill-muted"><i class="bi bi-fire"></i>ครัว</span>
+      {% if branches|length > 1 %}
+        {# ย้ายสาขา: เลือกแล้วบันทึกทันที #}
+        <select name="branch" class="form-select form-select-sm mt-1" aria-label="สาขาของ {{ staff.full_name }}"
+                hx-post="{% url 'console:staff_move_branch' staff.pk %}" hx-target="#staff-{{ staff.pk }}" hx-swap="outerHTML" hx-trigger="change">
+          {% for b in branches %}<option value="{{ b.pk }}" {% if staff.branch_id == b.pk or not staff.branch_id and forloop.first %}selected{% endif %}>{{ b.name }}</option>{% endfor %}
+        </select>
+      {% elif staff.branch %}<div class="small-xs text-muted-tm mt-1">{{ staff.branch.name }}</div>{% endif %}
+    {% endif %}
   </td>
   <td class="font-mono-num">{{ staff.phone|default:"-" }}</td>
   <td>

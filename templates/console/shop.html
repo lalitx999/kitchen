@@ -4,7 +4,7 @@
 {% block content %}
 <div class="d-grid gap-4" style="max-width: 860px;">
   <div>
-    <h1 class="h4 fw-black mb-0">ข้อมูลร้าน</h1>
+    <h1 class="h4 fw-black mb-0">ข้อมูลร้าน{% if console_branches|length > 1 %} <span class="text-brand">· {{ console_branch.name }}</span>{% endif %}</h1>
     <div class="small text-muted-tm">แสดงบนหน้าร้าน ใช้คิดระยะส่ง และใช้นำทางไรเดอร์มารับอาหาร</div>
   </div>
 

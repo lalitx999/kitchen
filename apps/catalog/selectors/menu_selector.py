@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, time
 
+from django.core.exceptions import ValidationError
 from django.db.models import Prefetch, QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -8,9 +9,69 @@ from django.utils import timezone
 from ..models import Branch, Category, MenuItem, MenuOption
 
 
+CUSTOMER_BRANCH_KEY = 'branch_id'        # สาขาที่ลูกค้าเลือก (session)
+CONSOLE_BRANCH_KEY = 'console_branch_id'  # สาขาที่เจ้าของกำลังจัดการใน Console/จอครัว (session)
+
+
 def get_storefront_branch() -> Branch | None:
-    """ร้านเดียวตอนนี้: สาขาแรกที่ใช้งานอยู่ (เพิ่มสาขาแล้วค่อยให้ลูกค้าเลือก)"""
+    """สาขาหลัก: สาขาแรกที่เปิดใช้งาน (ใช้เป็นค่าเริ่มต้นเมื่อยังไม่ได้เลือก)"""
     return Branch.objects.filter(is_active=True).order_by('sort_order', 'created_at').first()
+
+
+def active_branches() -> list[Branch]:
+    """สาขาที่ลูกค้าเห็น (หน้าเลือกสาขา) · ไม่ดึงรูป/อัตราค่าส่งที่ไม่ใช้ในรายการ"""
+    return list(Branch.objects.filter(is_active=True).order_by('sort_order', 'created_at'))
+
+
+def all_branches() -> list[Branch]:
+    """ทุกสาขารวมที่ปิดใช้งาน (หน้าจัดการสาขาของเจ้าของ)"""
+    return list(Branch.objects.order_by('sort_order', 'created_at'))
+
+
+def get_branch(branch_id, *, active_only: bool = True) -> Branch | None:
+    qs = Branch.objects.filter(is_active=True) if active_only else Branch.objects.all()
+    try:
+        return qs.filter(pk=branch_id).first() if branch_id else None
+    except (ValidationError, ValueError, TypeError):  # id ใน session เสีย/ไม่ใช่ UUID
+        return None
+
+
+def customer_branch(session, branches: list[Branch] | None = None) -> Branch | None:
+    """
+    สาขาที่ลูกค้ากำลังสั่ง: มีสาขาเดียว = สาขานั้นเลย · หลายสาขา = ที่เลือกไว้ใน session
+    ยังไม่เลือก/สาขาที่เลือกถูกปิด -> None (หน้าแรกแสดงรายการให้เลือก)
+    ส่ง branches (active_branches()) มาด้วยได้ เพื่อไม่ query ซ้ำ
+    """
+    if branches is None:
+        branches = active_branches()
+    selected = str(session.get(CUSTOMER_BRANCH_KEY) or '')
+    for branch in branches:
+        if str(branch.pk) == selected:
+            return branch
+    return branches[0] if len(branches) == 1 else None
+
+
+def console_branch(session, branches: list[Branch] | None = None) -> Branch | None:
+    """
+    สาขาที่เจ้าของกำลังจัดการ (รวมสาขาที่ปิดใช้งาน เพื่อแก้ไขก่อนเปิด) · ไม่ได้เลือก = สาขาหลัก
+    ส่ง branches (all_branches()) มาด้วยได้ เพื่อไม่ query ซ้ำ
+    """
+    if branches is None:
+        return get_branch(session.get(CONSOLE_BRANCH_KEY), active_only=False) or get_storefront_branch()
+    selected = str(session.get(CONSOLE_BRANCH_KEY) or '')
+    for branch in branches:
+        if str(branch.pk) == selected:
+            return branch
+    return next((b for b in branches if b.is_active), branches[0] if branches else None)
+
+
+def kitchen_branch(user, session) -> Branch | None:
+    """จอครัว: เจ้าของใช้สาขาที่เลือกใน Console · พนักงานครัวใช้สาขาของตัวเอง (ไม่ได้ตั้ง = สาขาหลัก)"""
+    if user.is_owner:
+        return console_branch(session)
+    if user.branch_id:
+        return get_branch(user.branch_id, active_only=False)
+    return get_storefront_branch()
 
 
 @dataclass(frozen=True)

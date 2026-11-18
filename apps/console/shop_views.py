@@ -33,7 +33,7 @@ def _initial(branch):
 @owner_required
 @require_http_methods(['GET', 'POST'])
 def shop_settings(request):
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     if request.method == 'POST':
         form = BranchForm(request.POST, request.FILES)
         if form.is_valid():
@@ -62,7 +62,7 @@ def shop_settings(request):
 @require_POST
 def shop_toggle_open(request):
     """HTMX: เปิด/ปิดรับออเดอร์ทันที"""
-    branch = branch_service.get_or_create_main_branch()
+    branch = branch_service.get_console_branch(request.session)
     is_open = request.POST.get('is_open') == '1'
     if is_open and branch.location is None:
         messages.error(request, 'ตั้งพิกัดร้านก่อน จึงจะเปิดรับออเดอร์ได้')

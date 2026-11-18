@@ -25,18 +25,23 @@ def _toast(response, message, level='warning'):
     return response
 
 
-def _shop_context():
-    branch = branch_service.get_or_create_main_branch()
+def _branch(request):
+    return menu_selector.kitchen_branch(request.user, request.session) or branch_service.get_or_create_main_branch()
+
+
+def _shop_context(branch):
     return {'branch': branch, 'shop': menu_selector.shop_status(branch)}
 
 
 @kitchen_required
 @require_safe
 def kitchen_home(request):
-    branch = branch_service.get_or_create_main_branch()
+    branch = _branch(request)
     categories, uncategorized = menu_selector.console_menu(branch)
     return render(request, 'orders/kitchen/home.html', {
-        **kitchen_selector.board(), **_shop_context(),
+        **kitchen_selector.board(branch), **_shop_context(branch),
+        # เจ้าของสลับสาขาได้จากจอครัว (พนักงานครัวเห็นแค่สาขาตัวเอง)
+        'branches': menu_selector.all_branches() if request.user.is_owner else [],
         'menu_items': [item for c in categories for item in c.menu] + uncategorized,
     })
 
@@ -45,13 +50,15 @@ def kitchen_home(request):
 @require_safe
 @never_cache
 def kitchen_board(request):
-    return render(request, 'orders/kitchen/_board.html', kitchen_selector.board())
+    return render(request, 'orders/kitchen/_board.html', kitchen_selector.board(_branch(request)))
 
 
 @kitchen_required
 @require_POST
 def kitchen_action(request, order_id):
-    order = kitchen_selector.get_kitchen_order(order_id)
+    branch = _branch(request)
+    # กรองด้วยสาขาของคนกด: ครัวสาขาหนึ่งกดออเดอร์ของอีกสาขาไม่ได้ แม้จะรู้ id
+    order = kitchen_selector.get_kitchen_order(order_id, branch)
     response = None
     try:
         if order is None:
@@ -66,30 +73,30 @@ def kitchen_action(request, order_id):
         else:
             kitchen_service.apply_action(order, action, actor=request.user)
     except kitchen_service.KitchenError as exc:
-        response = _toast(render(request, 'orders/kitchen/_board.html', kitchen_selector.board()), str(exc))
-    return response or render(request, 'orders/kitchen/_board.html', kitchen_selector.board())
+        response = _toast(render(request, 'orders/kitchen/_board.html', kitchen_selector.board(branch)), str(exc))
+    return response or render(request, 'orders/kitchen/_board.html', kitchen_selector.board(branch))
 
 
 @kitchen_required
 @require_POST
 def kitchen_toggle_shop(request):
     """ครัวปิดรับออเดอร์ชั่วคราวได้ เช่น ออเดอร์ล้น ของหมด"""
-    branch = branch_service.get_or_create_main_branch()
+    branch = _branch(request)
     is_open = request.POST.get('is_open') == '1'
     if is_open and branch.location is None:
-        response = render(request, 'orders/kitchen/_shop_switch.html', _shop_context())
+        response = render(request, 'orders/kitchen/_shop_switch.html', _shop_context(branch))
         return _toast(response, 'ร้านยังไม่ได้ตั้งพิกัด ให้เจ้าของร้านตั้งก่อน')
     if branch_service.set_open(branch, is_open=is_open):
         audit_service.record(request, action='branch.open' if is_open else 'branch.close', target_type='branch',
                              target_id=branch.pk, target_label=branch.name, changes={'is_open': [not is_open, is_open]})
-    return render(request, 'orders/kitchen/_shop_switch.html', _shop_context())
+    return render(request, 'orders/kitchen/_shop_switch.html', _shop_context(branch))
 
 
 @kitchen_required
 @require_POST
 def kitchen_toggle_item(request, item_id):
     """ปุ่ม "หมด/มีขาย" บนจอครัว"""
-    branch = branch_service.get_or_create_main_branch()
+    branch = _branch(request)
     item = menu_selector.get_branch_item(branch, item_id)
     available = request.POST.get('available') == '1'
     if menu_service.set_available(item, available=available):

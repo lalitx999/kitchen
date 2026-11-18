@@ -15,9 +15,11 @@
 """
 import logging
 
+from django.db.models import Q
 from django.core.cache import cache
 from django.urls import reverse
 
+from apps.catalog.selectors import menu_selector
 from apps.accounts.models import Role, User
 from apps.orders.models import Order, OrderStatus
 
@@ -29,6 +31,18 @@ S = OrderStatus
 
 def _staff(*roles):
     return list(User.objects.filter(role__in=roles, is_active=True).only('id', 'is_active'))
+
+
+def _kitchen_for(order: Order):
+    """
+    ครัวของสาขาที่ได้ออเดอร์ + เจ้าของ · พนักงานครัวที่ยังไม่ผูกสาขาถือว่าอยู่สาขาหลัก
+    (สาขาอื่นไม่ต้องเด้งแจ้งเตือน ไม่อย่างนั้นทุกครัวจะได้ยินเสียงออเดอร์ที่ไม่ใช่ของตัวเอง)
+    """
+    main = menu_selector.get_storefront_branch()
+    kitchen_q = Q(role=Role.KITCHEN, branch_id=order.branch_id)
+    if main is not None and main.pk == order.branch_id:
+        kitchen_q |= Q(role=Role.KITCHEN, branch__isnull=True)
+    return list(User.objects.filter(kitchen_q | Q(role=Role.OWNER), is_active=True).only('id', 'is_active'))
 
 
 def _online_riders():
@@ -47,7 +61,7 @@ def status_changed(order_id, from_status: str, to_status: str, note: str = '') -
 
 
 def _status_changed(order_id, from_status, to_status, note):
-    order = Order.objects.select_related('customer', 'rider').filter(pk=order_id).first()
+    order = Order.objects.select_related('customer', 'rider', 'branch').filter(pk=order_id).first()
     if order is None:
         return
     customer_url = reverse('orders:detail', args=[order.pk])
@@ -56,8 +70,9 @@ def _status_changed(order_id, from_status, to_status, note):
     if to_status == S.PAID:
         notify([order.customer], kind='order.paid', title='ชำระเงินแล้ว',
                body=f'ออเดอร์ {short} ส่งเข้าครัวแล้ว', url=customer_url)
-        notify(_staff(Role.KITCHEN, Role.OWNER), kind='kitchen.new', title=f'ออเดอร์ใหม่ {short}',
-               body=f'{order.recipient_name} · ฿{order.total:,.0f}', url=reverse('orders:kitchen'))
+        branch_label = f' · {order.branch.name}' if order.branch_id else ''
+        notify(_kitchen_for(order), kind='kitchen.new', title=f'ออเดอร์ใหม่ {short}',
+               body=f'{order.recipient_name} · ฿{order.total:,.0f}{branch_label}', url=reverse('orders:kitchen'))
         if order.rider_id is None:
             notify(_online_riders(), kind='job.new', title='มีงานใหม่',
                    body=f'ออเดอร์ {short} · {order.distance_km} กม. · ค่าส่ง ฿{order.rider_fee:,.0f}',

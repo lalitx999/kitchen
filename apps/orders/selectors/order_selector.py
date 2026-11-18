@@ -48,8 +48,9 @@ def saved_addresses(user) -> QuerySet[CustomerAddress]:
 
 # --------------------------------------------------------------------------- console
 def console_orders(*, status: str | None = None, query: str = '') -> QuerySet[Order]:
-    qs = Order.objects.select_related('customer').only(
+    qs = Order.objects.select_related('customer', 'branch').only(
         *_LIST_FIELDS, 'recipient_name', 'recipient_phone', 'customer__full_name', 'customer__email',
+        'branch__id', 'branch__name',
     )
     if status == 'active':
         qs = qs.filter(status__in=ACTIVE_STATUSES)

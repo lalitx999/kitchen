@@ -130,7 +130,7 @@ def test_kitchen_toggles_shop_and_menu_item(kitchen_client, client, branch, menu
 def test_waiting_minutes_and_late_flag(customer_client, customer, menu):
     order = _paid_order(customer_client, customer, menu)
     Order.objects.filter(pk=order.pk).update(paid_at=timezone.now() - timedelta(minutes=20))
-    data = kitchen_selector.board()
+    data = kitchen_selector.board(order.branch)
     ticket = data['new_orders'][0]
     assert ticket.waiting_minutes >= 20 and ticket.is_late
 
@@ -139,8 +139,8 @@ def test_waiting_minutes_and_late_flag(customer_client, customer, menu):
 def test_board_query_count_is_constant(kitchen_client, customer_client, customer, menu, django_assert_max_num_queries):
     for _ in range(5):
         _paid_order(customer_client, customer, menu)
-    # session + user + orders + items + delivering (ไม่โตตามจำนวนออเดอร์)
-    with django_assert_max_num_queries(6):
+    # session + user + สาขา + orders + items + delivering (ไม่โตตามจำนวนออเดอร์)
+    with django_assert_max_num_queries(7):
         response = kitchen_client.get(reverse('orders:kitchen_board'))
     assert response.content.decode().count('รับออเดอร์') == 5
 

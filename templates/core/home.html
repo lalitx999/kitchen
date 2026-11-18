@@ -52,6 +52,7 @@
         {% endif %}
         <div class="min-w-0">
         <h1 class="h3 fw-black mb-1">{% if branch %}{{ branch.name }}{% else %}{{ SITE_NAME }}{% endif %}</h1>
+        {% if has_many_branches %}<a href="{% url 'core:branches' %}" class="small fw-bold d-inline-flex align-items-center gap-1 mb-1"><i class="bi bi-arrow-left-right"></i>เปลี่ยนสาขา</a>{% endif %}
         <div class="small text-muted-tm d-flex flex-wrap gap-3">
           {% if branch.opens_at %}<span><i class="bi bi-clock me-1"></i>{{ branch.opens_at|time:"H:i" }} - {{ branch.closes_at|time:"H:i" }} น.</span>{% endif %}
           {% if branch.phone %}<a href="tel:{{ branch.phone }}" class="text-muted-tm text-decoration-none"><i class="bi bi-telephone me-1"></i>{{ branch.phone }}</a>{% endif %}

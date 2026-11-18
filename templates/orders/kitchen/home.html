@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block header_actions %}
+  {% include "components/_branch_switcher.html" with branches=branches current=branch wrapper_class="d-none d-md-block" %}
   {# เบราว์เซอร์ไม่ให้เล่นเสียงจนกว่าผู้ใช้จะกดอะไรสักอย่าง จึงต้องมีปุ่มเปิดเสียงทุกครั้งที่เปิดจอ #}
   {# บน header เหลือแค่ไอคอนในจอเล็ก ข้อความเต็มอยู่ใน title/aria-label (push.js อัปเดตให้) #}
   {% include "components/_push_button.html" with label_class="d-none d-xl-inline" %}
@@ -17,6 +18,7 @@
     <span><span class="fw-bold d-block">เสียงยังไม่เปิด แตะตรงนี้</span><span class="small">ทุกครั้งที่เปิดแอป ต้องแตะหน้าจอ 1 ครั้ง ถึงจะมีเสียงเตือนออเดอร์ใหม่ (กฎของเบราว์เซอร์) · ปิดโหมดเงียบของมือถือด้วย</span></span>
   </button>
   <div class="d-flex flex-wrap align-items-stretch gap-3 mb-3">
+    {% if branches|length > 1 %}<div class="w-100 d-md-none">{% include "components/_branch_switcher.html" with branches=branches current=branch %}</div>{% endif %}
     <div class="flex-grow-1">{% include "orders/kitchen/_shop_switch.html" %}</div>
     <button type="button" class="btn btn-outline-ink btn-icon" @click="showMenu = !showMenu" :aria-expanded="showMenu">
       <i class="bi bi-journal-text"></i>เมนูหมด / มีขาย

@@ -17,8 +17,9 @@ from .selectors import order_selector
 customer_required = role_required(Role.CUSTOMER)
 
 
-def _branch():
-    return menu_selector.get_storefront_branch()
+def _branch(request):
+    """สาขาที่ลูกค้าเลือก (มีสาขาเดียว = สาขานั้น)"""
+    return menu_selector.customer_branch(request.session)
 
 
 def _toast(response: HttpResponse, message: str, level: str = 'success') -> HttpResponse:
@@ -32,7 +33,7 @@ def _toast(response: HttpResponse, message: str, level: str = 'success') -> Http
 @require_safe
 def item_sheet(request, item_id):
     """HTMX: เนื้อหา modal เลือกตัวเลือก/จำนวน ของเมนูหนึ่ง"""
-    branch = _branch()
+    branch = _branch(request)
     item = menu_selector.get_branch_item(branch, item_id) if branch else None
     if item is None or not item.is_available:
         return _toast(HttpResponse(status=204), 'เมนูนี้หมดแล้ว', 'warning')
@@ -41,7 +42,7 @@ def item_sheet(request, item_id):
 
 @require_POST
 def cart_add(request):
-    branch = _branch()
+    branch = _branch(request)
     item = menu_selector.get_branch_item(branch, request.POST.get('item_id')) if branch else None
     try:
         if item is None:
@@ -59,7 +60,7 @@ def cart_add(request):
 
 # --------------------------------------------------------------------------- ตะกร้า
 def _cart_context(request):
-    branch = _branch()
+    branch = _branch(request)
     cart = cart_service.priced_cart(request.session, branch)
     return {'cart': cart, 'branch': branch, 'shop': menu_selector.shop_status(branch)}
 

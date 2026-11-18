@@ -9,11 +9,11 @@ from apps.accounts.services import user_service
 from . import audit_service
 
 
-def create_staff(request, *, role, full_name, email, phone, password, vehicle_plate=''):
+def create_staff(request, *, role, full_name, email, phone, password, vehicle_plate='', branch=None):
     with transaction.atomic():
         user = user_service.create_staff_account(
             role=role, full_name=full_name, email=email, phone=phone,
-            password=password, vehicle_plate=vehicle_plate,
+            password=password, vehicle_plate=vehicle_plate, branch=branch,
         )
         audit_service.record(
             request, action='staff.create', target_type='user', target_id=user.pk,
@@ -45,3 +45,15 @@ def reset_staff_password(request, staff_user, *, new_password: str) -> None:
             request, action='staff.password_reset', target_type='user',
             target_id=staff_user.pk, target_label=staff_user.full_name,
         )
+
+
+def move_staff_branch(request, staff_user, branch) -> bool:
+    with transaction.atomic():
+        old_name = staff_user.branch.name if staff_user.branch_id else 'สาขาหลัก'
+        changed = user_service.set_staff_branch(staff_user, branch)
+        if changed:
+            audit_service.record(
+                request, action='staff.branch', target_type='user', target_id=staff_user.pk,
+                target_label=staff_user.full_name, changes={'branch': [old_name, branch.name if branch else 'สาขาหลัก']},
+            )
+    return changed

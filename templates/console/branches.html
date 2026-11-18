@@ -1,0 +1,71 @@
+{% extends "layouts/console.html" %}
+{% block console_title %}สาขา{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4" style="max-width: 960px;">
+  <div>
+    <h1 class="h4 fw-black mb-0">สาขา</h1>
+    <div class="small text-muted-tm">แต่ละสาขามีข้อมูลร้าน พิกัด ค่าส่ง เมนู และจอครัวของตัวเอง · ไรเดอร์ใช้ร่วมกันทุกสาขา</div>
+  </div>
+
+  <section class="card-tm card-tm-body p-4">
+    <h2 class="h6 fw-black mb-3"><i class="bi bi-plus-circle me-1"></i>เพิ่มสาขา</h2>
+    <form method="post" class="d-flex flex-wrap gap-2 align-items-start" novalidate>
+      {% csrf_token %}
+      <div class="flex-grow-1" style="min-width: 0; flex-basis: 16rem;">
+        <label class="visually-hidden" for="id_name">{{ form.name.label }}</label>
+        <input type="text" name="name" id="id_name" maxlength="120" class="form-control{% if form.name.errors %} is-invalid{% endif %}"
+               value="{{ form.name.value|default:'' }}" placeholder="{{ form.name.field.widget.attrs.placeholder }}" required>
+        {% for e in form.name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary btn-icon"><i class="bi bi-plus-lg"></i>เพิ่มสาขา</button>
+    </form>
+    <div class="form-text small-xs mt-2">สาขาใหม่จะ<strong>ซ่อนจากลูกค้า</strong>ไว้ก่อน ใช้อัตราค่าส่งและเวลาเปิด-ปิดเดียวกับสาขาหลัก ตั้งพิกัด/เมนูให้ครบแล้วค่อยกดแสดง</div>
+  </section>
+
+  <section class="d-grid gap-3">
+    {% for branch, shop in rows %}
+      <article class="card-tm card-tm-body p-3 p-md-4{% if current and current.pk == branch.pk %} border-brand{% endif %}">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+          <div class="min-w-0">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <h2 class="h6 fw-black mb-0">{{ branch.name }}</h2>
+              {% if forloop.first and branch.is_active %}<span class="tm-pill tm-pill-muted">สาขาหลัก</span>{% endif %}
+              {% if current and current.pk == branch.pk %}<span class="tm-pill tm-pill-ink">กำลังจัดการ</span>{% endif %}
+            </div>
+            <div class="small text-muted-tm mt-1 d-flex flex-wrap gap-3">
+              {% if branch.is_active %}
+                <span class="text-action fw-bold"><i class="bi bi-eye me-1"></i>ลูกค้าเห็น</span>
+              {% else %}
+                <span><i class="bi bi-eye-slash me-1"></i>ซ่อนจากลูกค้า</span>
+              {% endif %}
+              <span>{% if shop.accepting %}<i class="bi bi-circle-fill text-action me-1" style="font-size:.5rem"></i>เปิดรับออเดอร์{% else %}<i class="bi bi-moon me-1"></i>{{ shop.reason }}{% endif %}</span>
+              {% if not branch.location %}<span class="text-danger"><i class="bi bi-geo-alt me-1"></i>ยังไม่มีพิกัด</span>{% endif %}
+            </div>
+            {% if branch.address %}<div class="small text-muted-tm mt-1 text-truncate"><i class="bi bi-geo-alt me-1"></i>{{ branch.address }}</div>{% endif %}
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <form method="post" action="{% url 'console:branch_switch' branch.pk %}">{% csrf_token %}
+              <input type="hidden" name="next" value="{% url 'console:shop' %}">
+              <button type="submit" class="btn btn-outline-ink btn-sm btn-icon"><i class="bi bi-pencil"></i>ข้อมูลร้าน</button>
+            </form>
+            <form method="post" action="{% url 'console:branch_switch' branch.pk %}">{% csrf_token %}
+              <input type="hidden" name="next" value="{% url 'console:menu' %}">
+              <button type="submit" class="btn btn-outline-ink btn-sm btn-icon"><i class="bi bi-journal-text"></i>เมนู</button>
+            </form>
+            <form method="post" action="{% url 'console:branch_toggle_active' branch.pk %}">{% csrf_token %}
+              {% if branch.is_active %}
+                <input type="hidden" name="active" value="0">
+                <button type="submit" class="btn btn-outline-ink btn-sm btn-icon" onclick="return confirm('ซ่อน {{ branch.name|escapejs }} จากลูกค้า? ลูกค้าจะสั่งสาขานี้ไม่ได้')"><i class="bi bi-eye-slash"></i>ซ่อน</button>
+              {% else %}
+                <input type="hidden" name="active" value="1">
+                <button type="submit" class="btn btn-primary btn-sm btn-icon"><i class="bi bi-eye"></i>แสดงให้ลูกค้าเห็น</button>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

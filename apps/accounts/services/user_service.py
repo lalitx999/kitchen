@@ -20,7 +20,7 @@ def update_profile(user: User, *, full_name: str, phone: str) -> dict:
 
 
 def create_staff_account(
-    *, role: str, full_name: str, email: str, phone: str, password: str, vehicle_plate: str = ''
+    *, role: str, full_name: str, email: str, phone: str, password: str, vehicle_plate: str = '', branch=None
 ) -> User:
     if role not in STAFF_ROLES:
         raise ValueError(f'สร้างบัญชีพนักงานได้เฉพาะ {STAFF_ROLES}')
@@ -29,6 +29,7 @@ def create_staff_account(
             user = User.objects.create_user(
                 email=normalize_email_address(email), password=password,
                 full_name=full_name.strip(), phone=phone, role=role,
+                branch=branch if role == Role.KITCHEN else None,
             )
             if role == Role.RIDER:
                 rider_service.create_rider_profile(user, vehicle_plate=vehicle_plate)
@@ -56,3 +57,15 @@ def set_password(user: User, raw_password: str) -> None:
     # เปลี่ยนรหัสผ่าน = session เก่าของบัญชีนั้นหลุดทั้งหมด (Django ตรวจ hash ของรหัสผ่านใน session)
     user.set_password(raw_password)
     user.save(update_fields=['password', 'updated_at'])
+
+
+def set_staff_branch(user: User, branch) -> bool:
+    """ย้ายพนักงานครัวไปสาขาอื่น · คืน True ถ้าเปลี่ยนจริง"""
+    if user.role != Role.KITCHEN:
+        raise ValueError('ผูกสาขาได้เฉพาะพนักงานครัว')
+    new_id = branch.pk if branch else None
+    if user.branch_id == new_id:
+        return False
+    user.branch = branch
+    user.save(update_fields=['branch', 'updated_at'])
+    return True

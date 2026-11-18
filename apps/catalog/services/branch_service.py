@@ -3,7 +3,12 @@ from django.contrib.gis.geos import Point
 from django.db import transaction
 
 from ..models import Branch
-from ..selectors.menu_selector import get_storefront_branch
+from ..selectors import menu_selector
+from ..selectors.menu_selector import CONSOLE_BRANCH_KEY, CUSTOMER_BRANCH_KEY, get_storefront_branch
+
+
+class BranchError(Exception):
+    """ข้อความแสดงให้เจ้าของเห็นได้"""
 
 
 def get_or_create_main_branch() -> Branch:
@@ -13,6 +18,59 @@ def get_or_create_main_branch() -> Branch:
         with transaction.atomic():
             branch = get_storefront_branch() or Branch.objects.create(name=settings.SITE_NAME, is_open=False)
     return branch
+
+
+def get_console_branch(session) -> Branch:
+    """สาขาที่เจ้าของกำลังจัดการ ยังไม่มีร้านเลย -> สร้างร้านหลักให้"""
+    return menu_selector.console_branch(session) or get_or_create_main_branch()
+
+
+def switch_console_branch(session, branch: Branch) -> None:
+    session[CONSOLE_BRANCH_KEY] = str(branch.pk)
+
+
+def select_customer_branch(session, branch: Branch) -> bool:
+    """
+    ลูกค้าเลือกสาขา · คืน True ถ้าล้างตะกร้า (ของในตะกร้าเป็นของอีกสาขา ราคา/เมนูไม่ตรงกัน)
+    """
+    from apps.orders.services import cart_service
+
+    cleared = False
+    cart_branch = cart_service.branch_id(session)
+    if cart_branch and cart_branch != str(branch.pk) and cart_service.count(session):
+        cart_service.clear(session)
+        cleared = True
+    session[CUSTOMER_BRANCH_KEY] = str(branch.pk)
+    return cleared
+
+
+def create_branch(*, name: str, copy_rates_from: Branch | None = None) -> Branch:
+    """สาขาใหม่: ปิดรับออเดอร์และซ่อนจากลูกค้าไว้ก่อน จนกว่าเจ้าของจะตั้งพิกัด/เมนูครบแล้วเปิดเอง"""
+    name = (name or '').strip()
+    if not name:
+        raise BranchError('ใส่ชื่อสาขา')
+    last = Branch.objects.order_by('-sort_order').values_list('sort_order', flat=True).first() or 0
+    branch = Branch(name=name[:120], is_open=False, is_active=False, sort_order=last + 1)
+    if copy_rates_from is not None:
+        # ใช้อัตราค่าส่งเดียวกับสาขาหลักเป็นค่าเริ่มต้น แก้ทีหลังได้
+        for field in ('delivery_base_km', 'delivery_base_fare', 'delivery_per_km_fare',
+                      'rider_base_fare', 'rider_per_km_fare', 'max_delivery_km', 'opens_at', 'closes_at'):
+            setattr(branch, field, getattr(copy_rates_from, field))
+    branch.save()
+    return branch
+
+
+def set_active(branch: Branch, *, active: bool) -> bool:
+    """เปิด/ซ่อนสาขาจากลูกค้า · ซ่อนสาขาสุดท้ายไม่ได้ (ลูกค้าจะไม่มีร้านให้สั่ง)"""
+    if branch.is_active == active:
+        return False
+    if not active and not Branch.objects.filter(is_active=True).exclude(pk=branch.pk).exists():
+        raise BranchError('ต้องมีอย่างน้อย 1 สาขาที่เปิดใช้งาน')
+    branch.is_active = active
+    if not active:
+        branch.is_open = False
+    branch.save(update_fields=['is_active', 'is_open', 'updated_at'])
+    return True
 
 
 def _point_label(point):
