@@ -77,6 +77,12 @@ def test_every_plain_page_renders_for_every_role(world, customer_client):
         'kitchen': _login('k@example.test', Role.KITCHEN),
         'rider': _login('r@example.test', Role.RIDER),
     }
+    # ไรเดอร์มีงานกำลังไปส่ง 1 งาน (หน้าไรเดอร์แสดงฟอร์มถ่ายรูป)
+    rider_user = User.objects.get(email='r@example.test')
+    ready = next(o for o in world if o.status == OrderStatus.READY)
+    order_service.assign_rider(ready, rider_user)
+    order_service.transition_order(Order.objects.get(pk=ready.pk), OrderStatus.DELIVERING, actor=rider_user)
+
     failures = []
     for name in _plain_urls():
         url = reverse(name)
@@ -84,6 +90,11 @@ def test_every_plain_page_renders_for_every_role(world, customer_client):
             response = client.get(url)
             if response.status_code >= 500:
                 failures.append(f'{role} GET {url} -> {response.status_code}')
+            elif response.status_code == 200 and response.get('Content-Type', '').startswith('text/html'):
+                body = response.content.decode()
+                # comment {# #} ของ Django ใช้ได้บรรทัดเดียว ถ้าขึ้นบรรทัดใหม่จะโผล่บนหน้าเว็บ (บั๊กที่เจอจริง)
+                if '{#' in body or '#}' in body or '{%' in body:
+                    failures.append(f'{role} GET {url} -> template syntax shown as text')
     assert not failures, '\n'.join(failures)
 
 

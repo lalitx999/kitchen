@@ -1,5 +1,5 @@
-{# สลับสาขาที่กำลังจัดการ (เจ้าของร้าน) · ใช้ใน Console และจอครัว
-   branches = ทุกสาขา, current = สาขาปัจจุบัน, dark = ปุ่มบนพื้นเข้ม #}
+{% comment %} สลับสาขาที่กำลังจัดการ (เจ้าของร้าน) · ใช้ใน Console และจอครัว
+   branches = ทุกสาขา, current = สาขาปัจจุบัน, dark = ปุ่มบนพื้นเข้ม {% endcomment %}
 {% if branches|length > 1 %}
 <div class="dropdown {{ wrapper_class }}">
   <button class="btn btn-sm {% if dark %}btn-outline-light{% else %}btn-outline-ink{% endif %} btn-icon dropdown-toggle w-100 justify-content-between" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="สาขาที่กำลังจัดการ">

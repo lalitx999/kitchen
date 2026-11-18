@@ -33,15 +33,23 @@
       </div>
 
       {% if job.status == 'DELIVERING' %}
-        {# ส่งสำเร็จต้องถ่ายรูป 1-4 รูป (แตะแล้วเปิดกล้องหลังทันที) · ใส่พิกัดตอนกดส่ง (rider.js เติมให้ถ้ามี)
+        {% comment %} ส่งสำเร็จต้องถ่ายรูป 1-4 รูป (แตะแล้วเปิดกล้องหลังทันที) · ใส่พิกัดตอนกดส่ง (rider.js เติมให้ถ้ามี)
            ช่องไฟล์ 4 ช่องแยกกัน (ช่องละ 1 รูป) เพราะ iPhone ไม่เปิดกล้องตรงถ้าช่องเดียวเลือกหลายรูป
-           rider.js ย่อรูปก่อนส่ง (tmppCompressImage) ให้อัปโหลดเร็วบนเน็ตมือถือ #}
+           rider.js ย่อรูปก่อนส่ง (tmppCompressImage) ให้อัปโหลดเร็วบนเน็ตมือถือ {% endcomment %}
         <form method="post" action="{% url 'delivery:rider_complete' job.pk %}" enctype="multipart/form-data" class="d-grid gap-2"
-              x-data="{ busy: false, working: false, slots: [null, null, null, null],
+              x-data="{ busy: false, working: false, opening: false, slots: [null, null, null, null],
                         get count() { return this.slots.filter(Boolean).length },
-                        add() { const i = this.slots.indexOf(null); if (i !== -1) this.$refs['p' + i].click() },
+                        add() {
+                          const i = this.slots.indexOf(null);
+                          if (i === -1) return;
+                          /* ตั้ง data-busy ก่อนเปิดกล้อง: กลับจากกล้องแล้วหน้าเว็บจะโหลดรายการงานใหม่
+                             ถ้าไม่หยุดไว้ ฟอร์มถูกแทนที่และรูปที่เพิ่งถ่ายหายไป (บั๊กรอบแรก) */
+                          this.opening = true;
+                          this.$refs['p' + i].click();
+                        },
                         async pick(i, event) {
                           const input = event.target; let file = input.files[0];
+                          this.opening = false;
                           if (!file) return;
                           this.working = true;
                           try { if (window.tmppCompressImage) file = await window.tmppCompressImage(input); } finally { this.working = false }
@@ -49,12 +57,13 @@
                           this.slots[i] = URL.createObjectURL(file);
                         },
                         remove(i) { this.$refs['p' + i].value = ''; URL.revokeObjectURL(this.slots[i]); this.slots[i] = null } }"
-              @submit="busy = true" :data-busy="(count > 0 || busy) ? 'true' : null">
+              @submit="busy = true" :data-busy="(count > 0 || busy || opening || working) ? 'true' : null">
           {% csrf_token %}
           <input type="hidden" name="latitude" data-gps-lat>
           <input type="hidden" name="longitude" data-gps-lng>
           {% for i in "0123" %}
-            <input type="file" name="photos" accept="image/*" capture="environment" class="d-none" x-ref="p{{ i }}" @change="pick({{ i }}, $event)">
+            <input type="file" name="photos" accept="image/*" capture="environment" class="d-none" x-ref="p{{ i }}"
+                   @change="pick({{ i }}, $event)" @cancel="opening = false">
           {% endfor %}
 
           <div class="proof-picker" aria-label="รูปตอนส่งของ">
