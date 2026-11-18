@@ -41,17 +41,36 @@ def count(session) -> int:
     return sum(line['qty'] for line in _lines(session))
 
 
-def add(session, *, item, option_ids: list[str], qty: int, note: str = '') -> None:
+def validate_options(item, option_ids: list[str]) -> list[str]:
+    """ตัวเลือกต้องเป็นของเมนูนี้ และจำนวนที่เลือกในแต่ละกลุ่มต้องอยู่ในช่วงที่ร้านตั้ง"""
+    options = {str(o.pk): o for o in item.options.all()}
+    option_ids = sorted({str(o) for o in option_ids})
+    if not set(option_ids) <= set(options):
+        raise CartError('ตัวเลือกไม่ถูกต้อง ลองเปิดเมนูใหม่')
+    for group in item.option_groups.all():
+        picked = sum(1 for oid in option_ids if options[oid].group_id == group.pk)
+        if picked < group.min_select:
+            raise CartError(f'กรุณาเลือก "{group.name}"')
+        if picked > group.max_select:
+            raise CartError(f'"{group.name}" เลือกได้สูงสุด {group.max_select}')
+    return option_ids
+
+
+def get_line(session, key: str) -> dict | None:
+    return next((line for line in _lines(session) if line['key'] == key), None)
+
+
+def add(session, *, item, option_ids: list[str], qty: int, note: str = '', replace_key: str = '') -> None:
+    """replace_key: แก้ไขรายการเดิมในตะกร้า (กด "แก้ไข") = ลบบรรทัดเดิมแล้วใส่ใหม่"""
     if not item.is_available:
         raise CartError(f'{item.name} หมดแล้ว')
-    valid_options = {str(o.pk) for o in item.options.all()}
-    option_ids = sorted({str(o) for o in option_ids})
-    if not set(option_ids) <= valid_options:
-        raise CartError('ตัวเลือกไม่ถูกต้อง ลองเปิดเมนูใหม่')
+    option_ids = validate_options(item, option_ids)
     qty = max(1, min(int(qty), settings.CART_MAX_QUANTITY_PER_LINE))
     note = (note or '').strip()[:120]
 
     lines = _lines(session)
+    if replace_key:
+        lines = [line for line in lines if line['key'] != replace_key]
     if lines and branch_id(session) and branch_id(session) != str(item.branch_id):
         # เปลี่ยนสาขาแล้วกดเพิ่ม: ของเก่าเป็นของอีกสาขา สั่งรวมกันไม่ได้
         lines = []

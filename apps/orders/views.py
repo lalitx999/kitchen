@@ -11,8 +11,8 @@ from apps.catalog.selectors import menu_selector
 from apps.core.decorators import role_required
 
 from .forms import CheckoutForm
-from .services import cart_service, order_service, pricing_service
-from .selectors import order_selector
+from .services import cart_service, coupon_service, order_service, pricing_service
+from .selectors import coupon_selector, order_selector
 
 customer_required = role_required(Role.CUSTOMER)
 
@@ -37,7 +37,14 @@ def item_sheet(request, item_id):
     item = menu_selector.get_branch_item(branch, item_id) if branch else None
     if item is None or not item.is_available:
         return _toast(HttpResponse(status=204), 'เมนูนี้หมดแล้ว', 'warning')
-    return render(request, 'orders/_item_sheet.html', {'item': item})
+    # กด "แก้ไข" จากตะกร้า: เติมตัวเลือก/จำนวน/หมายเหตุเดิม แล้วบันทึกทับบรรทัดเดิม
+    line = cart_service.get_line(request.session, request.GET.get('line', ''))
+    if line and line['item_id'] != str(item.pk):
+        line = None
+    return render(request, 'orders/_item_sheet.html', {
+        'item': item, 'sections': item.option_sections(), 'line': line,
+        'selected_ids': line['option_ids'] if line else [],
+    })
 
 
 @require_POST
@@ -50,12 +57,19 @@ def cart_add(request):
         cart_service.add(
             request.session, item=item, option_ids=request.POST.getlist('option_ids'),
             qty=int(request.POST.get('qty') or 1), note=request.POST.get('note', ''),
+            replace_key=request.POST.get('replace_key', ''),
         )
     except (cart_service.CartError, ValueError) as exc:
         message = str(exc) if isinstance(exc, cart_service.CartError) else 'จำนวนไม่ถูกต้อง'
         return _toast(render(request, 'orders/_cart_badges.html', {'cart_count': cart_service.count(request.session)}), message, 'warning')
     response = render(request, 'orders/_cart_badges.html', {'cart_count': cart_service.count(request.session)})
-    return _toast(response, f'เพิ่ม {item.name} ลงตะกร้าแล้ว')
+    edited = bool(request.POST.get('replace_key'))
+    response = _toast(response, f'แก้ไข {item.name} แล้ว' if edited else f'เพิ่ม {item.name} ลงตะกร้าแล้ว')
+    # หน้าตะกร้าฟัง event นี้แล้วโหลดรายการใหม่ (แก้ไข/เพิ่มจาก "รายการอื่นที่คนมักสั่งด้วย")
+    trigger = json.loads(response['HX-Trigger'])
+    trigger['tmpp:cart-changed'] = True
+    response['HX-Trigger'] = json.dumps(trigger, ensure_ascii=True)
+    return response
 
 
 # --------------------------------------------------------------------------- ตะกร้า
@@ -65,9 +79,25 @@ def _cart_context(request):
     return {'cart': cart, 'branch': branch, 'shop': menu_selector.shop_status(branch)}
 
 
+def _cart_page_context(request):
+    context = _cart_context(request)
+    branch, cart = context['branch'], context['cart']
+    if branch is not None and not cart.is_empty:
+        context['suggestions'] = menu_selector.suggestion_items(
+            branch, exclude_ids=[line.item.pk for line in cart.lines],
+            popular_ids=order_selector.popular_item_ids(branch, days=30, limit=12),
+        )
+    return context
+
+
 @require_safe
 def cart_page(request):
-    return render(request, 'orders/cart.html', _cart_context(request))
+    context = _cart_page_context(request)
+    if request.htmx:
+        # โหลดรายการใหม่หลังแก้ไข/เพิ่มจากหน้าเลือกอาหาร (tmpp:cart-changed ใน app.js)
+        context.update(cart_count=cart_service.count(request.session), oob_badges=True)
+        return render(request, 'orders/_cart_body.html', context)
+    return render(request, 'orders/cart.html', context)
 
 
 @require_POST
@@ -78,7 +108,7 @@ def cart_update(request):
     except ValueError:
         qty = 0
     cart_service.set_quantity(request.session, request.POST.get('key', ''), qty)
-    context = _cart_context(request)
+    context = _cart_page_context(request)
     context['cart_count'] = cart_service.count(request.session)
     return render(request, 'orders/_cart_body.html', {**context, 'oob_badges': True})
 
@@ -105,6 +135,7 @@ def checkout(request):
                     address_text=data['address_text'], address_note=data['address_note'],
                     latitude=data['latitude'], longitude=data['longitude'], note=data['note'],
                 ),
+                coupon_code=data.get('coupon_code', ''),
             )
         except order_service.OrderError as exc:
             form.add_error(None, str(exc))
@@ -119,6 +150,7 @@ def checkout(request):
         'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
         'google_maps_map_id': settings.GOOGLE_MAPS_MAP_ID,
         'shop_location': context['branch'].location if context['branch'] else None,
+        'coupons': coupon_selector.checkout_coupons(context['branch']) if context['branch'] else [],
     })
     return render(request, 'orders/checkout.html', context)
 
@@ -129,13 +161,32 @@ def checkout_quote(request):
     """HTMX: คิดค่าส่งทันทีที่ได้พิกัด (ราคาจริงคิดซ้ำอีกครั้งตอนกดสั่ง)"""
     context = _cart_context(request)
     quote, error = None, ''
-    try:
-        point = pricing_service.make_point(request.POST.get('latitude'), request.POST.get('longitude'))
-        quote = pricing_service.quote_delivery(context['branch'], point)
-    except pricing_service.InvalidLocation as exc:
-        error = str(exc)
-    return render(request, 'orders/_quote.html', {**context, 'quote': quote, 'error': error,
-                                                  'max_km': context['branch'].max_delivery_km if context['branch'] else None})
+    has_location = bool(request.POST.get('latitude'))
+    if has_location:
+        try:
+            point = pricing_service.make_point(request.POST.get('latitude'), request.POST.get('longitude'))
+            quote = pricing_service.quote_delivery(context['branch'], point)
+        except pricing_service.InvalidLocation as exc:
+            error = str(exc)
+    # คูปอง: ตรวจเงื่อนไขและบอกส่วนลดก่อนสั่ง (ตอนสั่งจริงตรวจซ้ำพร้อมล็อกใน order_service)
+    coupon_code = coupon_service.normalize_code(request.POST.get('coupon_code', ''))
+    coupon_result, coupon_error = None, ''
+    if coupon_code:
+        try:
+            coupon_result = coupon_service.apply(
+                coupon_code, customer=request.user, branch=context['branch'], subtotal=context['cart'].subtotal,
+                delivery_fee=quote.fee if quote and quote.within_range else None,
+            )
+        except coupon_service.CouponError as exc:
+            coupon_error = str(exc)
+    discount = coupon_result.discount if coupon_result else 0
+    fee = quote.fee if quote and quote.within_range else 0
+    return render(request, 'orders/_quote.html', {
+        **context, 'quote': quote, 'error': error, 'has_location': has_location,
+        'max_km': context['branch'].max_delivery_km if context['branch'] else None,
+        'coupon_code': coupon_code, 'coupon_result': coupon_result, 'coupon_error': coupon_error,
+        'discount': discount, 'grand_total': max(0, context['cart'].subtotal + fee - discount),
+    })
 
 
 # --------------------------------------------------------------------------- ออเดอร์ของฉัน

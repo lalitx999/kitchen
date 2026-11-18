@@ -97,11 +97,62 @@ class MenuItem(UUIDModel):
     def __str__(self):
         return self.name
 
+    def option_sections(self) -> list[dict]:
+        """
+        ตัวเลือกจัดเป็นกลุ่มสำหรับแสดงผล (ใช้ข้อมูลที่ prefetch มาแล้ว ไม่ query เพิ่ม)
+        ตัวเลือกที่ไม่มีกลุ่มรวมไว้ท้ายสุด ชื่อ "ตัวเลือกเพิ่มเติม" เลือกได้ไม่จำกัด
+        """
+        options = list(self.options.all())
+        sections = [{'group': g, 'options': [o for o in options if o.group_id == g.pk]}
+                    for g in self.option_groups.all()]
+        loose = [o for o in options if o.group_id is None]
+        if loose:
+            sections.append({'group': None, 'options': loose})
+        return [s for s in sections if s['options']]
+
+    def empty_option_groups(self) -> list:
+        """กลุ่มที่ยังไม่มีตัวเลือก (ลูกค้ายังไม่เห็น) แสดงเตือนใน Console"""
+        used = {o.group_id for o in self.options.all()}
+        return [g for g in self.option_groups.all() if g.pk not in used]
+
+
+class MenuOptionGroup(UUIDModel):
+    """
+    กลุ่มตัวเลือก เช่น "เลือกเนื้อ" (ต้องเลือก 1) · "ท็อปปิ้ง" (ไม่บังคับ เลือกได้สูงสุด 3)
+    min_select = 0 คือไม่บังคับ · ตรวจซ้ำที่เซิร์ฟเวอร์ตอนใส่ตะกร้า (ไม่เชื่อหน้าเว็บ)
+    """
+
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='option_groups')
+    name = models.CharField('ชื่อกลุ่ม', max_length=80)
+    min_select = models.PositiveSmallIntegerField('ต้องเลือกอย่างน้อย', default=0)
+    max_select = models.PositiveSmallIntegerField('เลือกได้สูงสุด', default=1)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        db_table = 'menu_option_groups'
+        ordering = ['sort_order', 'created_at']
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_required(self) -> bool:
+        return self.min_select > 0
+
+    @property
+    def rule_label(self) -> str:
+        if self.min_select and self.min_select == self.max_select:
+            return f'ต้องเลือก {self.min_select}'
+        if self.min_select:
+            return f'ต้องเลือก {self.min_select}-{self.max_select}'
+        return f'ไม่จำเป็นต้องระบุ, สูงสุด {self.max_select}'
+
 
 class MenuOption(UUIDModel):
-    """ตัวเลือกเสริม เลือกได้หลายอัน เช่น ไข่ดาว +10, พิเศษ +15"""
+    """ตัวเลือกเสริม เช่น ไข่ดาว +10 · อยู่ในกลุ่มหรือไม่มีกลุ่มก็ได้ (ไม่มีกลุ่ม = เลือกได้หลายอัน)"""
 
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='options')
+    group = models.ForeignKey(MenuOptionGroup, on_delete=models.CASCADE, null=True, blank=True, related_name='choices')
     name = models.CharField('ชื่อตัวเลือก', max_length=80)
     extra_price = models.DecimalField(
         'ราคาเพิ่ม', max_digits=8, decimal_places=2, default=Decimal('0'),

@@ -1,26 +1,30 @@
 {% load humanize %}
+{# การ์ดเมนู: แตะการ์ดเปิดหน้าเลือกอาหาร (เหมือนแอป) · ปุ่ม + เมนูที่ไม่มีตัวเลือกใส่ตะกร้าได้ทันที #}
 <div class="col">
   <div class="card-tm menu-card">
-    <div class="menu-thumb">
-      {% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy">{% else %}<i class="bi bi-image fs-1"></i>{% endif %}
-    </div>
-    <div class="p-3 d-flex flex-column gap-1 flex-grow-1">
-      <div class="fw-bold">{{ item.name }}</div>
-      {% if item.description %}<div class="small text-muted-tm">{{ item.description }}</div>{% endif %}
-      <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
-        <span class="price">฿{{ item.price|floatformat:"-2"|intcomma }}</span>
-        {% if item.options.all %}
-          <button type="button" class="btn btn-action btn-sm btn-pill btn-icon" aria-label="เลือก {{ item.name }}"
-                  hx-get="{% url 'orders:item_sheet' item.pk %}" hx-target="#item-sheet-body" hx-swap="innerHTML">
-            <i class="bi bi-plus-lg"></i>
-          </button>
-        {% else %}
-          <form hx-post="{% url 'orders:cart_add' %}" hx-swap="none" hx-disabled-elt="find button">
-            <input type="hidden" name="item_id" value="{{ item.pk }}">
-            <button type="submit" class="btn btn-action btn-sm btn-pill btn-icon" aria-label="ใส่ {{ item.name }} ลงตะกร้า"><i class="bi bi-plus-lg"></i></button>
-          </form>
-        {% endif %}
-      </div>
+    <button type="button" class="menu-card-open" aria-label="ดู {{ item.name }}"
+            hx-get="{% url 'orders:item_sheet' item.pk %}" hx-target="#item-sheet-body" hx-swap="innerHTML">
+      <span class="menu-thumb">
+        {% if item.image %}<img src="{{ item.image.url }}" alt="" loading="lazy">{% else %}<i class="bi bi-image fs-1"></i>{% endif %}
+      </span>
+      <span class="p-3 pb-0 d-flex flex-column gap-1 text-start">
+        <span class="fw-bold">{{ item.name }}</span>
+        {% if item.description %}<span class="small text-muted-tm menu-desc">{{ item.description }}</span>{% endif %}
+      </span>
+    </button>
+    <div class="d-flex align-items-center justify-content-between mt-auto p-3 pt-2">
+      <span class="price">฿{{ item.price|floatformat:"-2"|intcomma }}</span>
+      {% if item.options.all %}
+        <button type="button" class="btn btn-action btn-sm btn-pill btn-icon" aria-label="เลือก {{ item.name }}"
+                hx-get="{% url 'orders:item_sheet' item.pk %}" hx-target="#item-sheet-body" hx-swap="innerHTML">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      {% else %}
+        <form hx-post="{% url 'orders:cart_add' %}" hx-swap="none" hx-disabled-elt="find button">
+          <input type="hidden" name="item_id" value="{{ item.pk }}">
+          <button type="submit" class="btn btn-action btn-sm btn-pill btn-icon" aria-label="ใส่ {{ item.name }} ลงตะกร้า"><i class="bi bi-plus-lg"></i></button>
+        </form>
+      {% endif %}
     </div>
   </div>
 </div>

@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.db import IntegrityError, transaction
 
-from ..models import Branch, Category, MenuItem, MenuOption
+from ..models import Branch, Category, MenuItem, MenuOption, MenuOptionGroup
 
 ITEM_FIELDS = ('name', 'description', 'price', 'category', 'is_available', 'sort_order')
 
@@ -92,9 +92,27 @@ def delete_category(category: Category) -> int:
     return moved
 
 
-def add_option(item: MenuItem, *, name: str, extra_price: Decimal) -> MenuOption:
+def add_option(item: MenuItem, *, name: str, extra_price: Decimal, group=None) -> MenuOption:
+    if group is not None and group.menu_item_id != item.pk:
+        raise ValueError('กลุ่มไม่ใช่ของเมนูนี้')
     next_order = item.options.count()
-    return MenuOption.objects.create(menu_item=item, name=name.strip(), extra_price=extra_price, sort_order=next_order)
+    return MenuOption.objects.create(menu_item=item, group=group, name=name.strip(), extra_price=extra_price,
+                                     sort_order=next_order)
+
+
+def add_option_group(item: MenuItem, *, name: str, min_select: int, max_select: int) -> MenuOptionGroup:
+    max_select = max(1, max_select)
+    min_select = max(0, min(min_select, max_select))
+    return MenuOptionGroup.objects.create(menu_item=item, name=name.strip(), min_select=min_select,
+                                          max_select=max_select, sort_order=item.option_groups.count())
+
+
+def delete_option_group(item: MenuItem, group_id) -> MenuOptionGroup | None:
+    """ลบกลุ่มพร้อมตัวเลือกในกลุ่ม (ตะกร้าที่มีตัวเลือกนั้นจะถูกตัดออกเองตอนคิดราคา)"""
+    group = item.option_groups.filter(pk=group_id).first()
+    if group:
+        group.delete()
+    return group
 
 
 def delete_option(item: MenuItem, option_id) -> MenuOption | None:

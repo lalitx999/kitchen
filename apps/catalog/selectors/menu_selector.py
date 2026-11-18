@@ -6,7 +6,7 @@ from django.db.models import Prefetch, QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from ..models import Branch, Category, MenuItem, MenuOption
+from ..models import Branch, Category, MenuItem, MenuOption, MenuOptionGroup
 
 
 CUSTOMER_BRANCH_KEY = 'branch_id'        # สาขาที่ลูกค้าเลือก (session)
@@ -105,7 +105,13 @@ def shop_status(branch: Branch | None, at: datetime | None = None) -> ShopStatus
 
 
 def _options_prefetch():
-    return Prefetch('options', queryset=MenuOption.objects.only('id', 'menu_item_id', 'name', 'extra_price', 'sort_order'))
+    return Prefetch('options', queryset=MenuOption.objects.only(
+        'id', 'menu_item_id', 'group_id', 'name', 'extra_price', 'sort_order'))
+
+
+def _groups_prefetch():
+    return Prefetch('option_groups', queryset=MenuOptionGroup.objects.only(
+        'id', 'menu_item_id', 'name', 'min_select', 'max_select', 'sort_order'))
 
 
 def storefront_menu(branch: Branch) -> tuple[list[Category], list[MenuItem]]:
@@ -116,7 +122,7 @@ def storefront_menu(branch: Branch) -> tuple[list[Category], list[MenuItem]]:
     item_qs = (
         MenuItem.objects.filter(branch=branch, is_available=True)
         .only('id', 'branch_id', 'category_id', 'name', 'description', 'price', 'image', 'sort_order')
-        .prefetch_related(_options_prefetch())
+        .prefetch_related(_options_prefetch(), _groups_prefetch())
     )
     items = list(item_qs)
     categories = list(Category.objects.filter(branch=branch).only('id', 'name', 'sort_order'))
@@ -133,7 +139,7 @@ def console_menu(branch: Branch) -> tuple[list[Category], list[MenuItem]]:
     items = list(
         MenuItem.objects.filter(branch=branch)
         .select_related('category')
-        .prefetch_related(_options_prefetch())
+        .prefetch_related(_options_prefetch(), _groups_prefetch())
     )
     categories = list(Category.objects.filter(branch=branch))
     by_category: dict = {}
@@ -145,7 +151,8 @@ def console_menu(branch: Branch) -> tuple[list[Category], list[MenuItem]]:
 
 
 def get_branch_item(branch: Branch, item_id) -> MenuItem:
-    return get_object_or_404(MenuItem.objects.prefetch_related(_options_prefetch()), pk=item_id, branch=branch)
+    return get_object_or_404(MenuItem.objects.prefetch_related(_options_prefetch(), _groups_prefetch()),
+                             pk=item_id, branch=branch)
 
 
 def get_branch_category(branch: Branch, category_id) -> Category:
@@ -157,10 +164,24 @@ def items_for_pricing(branch: Branch, item_ids) -> dict:
     qs: QuerySet[MenuItem] = (
         MenuItem.objects.filter(branch=branch, pk__in=list(item_ids))
         .only('id', 'name', 'price', 'is_available', 'image', 'branch_id')
-        .prefetch_related(_options_prefetch())
+        .prefetch_related(_options_prefetch(), _groups_prefetch())
     )
     return {str(item.pk): item for item in qs}
 
 
 def category_choices(branch: Branch) -> QuerySet[Category]:
     return Category.objects.filter(branch=branch).only('id', 'name')
+
+
+def suggestion_items(branch: Branch, *, exclude_ids, popular_ids=(), limit: int = 8) -> list[MenuItem]:
+    """
+    "รายการอื่นที่คนมักสั่งด้วย" ในหน้าตะกร้า: เมนูขายดี (popular_ids จาก orders) ก่อน แล้วเติมด้วยเมนูอื่น
+    ไม่เอาเมนูที่อยู่ในตะกร้าแล้ว · 1 query
+    """
+    exclude = {str(i) for i in exclude_ids}
+    items = [i for i in MenuItem.objects.filter(branch=branch, is_available=True)
+             .only('id', 'name', 'price', 'image', 'sort_order').prefetch_related(_options_prefetch())
+             if str(i.pk) not in exclude]
+    rank = {str(pk): n for n, pk in enumerate(popular_ids)}
+    items.sort(key=lambda i: (rank.get(str(i.pk), len(rank)), i.sort_order, i.name))
+    return items[:limit]

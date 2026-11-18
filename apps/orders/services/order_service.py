@@ -3,6 +3,7 @@
 """
 import secrets
 from dataclasses import dataclass
+from decimal import Decimal
 
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -11,7 +12,7 @@ from apps.accounts.models import CustomerAddress
 from apps.catalog.selectors import menu_selector
 
 from ..models import Order, OrderItem, OrderStatus, OrderStatusLog
-from . import pricing_service
+from . import coupon_service, pricing_service
 from .cart_service import PricedCart
 
 S = OrderStatus
@@ -71,7 +72,7 @@ def _remember_address(customer, details: DeliveryDetails, point) -> None:
         CustomerAddress.objects.filter(pk__in=stale).delete()
 
 
-def place_order(*, customer, branch, cart: PricedCart, details: DeliveryDetails) -> Order:
+def place_order(*, customer, branch, cart: PricedCart, details: DeliveryDetails, coupon_code: str = '') -> Order:
     status = menu_selector.shop_status(branch)
     if not status.accepting:
         raise OrderError(status.reason)
@@ -94,9 +95,19 @@ def place_order(*, customer, branch, cart: PricedCart, details: DeliveryDetails)
     for _attempt in range(5):
         try:
             with transaction.atomic():
+                coupon, discount = None, Decimal('0')
+                if coupon_code:
+                    try:
+                        result = coupon_service.lock_and_check(coupon_code, customer=customer, branch=branch,
+                                                               subtotal=subtotal, delivery_fee=quote.fee)
+                    except coupon_service.CouponError as exc:
+                        raise OrderError(f'คูปอง: {exc}') from exc
+                    coupon, discount = result.coupon, result.discount
+                total = max(Decimal('0'), subtotal + quote.fee - discount)
                 order = Order.objects.create(
                     order_number=_new_order_number(), customer=customer, branch=branch,
-                    subtotal=subtotal, delivery_fee=quote.fee, total=subtotal + quote.fee,
+                    subtotal=subtotal, delivery_fee=quote.fee, total=total,
+                    discount=discount, coupon=coupon, coupon_code=coupon.code if coupon else '',
                     rider_fee=quote.rider_fee, distance_km=quote.distance_km,
                     recipient_name=details.recipient_name.strip(), recipient_phone=details.recipient_phone,
                     address_text=details.address_text.strip(), address_note=details.address_note.strip(),

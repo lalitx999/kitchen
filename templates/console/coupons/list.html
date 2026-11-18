@@ -1,0 +1,56 @@
+{% extends "layouts/console.html" %}
+{% block console_title %}คูปอง{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4" style="max-width: 1100px;">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+      <h1 class="h4 fw-black mb-0">คูปองส่วนลด</h1>
+      <div class="small text-muted-tm">เช่น ซื้อครบ 200 ลด 30 · ลด 10% สูงสุด 50 · ส่งฟรี · ส่วนลดหักจากยอดที่ลูกค้าจ่าย ค่าไรเดอร์ไม่ลด</div>
+    </div>
+    <a href="{% url 'console:coupon_create' %}" class="btn btn-primary btn-sm btn-icon"><i class="bi bi-plus-circle"></i>เพิ่มคูปอง</a>
+  </div>
+
+  {% if coupons %}
+    <div class="d-grid gap-3">
+      {% for c in coupons %}
+        <article class="card-tm card-tm-body p-3 p-md-4{% if not c.is_active %} opacity-75{% endif %}">
+          <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+            <div class="min-w-0">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="coupon-code font-mono-num">{{ c.code }}</span>
+                <span class="fw-bold">{{ c.name }}</span>
+                {% if c.is_active %}<span class="status-badge status-completed">เปิดใช้งาน</span>{% else %}<span class="status-badge status-cancelled">ปิดอยู่</span>{% endif %}
+                {% if not c.show_in_checkout %}<span class="tm-pill tm-pill-muted">รหัสลับ</span>{% endif %}
+              </div>
+              <div class="small text-muted-tm mt-1">{{ c.summary }}</div>
+              <div class="small-xs text-muted-tm mt-1 d-flex flex-wrap gap-3">
+                <span><i class="bi bi-people me-1"></i>ใช้แล้ว {{ c.used }}{% if c.usage_limit %}/{{ c.usage_limit }}{% endif %} ครั้ง</span>
+                <span>ต่อคน {% if c.per_customer_limit %}{{ c.per_customer_limit }} ครั้ง{% else %}ไม่จำกัด{% endif %}</span>
+                <span><i class="bi bi-shop me-1"></i>{% if c.branch %}{{ c.branch.name }}{% else %}ทุกสาขา{% endif %}</span>
+                {% if c.starts_at or c.ends_at %}<span><i class="bi bi-calendar me-1"></i>{% if c.starts_at %}{{ c.starts_at|date:"j M H:i" }}{% else %}ตอนนี้{% endif %} - {% if c.ends_at %}{{ c.ends_at|date:"j M H:i" }}{% else %}ไม่หมดอายุ{% endif %}</span>{% endif %}
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <a href="{% url 'console:coupon_edit' c.pk %}" class="btn btn-outline-ink btn-sm btn-icon"><i class="bi bi-pencil"></i>แก้ไข</a>
+              <form method="post" action="{% url 'console:coupon_toggle' c.pk %}">{% csrf_token %}
+                <input type="hidden" name="active" value="{% if c.is_active %}0{% else %}1{% endif %}">
+                <button class="btn btn-sm {% if c.is_active %}btn-outline-ink{% else %}btn-action{% endif %}">{% if c.is_active %}ปิด{% else %}เปิด{% endif %}</button>
+              </form>
+              <form method="post" action="{% url 'console:coupon_delete' c.pk %}" onsubmit="return confirm('ลบคูปอง {{ c.code|escapejs }}? (ถ้าแค่หยุดชั่วคราว กด ปิด แทน)');">{% csrf_token %}
+                <button class="btn btn-sm btn-outline-ink text-danger" aria-label="ลบคูปอง {{ c.code }}"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card-tm card-tm-body text-center py-5">
+      <i class="bi bi-ticket-perforated fs-1 text-muted-tm"></i>
+      <div class="fw-bold mt-2">ยังไม่มีคูปอง</div>
+      <a href="{% url 'console:coupon_create' %}" class="btn btn-primary btn-sm mt-3">เพิ่มคูปองแรก</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

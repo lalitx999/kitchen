@@ -1,20 +1,35 @@
 {% load humanize %}
-{# ผลคิดค่าส่ง: แสดงในกล่องตำแหน่ง + อัปเดตสรุปยอดฝั่งขวาด้วย out-of-band swap #}
-{% if error %}
-  <div class="alert alert-warning small mb-0">{{ error }}</div>
-{% elif quote %}
-  {% if quote.within_range %}
-    <div class="d-flex align-items-center gap-2 small"><i class="bi bi-signpost-split text-brand"></i>ระยะประมาณ {{ quote.distance_km }} กม. · ค่าส่ง ฿{{ quote.fee|floatformat:"-2" }}</div>
-  {% else %}
-    <div class="alert alert-danger small mb-0">ไกลเกินระยะส่ง ({{ quote.distance_km }} กม. ส่งได้ไม่เกิน {{ max_km }} กม.)</div>
+{# ผลคิดค่าส่ง + คูปอง: แสดงในกล่องตำแหน่ง แล้วอัปเดตสรุปยอดและสถานะคูปองด้วย out-of-band swap #}
+{% if has_location %}
+  {% if error %}
+    <div class="alert alert-warning small mb-0">{{ error }}</div>
+  {% elif quote %}
+    {% if quote.within_range %}
+      <div class="d-flex align-items-center gap-2 small"><i class="bi bi-signpost-split text-brand"></i>ระยะประมาณ {{ quote.distance_km }} กม. · ค่าส่ง ฿{{ quote.fee|floatformat:"-2" }}</div>
+    {% else %}
+      <div class="alert alert-danger small mb-0">ไกลเกินระยะส่ง ({{ quote.distance_km }} กม. ส่งได้ไม่เกิน {{ max_km }} กม.)</div>
+    {% endif %}
   {% endif %}
 {% endif %}
 
 <div id="quote-summary" hx-swap-oob="true" class="d-grid gap-1">
   {% if quote and quote.within_range %}
     <div class="d-flex justify-content-between"><span class="text-muted-tm">ค่าส่ง ({{ quote.distance_km }} กม.)</span><span class="font-mono-num">฿{{ quote.fee|floatformat:"-2" }}</span></div>
-    <div class="d-flex justify-content-between fs-5 fw-black mt-2"><span>รวม</span><span class="text-brand font-mono-num">฿{{ cart.subtotal|add:quote.fee|floatformat:"-2"|intcomma }}</span></div>
   {% else %}
     <div class="d-flex justify-content-between"><span class="text-muted-tm">ค่าส่ง</span><span class="text-muted-tm">{% if quote %}เกินระยะ{% else %}รอปักหมุด{% endif %}</span></div>
+  {% endif %}
+  {% if coupon_result and discount %}
+    <div class="d-flex justify-content-between text-action fw-bold"><span><i class="bi bi-ticket-perforated me-1"></i>ส่วนลด {{ coupon_result.coupon.code }}</span><span class="font-mono-num">-฿{{ discount|floatformat:"-2"|intcomma }}</span></div>
+  {% endif %}
+  {% if quote and quote.within_range %}
+    <div class="d-flex justify-content-between fs-5 fw-black mt-2"><span>รวม</span><span class="text-brand font-mono-num">฿{{ grand_total|floatformat:"-2"|intcomma }}</span></div>
+  {% endif %}
+</div>
+
+<div id="coupon-status" hx-swap-oob="true" class="small mt-2">
+  {% if coupon_error %}
+    <span class="text-danger"><i class="bi bi-x-circle me-1"></i>{{ coupon_error }}</span>
+  {% elif coupon_result %}
+    <span class="text-action fw-bold"><i class="bi bi-check-circle me-1"></i>{{ coupon_result.coupon.name }}{% if not discount %} · ส่วนลดคิดหลังปักหมุด{% endif %}</span>
   {% endif %}
 </div>

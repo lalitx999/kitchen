@@ -1,47 +1,71 @@
 {% load humanize %}
-{# เนื้อหา modal: เลือกตัวเลือก + จำนวน + หมายเหตุ · ยอดรวมคิดใน Alpine เพื่อแสดงผล ราคาจริงคิดที่เซิร์ฟเวอร์ #}
-<form hx-post="{% url 'orders:cart_add' %}" hx-swap="none" hx-disabled-elt="find button[type=submit]"
-      x-data="{ qty: 1, base: {{ item.price|stringformat:'f' }}, extras: {}, get unit() { return this.base + Object.values(this.extras).reduce((a, b) => a + b, 0) } }">
+{% comment %}
+หน้าเลือกอาหาร (เต็มจอบนมือถือ): รูปเต็มความกว้าง · กลุ่มตัวเลือก (ต้องเลือก/สูงสุด) · หมายเหตุ · จำนวน
+ปุ่มล่างแสดงยอดรวมสด (คิดใน Alpine เพื่อแสดงผลเท่านั้น ราคาจริง/กติกากลุ่มตรวจซ้ำที่เซิร์ฟเวอร์)
+line = แก้ไขรายการเดิมจากตะกร้า
+{% endcomment %}
+<form class="item-sheet" hx-post="{% url 'orders:cart_add' %}" hx-swap="none" hx-disabled-elt="find button[type=submit]"
+      x-data="tmppItemSheet(JSON.parse($el.querySelector('[data-sheet-config]').textContent))" @submit="if (!valid) $event.preventDefault()">
+  <script type="application/json" data-sheet-config>{"base": {{ item.price|stringformat:'f' }}, "qty": {{ line.qty|default:1 }}, "selected": [{% for i in selected_ids %}"{{ i }}"{% if not forloop.last %},{% endif %}{% endfor %}], "groups": [{% for s in sections %}{"key": "{% if s.group %}{{ s.group.pk }}{% else %}loose{% endif %}", "min": {% if s.group %}{{ s.group.min_select }}{% else %}0{% endif %}, "max": {% if s.group %}{{ s.group.max_select }}{% else %}99{% endif %}, "options": [{% for o in s.options %}{"id": "{{ o.pk }}", "price": {{ o.extra_price|stringformat:'f' }}}{% if not forloop.last %},{% endif %}{% endfor %}]}{% if not forloop.last %},{% endif %}{% endfor %}]}</script>
   <input type="hidden" name="item_id" value="{{ item.pk }}">
-  {% if item.image %}<img src="{{ item.image.url }}" alt="" class="w-100 object-fit-cover" style="aspect-ratio: 16/9; border-radius: var(--tm-radius-lg) var(--tm-radius-lg) 0 0;">{% endif %}
-  <div class="modal-header border-0 pb-0">
-    <div>
-      <h2 class="modal-title h5 fw-black mb-0">{{ item.name }}</h2>
-      {% if item.description %}<div class="small text-muted-tm">{{ item.description }}</div>{% endif %}
+  {% if line %}<input type="hidden" name="replace_key" value="{{ line.key }}">{% endif %}
+
+  <div class="item-sheet-scroll">
+    <div class="item-sheet-hero{% if not item.image %} is-empty{% endif %}">
+      {% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}">{% else %}<i class="bi bi-image"></i>{% endif %}
+      <button type="button" class="sheet-round-btn" data-bs-dismiss="modal" aria-label="ปิด"><i class="bi bi-x-lg"></i></button>
     </div>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
-  </div>
-  <div class="modal-body">
-    {% if item.options.all %}
-      <div class="small fw-bold text-muted-tm mb-2">ตัวเลือกเพิ่ม (เลือกได้หลายอย่าง)</div>
-      <div class="d-grid gap-2 mb-3">
-        {% for option in item.options.all %}
-          <label class="d-flex align-items-center justify-content-between gap-2 border rounded-3 px-3 py-2">
-            <span class="d-flex align-items-center gap-2">
-              <input class="form-check-input m-0" type="checkbox" name="option_ids" value="{{ option.pk }}"
-                     @change="$event.target.checked ? extras['{{ option.pk }}'] = {{ option.extra_price|stringformat:'f' }} : delete extras['{{ option.pk }}']">
-              <span>{{ option.name }}</span>
-            </span>
-            <span class="small text-muted-tm">{% if option.extra_price %}+฿{{ option.extra_price|floatformat:"-2" }}{% else %}ฟรี{% endif %}</span>
+
+    <section class="item-sheet-section">
+      <div class="d-flex align-items-start justify-content-between gap-3">
+        <h2 class="h4 fw-black mb-0">{{ item.name }}</h2>
+        <div class="text-end flex-none">
+          <div class="h4 fw-black mb-0 font-mono-num">{{ item.price|floatformat:"-2"|intcomma }}</div>
+          {% if sections %}<div class="small text-muted-tm">ราคาเริ่มต้น</div>{% endif %}
+        </div>
+      </div>
+      {% if item.description %}<p class="small text-muted-tm mb-0 mt-2">{{ item.description }}</p>{% endif %}
+    </section>
+
+    {% for s in sections %}
+      <section class="item-sheet-section" x-data="{ g: groups[{{ forloop.counter0 }}] }">
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+          <h3 class="h6 fw-black mb-0">{% if s.group %}{{ s.group.name }}{% else %}ตัวเลือกเพิ่มเติม{% endif %}</h3>
+          <span class="sheet-chip" :class="g.min && count(g) < g.min && 'is-required'">{% if s.group %}{{ s.group.rule_label }}{% else %}ไม่จำเป็นต้องระบุ{% endif %}</span>
+        </div>
+        {% for o in s.options %}
+          <label class="sheet-option" :class="isDisabled(g, '{{ o.pk }}') && 'is-disabled'">
+            <input type="checkbox" class="sheet-check" name="option_ids" value="{{ o.pk }}"
+                   :checked="isChecked('{{ o.pk }}')" :disabled="isDisabled(g, '{{ o.pk }}')" @change="toggle(g, '{{ o.pk }}')">
+            <span class="flex-grow-1">{{ o.name }}</span>
+            <span class="text-muted-tm">{% if o.extra_price %}+{{ o.extra_price|floatformat:"-2"|intcomma }}{% else %}ฟรี{% endif %}</span>
           </label>
         {% endfor %}
+      </section>
+    {% endfor %}
+
+    <section class="item-sheet-section">
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+        <label class="h6 fw-black mb-0" for="sheet-note">หมายเหตุถึงร้านอาหาร</label>
+        <span class="sheet-chip">ไม่จำเป็นต้องระบุ</span>
       </div>
-    {% endif %}
-    <label class="form-label" for="sheet-note">หมายเหตุ</label>
-    <input class="form-control mb-3" id="sheet-note" name="note" maxlength="120" placeholder="เช่น ไม่เผ็ด">
-    <div class="d-flex align-items-center justify-content-between">
-      <span class="small fw-bold text-muted-tm">จำนวน</span>
-      <div class="d-flex align-items-center gap-2">
-        <button type="button" class="btn btn-outline-ink btn-sm" @click="qty = Math.max(1, qty - 1)" aria-label="ลด"><i class="bi bi-dash-lg"></i></button>
-        <input type="number" name="qty" x-model.number="qty" min="1" max="20" class="form-control form-control-sm text-center" style="width: 4rem;" aria-label="จำนวน">
-        <button type="button" class="btn btn-outline-ink btn-sm" @click="qty = Math.min(20, qty + 1)" aria-label="เพิ่ม"><i class="bi bi-plus-lg"></i></button>
+      <textarea class="form-control sheet-note" id="sheet-note" name="note" maxlength="120" rows="3"
+                placeholder="ระบุรายละเอียดคำขอ เช่น ไม่เผ็ด ไม่ใส่ผัก (ขึ้นอยู่กับดุลยพินิจของร้าน)">{{ line.note|default:"" }}</textarea>
+      <div class="sheet-stepper" role="group" aria-label="จำนวน">
+        <button type="button" class="sheet-step" @click="qty = Math.max(1, qty - 1)" :disabled="qty <= 1" aria-label="ลดจำนวน"><i class="bi bi-dash-lg"></i></button>
+        <span class="sheet-qty font-mono-num" x-text="qty">{{ line.qty|default:1 }}</span>
+        <button type="button" class="sheet-step" @click="qty = Math.min(20, qty + 1)" :disabled="qty >= 20" aria-label="เพิ่มจำนวน"><i class="bi bi-plus-lg"></i></button>
+        <input type="hidden" name="qty" :value="qty" value="{{ line.qty|default:1 }}">
       </div>
-    </div>
+    </section>
   </div>
-  <div class="modal-footer border-0 pt-0">
-    <button type="submit" class="btn btn-action btn-lg w-100 btn-icon justify-content-between">
-      <span><span class="spinner-border spinner-border-sm htmx-indicator me-1"></span>ใส่ตะกร้า</span>
-      <span x-text="'฿' + (unit * qty).toLocaleString('th-TH')">฿{{ item.price|floatformat:"-2" }}</span>
+
+  <div class="item-sheet-footer">
+    <div class="small text-danger text-center mb-2" x-show="!valid" x-cloak x-text="missingText"></div>
+    <button type="submit" class="btn btn-action btn-lg w-100 rounded-pill fw-bold" :disabled="!valid">
+      <span class="spinner-border spinner-border-sm htmx-indicator me-1"></span>
+      <span>{% if line %}บันทึกการแก้ไข{% else %}เพิ่มไปยังตะกร้า{% endif %}</span>
+      <span x-text="' - ' + total.toLocaleString('th-TH')"> - {{ item.price|floatformat:"-2"|intcomma }}</span>
     </button>
   </div>
 </form>

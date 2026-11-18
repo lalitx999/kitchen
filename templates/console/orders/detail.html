@@ -31,6 +31,7 @@
         <div class="border-top pt-3 d-grid gap-1 small">
           <div class="d-flex justify-content-between"><span class="text-muted-tm">ค่าอาหาร</span><span>฿{{ order.subtotal|floatformat:"-2"|intcomma }}</span></div>
           <div class="d-flex justify-content-between"><span class="text-muted-tm">ค่าส่ง ({{ order.distance_km }} กม.)</span><span>฿{{ order.delivery_fee|floatformat:"-2" }}</span></div>
+          {% if order.discount %}<div class="d-flex justify-content-between text-action fw-bold"><span><i class="bi bi-ticket-perforated me-1"></i>ส่วนลด{% if order.coupon_code %} {{ order.coupon_code }}{% endif %}</span><span class="font-mono-num">-฿{{ order.discount|floatformat:"-2" }}</span></div>{% endif %}
           <div class="d-flex justify-content-between fw-black fs-6"><span>ลูกค้าจ่าย</span><span class="text-brand">฿{{ order.total|floatformat:"-2"|intcomma }}</span></div>
           <div class="d-flex justify-content-between text-muted-tm"><span>ส่วนของไรเดอร์</span><span>฿{{ order.rider_fee|floatformat:"-2" }}</span></div>
         </div>

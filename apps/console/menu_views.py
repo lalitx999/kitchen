@@ -4,7 +4,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_safe, require_http_methods, require_POST
 
 from apps.accounts.models import Role
-from apps.catalog.forms import CategoryForm, MenuItemForm, MenuOptionForm
+from apps.catalog.forms import CategoryForm, MenuItemForm, MenuOptionForm, MenuOptionGroupForm
 from apps.catalog.selectors import menu_selector
 from apps.catalog.services import branch_service, menu_service
 from apps.core.decorators import role_required
@@ -105,10 +105,40 @@ def option_add(request, item_id):
     item = menu_selector.get_branch_item(branch, item_id)
     form = MenuOptionForm(request.POST)
     if form.is_valid():
-        option = menu_service.add_option(item, **form.cleaned_data)
-        _audit(request, 'menu_option.create', item, {'option': [None, str(option)]})
+        data = dict(form.cleaned_data)
+        group_id = data.pop('group')
+        group = next((g for g in item.option_groups.all() if g.pk == group_id), None) if group_id else None
+        option = menu_service.add_option(item, group=group, **data)
+        _audit(request, 'menu_option.create', item, {'option': [None, f'{group.name}: {option}' if group else str(option)]})
     else:
         messages.error(request, 'ตัวเลือกไม่ถูกต้อง: ' + ' '.join(e for errs in form.errors.values() for e in errs))
+    return redirect('console:menu_item_edit', item_id=item.pk)
+
+
+@owner_required
+@require_POST
+def option_group_add(request, item_id):
+    branch = branch_service.get_console_branch(request.session)
+    item = menu_selector.get_branch_item(branch, item_id)
+    form = MenuOptionGroupForm(request.POST)
+    if form.is_valid():
+        data = form.cleaned_data
+        group = menu_service.add_option_group(item, name=data['name'], min_select=data['min_select'],
+                                              max_select=data['max_select'])
+        _audit(request, 'menu_option_group.create', item, {'group': [None, f'{group.name} ({group.rule_label})']})
+    else:
+        messages.error(request, 'กลุ่มไม่ถูกต้อง: ' + ' '.join(e for errs in form.errors.values() for e in errs))
+    return redirect('console:menu_item_edit', item_id=item.pk)
+
+
+@owner_required
+@require_POST
+def option_group_delete(request, item_id, group_id):
+    branch = branch_service.get_console_branch(request.session)
+    item = menu_selector.get_branch_item(branch, item_id)
+    group = menu_service.delete_option_group(item, group_id)
+    if group:
+        _audit(request, 'menu_option_group.delete', item, {'group': [group.name, None]})
     return redirect('console:menu_item_edit', item_id=item.pk)
 
 

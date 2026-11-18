@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import branch_views, menu_views, order_views, people_views, shop_views, slip_views, views
+from . import branch_views, coupon_views, menu_views, order_views, people_views, shop_views, slip_views, views
 
 app_name = 'console'
 
@@ -25,10 +25,17 @@ urlpatterns = [
     path('menu/items/<uuid:item_id>/delete/', menu_views.item_delete, name='menu_item_delete'),
     path('menu/items/<uuid:item_id>/options/', menu_views.option_add, name='menu_option_add'),
     path('menu/items/<uuid:item_id>/options/<uuid:option_id>/delete/', menu_views.option_delete, name='menu_option_delete'),
+    path('menu/items/<uuid:item_id>/groups/', menu_views.option_group_add, name='menu_option_group_add'),
+    path('menu/items/<uuid:item_id>/groups/<uuid:group_id>/delete/', menu_views.option_group_delete, name='menu_option_group_delete'),
     path('menu/categories/', menu_views.category_create, name='category_create'),
     path('menu/categories/<uuid:category_id>/', menu_views.category_update, name='category_update'),
     path('menu/categories/<uuid:category_id>/delete/', menu_views.category_delete, name='category_delete'),
     # สลิป
+    path('coupons/', coupon_views.coupon_list, name='coupons'),
+    path('coupons/new/', coupon_views.coupon_create, name='coupon_create'),
+    path('coupons/<uuid:coupon_id>/', coupon_views.coupon_edit, name='coupon_edit'),
+    path('coupons/<uuid:coupon_id>/active/', coupon_views.coupon_toggle, name='coupon_toggle'),
+    path('coupons/<uuid:coupon_id>/delete/', coupon_views.coupon_delete, name='coupon_delete'),
     path('slips/', slip_views.slip_queue, name='slips'),
     path('slips/<uuid:slip_id>/approve/', slip_views.slip_approve, name='slip_approve'),
     path('slips/<uuid:slip_id>/reject/', slip_views.slip_reject, name='slip_reject'),

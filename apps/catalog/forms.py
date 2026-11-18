@@ -120,3 +120,15 @@ class CategoryForm(forms.Form):
 class MenuOptionForm(forms.Form):
     name = forms.CharField(label='ตัวเลือก', max_length=80)
     extra_price = forms.DecimalField(label='ราคาเพิ่ม', min_value=Decimal('0'), max_digits=8, decimal_places=2, initial=0)
+    group = forms.UUIDField(required=False)
+
+
+class MenuOptionGroupForm(forms.Form):
+    name = forms.CharField(label='ชื่อกลุ่ม', max_length=80)
+    required = forms.BooleanField(label='ลูกค้าต้องเลือก', required=False)
+    max_select = forms.IntegerField(label='เลือกได้สูงสุด', min_value=1, max_value=20, initial=1)
+
+    def clean(self):
+        cleaned = super().clean()
+        cleaned['min_select'] = 1 if cleaned.get('required') else 0
+        return cleaned

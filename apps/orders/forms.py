@@ -17,6 +17,7 @@ class CheckoutForm(forms.Form):
     # ได้จาก GPS ของเครื่อง หรือหมุดบนแผนที่ (ไม่มีพิกัดสำรอง ถ้าว่าง = สั่งไม่ได้)
     latitude = forms.FloatField(widget=forms.HiddenInput, required=False)
     longitude = forms.FloatField(widget=forms.HiddenInput, required=False)
+    coupon_code = forms.CharField(label='โค้ดส่วนลด', max_length=40, required=False)
 
     def clean(self):
         cleaned = super().clean()

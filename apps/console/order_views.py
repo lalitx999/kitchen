@@ -82,7 +82,7 @@ def order_export(request):
             return value
 
     writer = csv.writer(Echo())
-    header = ['เลขออเดอร์', 'สั่งเมื่อ', 'จ่ายเมื่อ', 'ส่งถึงเมื่อ', 'สถานะ', 'ค่าอาหาร', 'ค่าส่ง', 'รวม',
+    header = ['เลขออเดอร์', 'สั่งเมื่อ', 'จ่ายเมื่อ', 'ส่งถึงเมื่อ', 'สถานะ', 'ค่าอาหาร', 'ค่าส่ง', 'ส่วนลด', 'คูปอง', 'รวม',
               'ส่วนของไรเดอร์', 'ระยะ(กม.)', 'ผู้รับ', 'เบอร์', 'บัญชีลูกค้า', 'ไรเดอร์', 'เหตุผลยกเลิก']
 
     def fmt(dt):
@@ -94,7 +94,7 @@ def order_export(request):
         for o in order_selector.export_rows(start, end):
             yield writer.writerow([
                 o.order_number, fmt(o.created_at), fmt(o.paid_at), fmt(o.completed_at), o.get_status_display(),
-                o.subtotal, o.delivery_fee, o.total, o.rider_fee, o.distance_km, o.recipient_name,
+                o.subtotal, o.delivery_fee, o.discount, o.coupon_code, o.total, o.rider_fee, o.distance_km, o.recipient_name,
                 o.recipient_phone, o.customer.email, o.rider.full_name if o.rider else '', o.cancelled_reason,
             ])
 

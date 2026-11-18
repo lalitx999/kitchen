@@ -1,9 +1,17 @@
 {% extends "layouts/customer.html" %}
-{% block title %}ตะกร้า — {{ SITE_NAME }}{% endblock %}
+{% block title %}สรุปคำสั่งซื้อ — {{ SITE_NAME }}{% endblock %}
+{# หน้าตะกร้าแบบแอป: ซ่อนแถบล่าง ใช้แถบสรุปยอด + ปุ่มสั่งซื้อติดขอบล่างแทน #}
+{% block body_class %}has-checkout-bar{% endblock %}
 
 {% block content %}
-<div class="container-xl py-4" style="max-width: 760px;">
-  <h1 class="h4 fw-black mb-3">ตะกร้า</h1>
+<div class="container-xl py-3" style="max-width: 760px;">
+  <div class="app-page-head">
+    <a href="{% url 'core:home' %}" class="app-back" aria-label="กลับไปหน้าเมนู"><i class="bi bi-arrow-left"></i></a>
+    <div class="min-w-0">
+      <div class="fw-black text-truncate fs-5">{% if branch %}{{ branch.name }}{% else %}{{ SITE_NAME }}{% endif %}</div>
+      <div class="small text-muted-tm">ค่าจัดส่งคิดตามระยะทาง ในขั้นตอนถัดไป</div>
+    </div>
+  </div>
   {% include "orders/_cart_body.html" %}
 </div>
 {% endblock %}

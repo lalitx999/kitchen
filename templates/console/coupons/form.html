@@ -1,0 +1,50 @@
+{% extends "layouts/console.html" %}
+{% block console_title %}{% if coupon %}แก้ไขคูปอง{% else %}เพิ่มคูปอง{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-grid gap-4" style="max-width: 860px;">
+  <div>
+    <a href="{% url 'console:coupons' %}" class="small text-decoration-none"><i class="bi bi-arrow-left me-1"></i>คูปองทั้งหมด</a>
+    <h1 class="h4 fw-black mb-0 mt-1">{% if coupon %}แก้ไขคูปอง {{ coupon.code }}{% else %}เพิ่มคูปอง{% endif %}</h1>
+  </div>
+
+  <form method="post" class="card-tm card-tm-body p-4" novalidate x-data="{ kind: '{{ form.kind.value|default:'AMOUNT' }}' }">
+    {% csrf_token %}
+    {% include "components/_form_errors.html" %}
+    <div class="row g-3">
+      {% include "components/_field.html" with field=form.code wrapper_class="col-12 col-md-5" %}
+      {% include "components/_field.html" with field=form.name wrapper_class="col-12 col-md-7" %}
+      <div class="col-12 col-md-4">
+        <label class="form-label" for="id_kind">{{ form.kind.label }}</label>
+        <select name="kind" id="id_kind" class="form-select" x-model="kind">
+          {% for value, label in form.kind.field.choices %}<option value="{{ value }}" {% if form.kind.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-4" x-show="kind !== 'FREE_DELIVERY'">{% include "components/_field.html" with field=form.value wrapper_class="" %}</div>
+      <div class="col-6 col-md-4" x-show="kind === 'PERCENT'" x-cloak>{% include "components/_field.html" with field=form.max_discount wrapper_class="" %}</div>
+      {% include "components/_field.html" with field=form.min_subtotal wrapper_class="col-12 col-md-4" %}
+      {% include "components/_field.html" with field=form.starts_at wrapper_class="col-6 col-md-4" %}
+      {% include "components/_field.html" with field=form.ends_at wrapper_class="col-6 col-md-4" %}
+      {% include "components/_field.html" with field=form.usage_limit wrapper_class="col-6 col-md-4" %}
+      {% include "components/_field.html" with field=form.per_customer_limit wrapper_class="col-6 col-md-4" %}
+      <div class="col-12 col-md-4">
+        <label class="form-label" for="id_branch">{{ form.branch.label }}</label>
+        <select name="branch" id="id_branch" class="form-select">
+          {% for value, label in form.branch.field.choices %}<option value="{{ value }}" {% if form.branch.value|stringformat:'s' == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-12 d-grid gap-2">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" name="show_in_checkout" id="id_show_in_checkout" {% if form.show_in_checkout.value %}checked{% endif %}>
+          <label class="form-check-label" for="id_show_in_checkout">{{ form.show_in_checkout.label }} <span class="small text-muted-tm">(ปิด = รหัสลับ ลูกค้าต้องพิมพ์เอง)</span></label>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" name="is_active" id="id_is_active" {% if form.is_active.value %}checked{% endif %}>
+          <label class="form-check-label" for="id_is_active">{{ form.is_active.label }}</label>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">{% if coupon %}บันทึก{% else %}เพิ่มคูปอง{% endif %}</button>
+  </form>
+</div>
+{% endblock %}

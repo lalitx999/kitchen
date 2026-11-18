@@ -50,25 +50,62 @@
 
   {% if item %}
     <section class="card-tm card-tm-body p-4">
-      <h2 class="h6 fw-black mb-1">ตัวเลือกเสริม</h2>
-      <div class="small text-muted-tm mb-3">ลูกค้าเลือกได้หลายอย่าง เช่น ไข่ดาว +10, พิเศษ +15</div>
-      {% if item.options.all %}
-        <ul class="list-group mb-3">
-          {% for option in item.options.all %}
-            <li class="list-group-item d-flex align-items-center justify-content-between">
-              <span>{{ option.name }} <span class="text-muted-tm small">{% if option.extra_price %}+฿{{ option.extra_price|floatformat:"-2" }}{% else %}ฟรี{% endif %}</span></span>
-              <form method="post" action="{% url 'console:menu_option_delete' item.pk option.pk %}">{% csrf_token %}
-                <button class="btn btn-sm btn-outline-ink" aria-label="ลบตัวเลือก"><i class="bi bi-x-lg"></i></button>
+      <h2 class="h6 fw-black mb-1">ตัวเลือก</h2>
+      <div class="small text-muted-tm mb-3">จัดเป็นกลุ่มได้ เช่น "เลือกเนื้อ" (ต้องเลือก 1) หรือ "ท็อปปิ้ง" (ไม่บังคับ สูงสุด 3) · ตัวเลือกที่ไม่มีกลุ่ม ลูกค้าเลือกได้ไม่จำกัด</div>
+
+      {% for s in item.option_sections %}
+        <div class="border rounded-3 p-3 mb-3">
+          <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+            <div class="fw-bold">{% if s.group %}{{ s.group.name }} <span class="sheet-chip ms-1">{{ s.group.rule_label }}</span>{% else %}ไม่มีกลุ่ม{% endif %}</div>
+            {% if s.group %}
+              <form method="post" action="{% url 'console:menu_option_group_delete' item.pk s.group.pk %}" onsubmit="return confirm('ลบกลุ่ม {{ s.group.name|escapejs }} และตัวเลือกทั้งหมดในกลุ่ม?');">{% csrf_token %}
+                <button class="btn btn-sm btn-outline-ink" aria-label="ลบกลุ่ม {{ s.group.name }}"><i class="bi bi-trash"></i></button>
               </form>
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-      <form method="post" action="{% url 'console:menu_option_add' item.pk %}" class="row g-2">
+            {% endif %}
+          </div>
+          <ul class="list-group">
+            {% for option in s.options %}
+              <li class="list-group-item d-flex align-items-center justify-content-between">
+                <span>{{ option.name }} <span class="text-muted-tm small">{% if option.extra_price %}+฿{{ option.extra_price|floatformat:"-2" }}{% else %}ฟรี{% endif %}</span></span>
+                <form method="post" action="{% url 'console:menu_option_delete' item.pk option.pk %}">{% csrf_token %}
+                  <button class="btn btn-sm btn-outline-ink" aria-label="ลบตัวเลือก {{ option.name }}"><i class="bi bi-x-lg"></i></button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+      {% for g in item.empty_option_groups %}
+        <div class="border rounded-3 p-3 mb-3 small"><span class="fw-bold">{{ g.name }}</span> <span class="sheet-chip ms-1">{{ g.rule_label }}</span> <span class="text-muted-tm">ยังไม่มีตัวเลือก (ลูกค้ายังไม่เห็นกลุ่มนี้)</span>
+          <form method="post" action="{% url 'console:menu_option_group_delete' item.pk g.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-link btn-sm p-0 ms-2 text-danger">ลบกลุ่ม</button></form>
+        </div>
+      {% endfor %}
+
+      <div class="fw-bold small mb-2">เพิ่มตัวเลือก</div>
+      <form method="post" action="{% url 'console:menu_option_add' item.pk %}" class="row g-2 mb-4">
         {% csrf_token %}
-        <div class="col-12 col-sm"><input name="name" class="form-control" placeholder="ชื่อตัวเลือก" maxlength="80" required></div>
-        <div class="col-6 col-sm-3"><input name="extra_price" type="number" min="0" step="0.01" value="0" class="form-control" aria-label="ราคาเพิ่ม"></div>
-        <div class="col-6 col-sm-auto"><button class="btn btn-action w-100">เพิ่มตัวเลือก</button></div>
+        <div class="col-12 col-sm-4">
+          <select name="group" class="form-select" aria-label="กลุ่ม">
+            <option value="">ไม่มีกลุ่ม</option>
+            {% for g in item.option_groups.all %}<option value="{{ g.pk }}">{{ g.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-sm"><input name="name" class="form-control" placeholder="ชื่อตัวเลือก เช่น กุ้งสด" maxlength="80" required></div>
+        <div class="col-6 col-sm-2"><input name="extra_price" type="number" min="0" step="0.01" value="0" class="form-control" aria-label="ราคาเพิ่ม"></div>
+        <div class="col-6 col-sm-auto"><button class="btn btn-action w-100">เพิ่ม</button></div>
+      </form>
+
+      <div class="fw-bold small mb-2">เพิ่มกลุ่มตัวเลือก</div>
+      <form method="post" action="{% url 'console:menu_option_group_add' item.pk %}" class="row g-2 align-items-center">
+        {% csrf_token %}
+        <div class="col-12 col-sm"><input name="name" class="form-control" placeholder="ชื่อกลุ่ม เช่น เลือกเนื้อ" maxlength="80" required></div>
+        <div class="col-6 col-sm-3">
+          <div class="input-group"><span class="input-group-text small">สูงสุด</span><input name="max_select" type="number" min="1" max="20" value="1" class="form-control" aria-label="เลือกได้สูงสุด"></div>
+        </div>
+        <div class="col-6 col-sm-auto">
+          <div class="form-check mb-0"><input class="form-check-input" type="checkbox" name="required" id="group-required"><label class="form-check-label small" for="group-required">ต้องเลือก</label></div>
+        </div>
+        <div class="col-12 col-sm-auto"><button class="btn btn-outline-ink w-100">เพิ่มกลุ่ม</button></div>
       </form>
     </section>
 

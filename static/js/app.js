@@ -46,3 +46,45 @@ document.addEventListener('visibilitychange', tmppRefreshVisible);
 // แอปบนหน้าจอโฮม (iPhone) กลับมาจากพื้นหลังด้วยหน้าเก่าในหน่วยความจำ (bfcache) โดยไม่ยิง visibilitychange
 window.addEventListener('pageshow', function (event) { if (event.persisted) tmppRefreshVisible(); });
 window.addEventListener('focus', tmppRefreshVisible);
+
+/* หน้าเลือกอาหาร (orders/_item_sheet.html): กติกากลุ่มตัวเลือก + ยอดรวมสด
+   ครบจำนวนสูงสุดแล้ว ตัวเลือกอื่นในกลุ่มจะเป็นสีเทา (ต้องเอาอันเดิมออกก่อน) · ต้องเลือกครบถึงกดเพิ่มได้ */
+window.tmppItemSheet = function (config) {
+  var priceOf = {};
+  config.groups.forEach(function (g) { g.options.forEach(function (o) { priceOf[o.id] = o.price; }); });
+  return {
+    base: config.base,
+    qty: config.qty || 1,
+    groups: config.groups,
+    selected: config.selected.slice(),
+    isChecked: function (id) { return this.selected.indexOf(id) !== -1; },
+    count: function (g) {
+      var self = this;
+      return g.options.filter(function (o) { return self.isChecked(o.id); }).length;
+    },
+    isDisabled: function (g, id) { return !this.isChecked(id) && this.count(g) >= g.max; },
+    toggle: function (g, id) {
+      if (this.isChecked(id)) { this.selected = this.selected.filter(function (x) { return x !== id; }); return; }
+      if (this.count(g) < g.max) this.selected = this.selected.concat([id]);
+    },
+    get valid() {
+      var self = this;
+      return this.groups.every(function (g) { return self.count(g) >= g.min; });
+    },
+    get missingText() {
+      var self = this;
+      var g = this.groups.find(function (x) { return self.count(x) < x.min; });
+      return g ? 'เลือกตัวเลือกที่ต้องระบุให้ครบก่อน' : '';
+    },
+    get total() {
+      var extras = this.selected.reduce(function (sum, id) { return sum + (priceOf[id] || 0); }, 0);
+      return (this.base + extras) * this.qty;
+    },
+  };
+};
+
+/* หน้าตะกร้า: แก้ไข/เพิ่มรายการจากหน้าเลือกอาหารแล้ว ให้โหลดรายการใหม่ */
+document.addEventListener('tmpp:cart-changed', function () {
+  var body = document.getElementById('cart-body');
+  if (body && window.htmx) htmx.ajax('GET', body.dataset.refreshUrl, { target: '#cart-body', swap: 'outerHTML' });
+});

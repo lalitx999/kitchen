@@ -310,3 +310,69 @@ a.tm-pill-muted:hover { border-color: var(--tm-brand-line); color: var(--tm-bran
 .branch-card-cover { aspect-ratio: 8 / 3; background: var(--tm-brand-soft); }
 .branch-card-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .card-tm.border-brand { border-color: var(--tm-brand) !important; border-width: 2px; }
+
+/* ---- หน้าเลือกอาหาร (เต็มจอบนมือถือ แบบแอป) ---- */
+#item-sheet .modal-content { overflow: hidden; }
+.item-sheet { display: flex; flex-direction: column; max-height: calc(100dvh - 3.5rem); background: var(--tm-surface); }
+@media (max-width: 575.98px) {
+  #item-sheet .modal-content { border-radius: 0 !important; }
+  .item-sheet { height: 100dvh; max-height: 100dvh; }
+}
+.item-sheet-scroll { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.item-sheet-hero { position: relative; aspect-ratio: 16 / 10; background: var(--tm-brand-soft); display: flex; align-items: center; justify-content: center; color: var(--tm-brand-line); font-size: 3rem; }
+.item-sheet-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.item-sheet-hero.is-empty { aspect-ratio: 16 / 6; }
+.sheet-round-btn { position: absolute; top: calc(.75rem + env(safe-area-inset-top)); left: .75rem; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: var(--tm-surface); color: var(--tm-ink); box-shadow: 0 2px 8px rgba(17, 24, 39, .18); display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.item-sheet-section { padding: 1.25rem 1.25rem; border-bottom: 1px solid var(--tm-line); }
+.item-sheet-section:last-child { border-bottom: 0; }
+.sheet-chip { display: inline-block; padding: .2rem .65rem; border-radius: 999px; background: #f3f4f6; color: var(--tm-muted); font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.sheet-chip.is-required { background: var(--tm-brand-soft); color: var(--tm-brand); }
+.sheet-option { display: flex; align-items: center; gap: 1rem; padding: .85rem 0; cursor: pointer; font-size: 1.02rem; }
+.sheet-option.is-disabled { opacity: .4; cursor: not-allowed; }
+.sheet-check { appearance: none; -webkit-appearance: none; flex: none; width: 1.6rem; height: 1.6rem; margin: 0; border: 2px solid #d1d5db; border-radius: .45rem; background: var(--tm-surface); display: inline-grid; place-content: center; }
+.sheet-check:checked { background: var(--tm-action); border-color: var(--tm-action); }
+.sheet-check:checked::after { content: ''; width: .45rem; height: .8rem; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.sheet-check:focus-visible { outline: 3px solid var(--tm-brand-line); outline-offset: 2px; }
+.sheet-note { border-radius: var(--tm-radius); padding: .85rem 1rem; resize: none; }
+.sheet-stepper { display: flex; align-items: center; justify-content: center; gap: 2.5rem; margin-top: 1.25rem; }
+.sheet-step { width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: var(--tm-action); color: #fff; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; }
+.sheet-step:disabled { background: #d1fae5; color: #fff; }
+.sheet-qty { min-width: 2rem; text-align: center; font-size: 1.25rem; font-weight: 700; }
+.item-sheet-footer { flex: none; padding: .85rem 1.25rem calc(.85rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--tm-line); background: var(--tm-surface); }
+.flex-none { flex: none; }
+.menu-card-open { display: flex; flex-direction: column; border: 0; padding: 0; background: none; color: inherit; width: 100%; }
+.menu-card-open .menu-thumb { width: 100%; }
+.menu-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---- หน้าแบบแอป: หัวหน้า + แถบสั่งซื้อติดขอบล่าง ---- */
+.app-page-head { display: flex; align-items: center; gap: .75rem; }
+.app-back { width: 2.5rem; height: 2.5rem; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--tm-ink); font-size: 1.35rem; text-decoration: none; }
+.app-back:hover { background: #f3f4f6; }
+.has-checkout-bar .tm-bottom-nav { display: none; }
+.has-checkout-bar { padding-bottom: calc(9.5rem + env(safe-area-inset-bottom)); }
+.has-checkout-bar .site-footer, .has-checkout-bar footer.tm-footer { display: none; }
+.checkout-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1020; background: var(--tm-surface); border-top: 1px solid var(--tm-line); border-radius: var(--tm-radius-lg) var(--tm-radius-lg) 0 0; box-shadow: 0 -4px 16px rgba(17, 24, 39, .06); padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom)); }
+
+/* ---- รายการในตะกร้า ---- */
+.cart-line { display: flex; gap: .9rem; padding: 1rem 0; border-bottom: 1px solid var(--tm-line); align-items: flex-start; }
+.cart-line.is-unavailable { opacity: .55; }
+.cart-thumb { width: 4.5rem; height: 4.5rem; flex: none; border-radius: var(--tm-radius); overflow: hidden; background: var(--tm-brand-soft); display: flex; align-items: center; justify-content: center; color: var(--tm-brand-line); font-size: 1.5rem; }
+.cart-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cart-qty-circle { width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 2px solid var(--tm-action); background: var(--tm-surface); color: var(--tm-ink); font-weight: 700; box-shadow: 0 2px 6px rgba(17, 24, 39, .08); }
+.cart-qty.is-open { border: 2px solid var(--tm-action); border-radius: 999px; padding: .15rem; background: var(--tm-surface); }
+.cart-qty-btn { width: 2.2rem; height: 2.2rem; border-radius: 50%; border: 0; background: none; color: var(--tm-action); font-size: 1.05rem; }
+.cart-qty-num { min-width: 1.5rem; text-align: center; font-weight: 700; }
+.suggest-row { display: flex; gap: .75rem; overflow-x: auto; padding-bottom: .5rem; scrollbar-width: none; }
+.suggest-row::-webkit-scrollbar { display: none; }
+.suggest-card { flex: 0 0 8.5rem; min-width: 0; }
+.suggest-thumb { position: relative; aspect-ratio: 1; border-radius: var(--tm-radius); overflow: hidden; background: var(--tm-brand-soft); display: flex; align-items: center; justify-content: center; color: var(--tm-brand-line); font-size: 1.5rem; }
+.suggest-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.suggest-add { position: absolute; right: .4rem; bottom: .4rem; width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 0; background: var(--tm-action); color: #fff; font-size: 1.1rem; display: inline-flex; align-items: center; justify-content: center; }
+.suggest-thumb form { position: static; }
+
+/* ---- คูปอง ---- */
+.coupon-chips { display: flex; gap: .5rem; overflow-x: auto; scrollbar-width: none; padding-bottom: .25rem; }
+.coupon-chips::-webkit-scrollbar { display: none; }
+.coupon-chip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: .1rem; max-width: 14rem; padding: .5rem .75rem; border: 1px dashed var(--tm-brand); border-radius: var(--tm-radius-sm); background: var(--tm-brand-soft); color: var(--tm-ink); text-align: left; }
+.coupon-chip.is-locked { border-color: var(--tm-line); background: var(--tm-surface); color: var(--tm-muted); }
+.coupon-code { display: inline-block; padding: .15rem .55rem; border: 1px dashed var(--tm-brand); border-radius: var(--tm-radius-sm); background: var(--tm-brand-soft); color: var(--tm-brand); font-weight: 800; letter-spacing: .03em; }

@@ -135,8 +135,20 @@ def export_rows(start, end):
         Order.objects.filter(created_at__date__gte=start, created_at__date__lte=end)
         .select_related('customer', 'rider')
         .only('order_number', 'created_at', 'paid_at', 'completed_at', 'status', 'subtotal', 'delivery_fee', 'total',
+              'discount', 'coupon_code',
               'rider_fee', 'distance_km', 'recipient_name', 'recipient_phone', 'cancelled_reason',
               'customer__email', 'rider__full_name')
         .order_by('created_at')
         .iterator(chunk_size=500)
+    )
+
+
+def popular_item_ids(branch, *, days: int = 30, limit: int = 12) -> list:
+    """เมนูขายดีของสาขา (นับจำนวนที่ขายในออเดอร์ที่จ่ายแล้ว) · 1 query"""
+    since = timezone.now() - timedelta(days=days)
+    return list(
+        OrderItem.objects.filter(order__branch=branch, order__paid_at__gte=since, menu_item__isnull=False)
+        .exclude(order__status=OrderStatus.CANCELLED)
+        .values('menu_item_id').annotate(sold=Sum('quantity')).order_by('-sold')
+        .values_list('menu_item_id', flat=True)[:limit]
     )
