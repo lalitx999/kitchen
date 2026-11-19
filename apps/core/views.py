@@ -9,6 +9,7 @@ from apps.accounts.services.auth_service import home_url_for
 from apps.catalog.selectors import menu_selector
 from apps.catalog.services import branch_service
 
+from .selectors import sales_page_selector
 from .selectors.health_selector import check_dependencies
 
 
@@ -31,6 +32,22 @@ def home(request):
         'categories': categories,
         'uncategorized': uncategorized,
         'has_many_branches': len(branches) > 1,
+    })
+
+
+@require_safe
+def about(request):
+    """
+    เซลเพจ (หน้าแนะนำร้าน) สำหรับแชร์ลิงก์/ยิงโฆษณา · หน้าแรก / ยังเป็นเมนูที่สั่งได้ทันทีเหมือนเดิม (U2)
+    ใช้สาขาที่ลูกค้าเลือกไว้ ไม่ได้เลือกใช้สาขาหลัก
+    """
+    branches = menu_selector.active_branches()
+    branch = menu_selector.customer_branch(request.session, branches) or (branches[0] if branches else None)
+    data = sales_page_selector.sales_page(branch)
+    image = sales_page_selector.share_image(branch, data['featured'])
+    return render(request, 'core/about.html', {
+        **data, 'has_many_branches': len(branches) > 1,
+        'share_image_url': request.build_absolute_uri(image) if image else '',
     })
 
 

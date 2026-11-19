@@ -582,3 +582,98 @@ a.rider-row:active { background: var(--tm-brand-soft); }
   padding: .75rem 1rem; border-bottom: 1px solid var(--tm-line); }
 .kds-history-row:last-child { border-bottom: 0; }
 .kds-menu-grid { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+/* ================================================================ M15 เซลเพจ /about/ (ต้นแบบ fastwork · ขาว เทา ดำ จากตัวแปรธีมเดิม · ชมพูเฉพาะปุ่มสั่ง) */
+.sp-page { background: var(--tm-surface); }
+.sp-container { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 1rem; }
+
+/* หัวเว็บ: แคปซูลกระจกฝ้าลอยด้านบน (ไม่ใช่ gradient: พื้นขาวโปร่ง + เบลอสิ่งที่อยู่ข้างหลัง) */
+.sp-nav-wrap { position: sticky; top: 0; z-index: 1030; padding: calc(.75rem + env(safe-area-inset-top)) 1rem 0; pointer-events: none; }
+.sp-nav { pointer-events: auto; max-width: 880px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; padding: .45rem .5rem .45rem 1rem;
+  border: 1px solid var(--tm-line); border-radius: 999px; background: rgba(255, 255, 255, .72);
+  -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px); transition: box-shadow .2s ease; }
+.sp-nav.is-scrolled { box-shadow: 0 6px 24px rgba(17, 24, 39, .08); }
+.sp-brand { display: inline-flex; align-items: center; gap: .45rem; font-weight: 800; color: var(--tm-ink); text-decoration: none; }
+.sp-nav-links { gap: 1.5rem; margin-left: auto; }
+.sp-nav-links a { color: var(--tm-muted); text-decoration: none; font-weight: 600; font-size: .9rem; }
+.sp-nav-links a:hover { color: var(--tm-ink); }
+.sp-nav > .btn { margin-left: auto; }
+@media (min-width: 768px) { .sp-nav-links + .btn { margin-left: 0; } }   /* มือถือซ่อนลิงก์ ปุ่มสั่งต้องชิดขวาเอง */
+
+/* หัวเรื่อง */
+.sp-hero { position: relative; min-height: min(86dvh, 760px); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 3rem 1rem 4rem; overflow: hidden; text-align: center; }
+.sp-hero-text { position: relative; z-index: 2; max-width: 640px; }
+.sp-status { display: inline-flex; align-items: center; gap: .45rem; padding: .3rem .85rem; border-radius: 999px; font-size: .82rem; font-weight: 700;
+  border: 1px solid var(--tm-line); color: var(--tm-muted); background: var(--tm-surface); margin-bottom: 1.25rem; }
+.sp-status i { font-size: .55rem; }
+.sp-status.is-open { color: var(--tm-action); }
+.sp-title { font-size: clamp(2.3rem, 7vw, 4.25rem); font-weight: 800; line-height: 1.12; letter-spacing: -.02em; color: var(--tm-ink); margin-bottom: 1rem; }
+.sp-lead { font-size: clamp(1rem, 2.2vw, 1.15rem); color: var(--tm-muted); margin: 0 auto 1.75rem; max-width: 34rem; }
+.sp-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
+.sp-scroll-hint { position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); flex-direction: column; align-items: center;
+  font-size: .75rem; color: var(--tm-muted); text-decoration: none; }
+
+/* รูปเมนูลอยรอบหัวข้อ (จอ ≥ 768px) */
+.sp-float { position: absolute; z-index: 1; width: 168px; margin: 0; padding: .4rem .4rem .55rem; background: var(--tm-surface);
+  border: 1px solid var(--tm-line); border-radius: var(--tm-radius); box-shadow: 0 10px 30px rgba(17, 24, 39, .08); }
+.sp-float img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: calc(var(--tm-radius) - .3rem); display: block; }
+.sp-float figcaption { font-size: .72rem; font-weight: 700; color: var(--tm-ink); padding: .4rem .2rem 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-float-1 { left: 4%; top: 12%; transform: rotate(-7deg); }
+.sp-float-2 { right: 5%; top: 9%; transform: rotate(6deg); }
+.sp-float-3 { left: 9%; bottom: 10%; transform: rotate(5deg); width: 140px; }
+.sp-float-4 { right: 10%; bottom: 12%; transform: rotate(-5deg); width: 150px; }
+.sp-float-5 { left: 22%; top: 2%; transform: rotate(3deg); width: 112px; }
+.sp-float-6 { right: 24%; bottom: 2%; transform: rotate(-3deg); width: 112px; }
+@media (max-width: 767.98px) { .sp-float { display: none; } }
+@media (min-width: 768px) and (max-width: 1099.98px) { .sp-float-5, .sp-float-6 { display: none; } .sp-float { width: 130px; } }
+.sp-float-row { display: flex; gap: .6rem; overflow-x: auto; margin-top: 2rem; padding: .25rem 0; max-width: 100%; scrollbar-width: none; }
+.sp-float-row::-webkit-scrollbar { display: none; }
+.sp-float-row img { width: 108px; height: 108px; flex: none; object-fit: cover; border-radius: var(--tm-radius); border: 1px solid var(--tm-line); }
+
+/* ส่วนเนื้อหา */
+.sp-section { padding: clamp(3.5rem, 8vw, 6rem) 0; }
+.sp-gray { background: var(--tm-bg); border-top: 1px solid var(--tm-line); border-bottom: 1px solid var(--tm-line); }
+.sp-dark { background: var(--tm-ink); color: #fff; }
+.sp-h2 { font-size: clamp(1.6rem, 4.5vw, 2.5rem); font-weight: 800; line-height: 1.2; letter-spacing: -.01em; margin-bottom: .75rem; }
+.sp-sub { color: var(--tm-muted); margin-bottom: 2rem; }
+.sp-dim { color: #9ca3af; }
+
+.sp-menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 1rem; }
+.sp-menu-card { display: flex; flex-direction: column; border: 1px solid var(--tm-line); border-radius: var(--tm-radius-lg); overflow: hidden;
+  background: var(--tm-surface); color: var(--tm-ink); text-decoration: none; transition: transform .2s ease, box-shadow .2s ease; }
+.sp-menu-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(17, 24, 39, .08); }
+.sp-menu-img { aspect-ratio: 4 / 3; background: var(--tm-bg); display: flex; align-items: center; justify-content: center; color: var(--tm-line); font-size: 2rem; }
+.sp-menu-img img { width: 100%; height: 100%; object-fit: cover; }
+.sp-menu-body { display: flex; flex-direction: column; gap: .2rem; padding: .85rem 1rem 1rem; }
+.sp-price { font-weight: 800; color: var(--tm-ink); }
+.sp-badge { align-self: flex-start; font-size: .68rem; font-weight: 800; padding: .1rem .5rem; border-radius: 999px; background: var(--tm-brand-soft); color: var(--tm-brand); }
+
+.sp-points { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1.5rem 2rem; margin-top: 2.5rem; }
+.sp-point { display: flex; gap: 1rem; align-items: flex-start; padding-top: 1.25rem; border-top: 1px solid rgba(255, 255, 255, .14); }
+.sp-point-big { font-size: 2.75rem; font-weight: 800; line-height: 1; min-width: 3.25rem; }
+.sp-point-big small { font-size: 1.4rem; }
+.sp-point-icon { font-size: 1.75rem; min-width: 3.25rem; line-height: 1; }
+
+.sp-steps { list-style: none; padding: 0; margin: 2rem 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 1rem; }
+.sp-steps li { display: flex; gap: 1rem; padding: 1.25rem; border: 1px solid var(--tm-line); border-radius: var(--tm-radius-lg); }
+.sp-step-no { flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--tm-ink); color: #fff; font-weight: 800; }
+
+.sp-shop { display: grid; gap: 2rem; align-items: center; }
+@media (min-width: 768px) { .sp-shop:has(.sp-shop-img) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.sp-shop-img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--tm-radius-lg); border: 1px solid var(--tm-line); }
+.sp-facts { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: .75rem; }
+.sp-facts li { display: flex; gap: .75rem; align-items: flex-start; }
+.sp-facts i { color: var(--tm-muted); margin-top: .15rem; }
+.sp-facts a { color: var(--tm-ink); }
+
+.sp-install { max-width: 460px; margin: 0 auto; text-align: left; }
+.sp-footer { border-top: 1px solid var(--tm-line); padding: 1.5rem 0 calc(1.5rem + env(safe-area-inset-bottom)); font-size: .85rem; color: var(--tm-muted); }
+.sp-footer .sp-container { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; }
+.sp-footer a { color: var(--tm-muted); text-decoration: none; }
+
+/* เบลอแล้วค่อยชัด (salespage.js ใส่ sp-reveal-ready เฉพาะเมื่อพร้อม และมือถือไม่ได้ตั้งลดการเคลื่อนไหว) */
+.sp-reveal-ready [data-reveal] { opacity: .25; filter: blur(10px); transform: translateY(24px);
+  transition: opacity .8s ease, filter .8s ease, transform .8s ease; }
+.sp-reveal-ready [data-reveal].is-visible { opacity: 1; filter: none; transform: none; }

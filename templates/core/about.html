@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static humanize %}
+{% comment %}
+เซลเพจ /about/ (ต้นแบบโครงหน้า: fastwork.com/selling) · โทนขาว เทา ดำ จากตัวแปรธีมเดิม · ชมพูเฉพาะปุ่มสั่ง
+หัวเว็บเป็นแคปซูลกระจกฝ้า · แต่ละส่วนเริ่มเบลอแล้วชัดเมื่อเลื่อนถึง (salespage.js · ปิดเองเมื่อมือถือตั้ง "ลดการเคลื่อนไหว")
+ข้อมูลจริงทั้งหมด: ไม่มีเมนู/รูป/เวลาเปิด ก็ซ่อนส่วนนั้น ไม่ใส่ของปลอมแทน
+{% endcomment %}
+
+{% block title %}{% if branch %}{{ branch.name }}{% else %}{{ SITE_NAME }}{% endif %} — สั่งตรงกับร้าน ส่งถึงบ้าน{% endblock %}
+{% block meta_description %}{% if branch %}{{ branch.name }}{% else %}{{ SITE_NAME }}{% endif %} สั่งอาหารตรงกับร้าน จ่าย QR พร้อมเพย์ ดูไรเดอร์สดบนแผนที่{% endblock %}
+{% block body_class %}sp-page{% endblock %}
+
+{% block extra_head %}
+  {# ตอนแชร์ลิงก์ใน LINE / Facebook จะมีชื่อ คำโปรย และรูปตัวอย่าง #}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ SITE_NAME }}">
+  <meta property="og:title" content="{% if branch %}{{ branch.name }}{% else %}{{ SITE_NAME }}{% endif %} — สั่งตรงกับร้าน ส่งถึงบ้าน">
+  <meta property="og:description" content="สั่งอาหารตรงกับร้าน จ่าย QR พร้อมเพย์ ดูไรเดอร์สดบนแผนที่">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  <meta property="og:image" content="{% if share_image_url %}{{ share_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/icon-512.png' %}{% endif %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <script src="{% static 'js/salespage.js' %}" defer></script>
+{% endblock %}
+
+{% block layout %}
+{% url 'core:home' as menu_url %}
+<header class="sp-nav-wrap">
+  <nav class="sp-nav" aria-label="เมนูหน้าแนะนำร้าน">
+    <a href="{% url 'core:about' %}" class="sp-brand">
+      <img src="{% static 'img/logo-mark.svg' %}" alt="" width="28" height="28"><span>{{ SITE_NAME }}</span>
+    </a>
+    <div class="sp-nav-links d-none d-md-flex">
+      {% if featured %}<a href="#popular">เมนูแนะนำ</a>{% endif %}
+      <a href="#how">วิธีสั่ง</a>
+      {% if branch %}<a href="#shop">ร้าน</a>{% endif %}
+    </div>
+    <a href="{{ menu_url }}" class="btn btn-primary btn-pill btn-sm px-3 fw-bold">สั่งเลย</a>
+  </nav>
+</header>
+
+<main>
+  {# ---- 1. หัวเรื่อง + รูปเมนูจริงลอยรอบๆ ---- #}
+  <section class="sp-hero">
+    {% for item in float_items %}
+      <figure class="sp-float sp-float-{{ forloop.counter }}" aria-hidden="true">
+        <img src="{{ item.image.url }}" alt="" loading="{% if forloop.counter <= 2 %}eager{% else %}lazy{% endif %}">
+        <figcaption>{{ item.name }}</figcaption>
+      </figure>
+    {% endfor %}
+    <div class="sp-hero-text">
+      {% if branch %}
+        <span class="sp-status {% if shop.accepting %}is-open{% endif %}">
+          <i class="bi {% if shop.accepting %}bi-circle-fill{% else %}bi-moon{% endif %}"></i>
+          {% if shop.accepting %}เปิดรับออเดอร์อยู่ตอนนี้{% else %}{{ shop.reason }}{% endif %}
+        </span>
+      {% endif %}
+      <h1 class="sp-title">อร่อยจากครัว<br>ถึงหน้าบ้านคุณ</h1>
+      <p class="sp-lead">{% if branch %}{{ branch.name }} · {% endif %}สั่งตรงกับร้าน จ่ายด้วย QR พร้อมเพย์ แล้วดูไรเดอร์วิ่งมาหาคุณบนแผนที่</p>
+      <div class="sp-cta">
+        <a href="{{ menu_url }}" class="btn btn-primary btn-lg btn-pill px-4 fw-bold">ดูเมนู สั่งเลย</a>
+        <a href="#install" class="btn btn-outline-ink btn-lg btn-pill px-4">ติดตั้งแอป</a>
+      </div>
+    </div>
+    {% if float_items %}
+      {# มือถือ: รูปเมนูเลื่อนแนวนอนใต้หัวข้อ (จอเล็กไม่มีที่ให้ลอย) #}
+      <div class="sp-float-row d-md-none" aria-hidden="true">
+        {% for item in float_items %}<img src="{{ item.image.url }}" alt="" loading="lazy">{% endfor %}
+      </div>
+    {% endif %}
+    <a href="#popular" class="sp-scroll-hint d-none d-md-inline-flex" aria-label="เลื่อนลง"><span>เลื่อนลง</span><i class="bi bi-chevron-down"></i></a>
+  </section>
+
+  {# ---- 2. เมนูแนะนำ (ขายดี 30 วันก่อน) ---- #}
+  {% if featured %}
+  <section id="popular" class="sp-section" data-reveal>
+    <div class="sp-container">
+      <h2 class="sp-h2">เมนูแนะนำ</h2>
+      <p class="sp-sub">เมนูที่ลูกค้าสั่งบ่อยที่สุดในเดือนนี้ และเมนูอื่นที่มีขายวันนี้</p>
+      <div class="sp-menu-grid">
+        {% for item in featured %}
+          <a href="{{ menu_url }}" class="sp-menu-card">
+            <span class="sp-menu-img">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy">{% else %}<i class="bi bi-image"></i>{% endif %}</span>
+            <span class="sp-menu-body">
+              {% if item.is_popular %}<span class="sp-badge">ขายดี</span>{% endif %}
+              <span class="fw-bold">{{ item.name }}</span>
+              <span class="sp-price">฿{{ item.price|floatformat:"-2"|intcomma }}</span>
+            </span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ---- 3. พื้นดำ: ทำไมสั่งตรงกับร้าน ---- #}
+  <section class="sp-section sp-dark" data-reveal>
+    <div class="sp-container">
+      <h2 class="sp-h2">สั่งผ่านแอปกลาง ร้านต้องจ่ายค่า GP<br><span class="sp-dim">สั่งตรงกับเรา ร้านไม่ต้องจ่าย</span></h2>
+      <div class="sp-points">
+        <div class="sp-point">
+          <span class="sp-point-big">0<small>%</small></span>
+          <div><div class="fw-bold">ไม่มีค่า GP ให้แอปกลาง</div><div class="sp-dim small">ร้านได้เงินเต็ม จึงไม่ต้องบวกราคาเผื่อค่าธรรมเนียม</div></div>
+        </div>
+        <div class="sp-point">
+          <span class="sp-point-icon"><i class="bi bi-qr-code-scan"></i></span>
+          <div><div class="fw-bold">จ่ายด้วย QR พร้อมเพย์</div><div class="sp-dim small">แนบสลิปแล้วระบบตรวจให้ ไม่ต้องโทรยืนยัน</div></div>
+        </div>
+        <div class="sp-point">
+          <span class="sp-point-icon"><i class="bi bi-geo-alt"></i></span>
+          <div><div class="fw-bold">ดูไรเดอร์สดบนแผนที่</div><div class="sp-dim small">รู้ว่าอาหารถึงไหนแล้ว พร้อมแจ้งเตือนเมื่อใกล้ถึง</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ---- 4. วิธีสั่ง 3 ขั้น ---- #}
+  <section id="how" class="sp-section" data-reveal>
+    <div class="sp-container">
+      <h2 class="sp-h2">สั่งง่าย 3 ขั้น</h2>
+      <ol class="sp-steps">
+        <li><span class="sp-step-no">1</span><div><div class="fw-bold">เลือกเมนู</div><div class="sp-sub small mb-0">เลือกตัวเลือก ใส่หมายเหตุ ใส่ตะกร้า</div></div></li>
+        <li><span class="sp-step-no">2</span><div><div class="fw-bold">ปักหมุดบ้าน แล้วจ่าย QR</div><div class="sp-sub small mb-0">ค่าส่งคิดตามระยะจริงจากร้าน เห็นก่อนจ่าย</div></div></li>
+        <li><span class="sp-step-no">3</span><div><div class="fw-bold">รออาหารถึงบ้าน</div><div class="sp-sub small mb-0">ติดตามสถานะและไรเดอร์ได้ในหน้าออเดอร์</div></div></li>
+      </ol>
+    </div>
+  </section>
+
+  {# ---- 5. ข้อมูลร้าน (มีเท่าที่ร้านตั้งไว้) ---- #}
+  {% if branch %}
+  <section id="shop" class="sp-section sp-gray" data-reveal>
+    <div class="sp-container sp-shop">
+      {% if branch.storefront_image or branch.cover_image %}
+        <img class="sp-shop-img" src="{% if branch.storefront_image %}{{ branch.storefront_image.url }}{% else %}{{ branch.cover_image.url }}{% endif %}" alt="ร้าน {{ branch.name }}" loading="lazy">
+      {% endif %}
+      <div>
+        <h2 class="sp-h2">{{ branch.name }}</h2>
+        <ul class="sp-facts">
+          {% if branch.opens_at %}<li><i class="bi bi-clock"></i>เปิด {{ branch.opens_at|time:"H:i" }} - {{ branch.closes_at|time:"H:i" }} น.</li>{% endif %}
+          <li><i class="bi bi-scooter"></i>ส่งไกลสุด {{ branch.max_delivery_km|floatformat:"-1" }} กม. · ค่าส่งเริ่มต้น ฿{{ branch.delivery_base_fare|floatformat:"-2" }} ใน {{ branch.delivery_base_km|floatformat:"-1" }} กม.แรก</li>
+          {% if branch.phone %}<li><i class="bi bi-telephone"></i><a href="tel:{{ branch.phone }}">{{ branch.phone }}</a></li>{% endif %}
+          {% if branch.address %}<li><i class="bi bi-geo-alt"></i><span>{{ branch.address }}{% if branch.maps_url %} · <a href="{{ branch.maps_url }}" target="_blank" rel="noopener">ดูแผนที่</a>{% endif %}</span></li>
+          {% elif branch.maps_url %}<li><i class="bi bi-geo-alt"></i><a href="{{ branch.maps_url }}" target="_blank" rel="noopener">ดูแผนที่ร้าน</a></li>{% endif %}
+        </ul>
+        {% if has_many_branches %}<a href="{% url 'core:branches' %}" class="small fw-bold"><i class="bi bi-arrow-left-right me-1"></i>ดูสาขาอื่น</a>{% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ---- 6. ติดตั้งแอป + ปิดท้าย ---- #}
+  <section id="install" class="sp-section sp-final" data-reveal>
+    <div class="sp-container text-center">
+      <h2 class="sp-h2">หิวเมื่อไหร่ เปิดแอปแล้วสั่ง</h2>
+      <p class="sp-sub">ติดตั้งไว้บนหน้าจอโฮม เปิดเร็ว เต็มจอ รับแจ้งเตือนเมื่ออาหารใกล้ถึง</p>
+      <div class="sp-install">{% include "components/_install_banner.html" %}</div>
+      <a href="{{ menu_url }}" class="btn btn-primary btn-lg btn-pill px-5 fw-bold mt-3">ดูเมนู สั่งเลย</a>
+    </div>
+  </section>
+</main>
+
+<footer class="sp-footer">
+  <div class="sp-container">
+    <span>&copy; {% now "Y" %} {{ SITE_NAME }}</span>
+    <a href="{{ menu_url }}">เมนู</a>
+    <a href="{% url 'orders:list' %}">ออเดอร์ของฉัน</a>
+  </div>
+</footer>
+{% endblock %}
