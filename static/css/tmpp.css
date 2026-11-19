@@ -127,7 +127,8 @@ h1, h2, h3, h4, .fw-black { letter-spacing: -.01em; }
 
 /* การ์ดเมนูอาหาร */
 .menu-card { overflow: hidden; display: flex; flex-direction: column; height: 100%; }
-.menu-card .menu-thumb { aspect-ratio: 4 / 3; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; }
+.menu-card .menu-thumb { aspect-ratio: 4 / 3; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af;
+  /* overflow: รูปแนวตั้งไม่ดันการ์ดให้สูงเกิน 4:3 (บั๊กที่เจอบนมือถือ) */ overflow: hidden; min-height: 0; flex: none; }
 .menu-card .menu-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .menu-card .price { font-weight: 800; color: var(--tm-brand); font-variant-numeric: tabular-nums; }
 
@@ -677,3 +678,29 @@ a.rider-row:active { background: var(--tm-brand-soft); }
 .sp-reveal-ready [data-reveal] { opacity: .25; filter: blur(10px); transform: translateY(24px);
   transition: opacity .8s ease, filter .8s ease, transform .8s ease; }
 .sp-reveal-ready [data-reveal].is-visible { opacity: 1; filter: none; transform: none; }
+
+/* ---- แผนที่ปักหมุด (หน้าชำระเงิน): หมุดกลางจอ ---- */
+.pin-map { position: relative; height: 18rem; border-radius: var(--tm-radius); overflow: hidden; border: 1px solid var(--tm-line); background: var(--tm-brand-soft); }
+.pin-map-canvas { position: absolute; inset: 0; }
+.pin-map-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%); pointer-events: none; z-index: 2; display: flex; flex-direction: column; align-items: center; transition: transform .15s ease; }
+.pin-map-center i { font-size: 2.6rem; line-height: 1; color: var(--tm-brand); text-shadow: 0 2px 4px rgba(17, 24, 39, .25); }
+.pin-map-dot { width: .5rem; height: .5rem; border-radius: 50%; background: rgba(17, 24, 39, .35); margin-top: -.15rem; }
+.pin-map.is-dragging .pin-map-center { transform: translate(-50%, calc(-100% - .6rem)); }
+.pin-map-hint { position: absolute; left: 50%; top: .75rem; transform: translateX(-50%); z-index: 2; padding: .35rem .8rem; border-radius: 999px; background: var(--tm-ink); color: #fff; font-size: .8rem; font-weight: 600; white-space: nowrap; pointer-events: none; transition: opacity .2s; }
+.pin-map.has-pin:not(.is-fullscreen) .pin-map-hint { opacity: 0; }
+.pin-map-btn { position: absolute; right: .75rem; z-index: 2; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: var(--tm-surface); color: var(--tm-ink); box-shadow: 0 2px 8px rgba(17, 24, 39, .2); display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem; }
+.pin-map-btn:disabled { opacity: .7; }
+.pin-map-btn .spinner-border:not(.d-none) + i { display: none; }
+.pin-map-expand { top: .75rem; }
+.pin-map-locate { bottom: .75rem; }
+.pin-map-msg { position: absolute; inset: auto .75rem .75rem .75rem; right: 4.25rem; z-index: 3; padding: .6rem .8rem; border-radius: var(--tm-radius-sm); background: var(--tm-surface); box-shadow: var(--tm-shadow); font-size: .85rem; }
+.pin-map-confirm { display: none; }
+/* เต็มจอ: แผนที่ทั้งจอ + แถบยืนยันด้านล่าง */
+.pin-map.is-fullscreen { position: fixed; inset: 0; height: 100dvh; z-index: 1085; border-radius: 0; border: 0; }
+.pin-map.is-fullscreen .pin-map-canvas { bottom: calc(8.5rem + env(safe-area-inset-bottom)); }
+.pin-map.is-fullscreen .pin-map-center { top: calc((100dvh - 8.5rem - env(safe-area-inset-bottom)) / 2); }
+.pin-map.is-fullscreen .pin-map-expand { top: calc(.75rem + env(safe-area-inset-top)); }
+.pin-map.is-fullscreen .pin-map-hint { top: calc(.75rem + env(safe-area-inset-top)); }
+.pin-map.is-fullscreen .pin-map-locate { bottom: calc(9.25rem + env(safe-area-inset-bottom)); }
+.pin-map.is-fullscreen .pin-map-confirm { display: block; position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom)); background: var(--tm-surface); border-top: 1px solid var(--tm-line); }
+body.pin-map-open { overflow: hidden; }

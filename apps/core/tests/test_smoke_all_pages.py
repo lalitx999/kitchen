@@ -104,3 +104,21 @@ def test_order_pages_render_in_every_status(world, customer_client):
     for order in world:
         assert customer_client.get(reverse('orders:detail', args=[order.pk])).status_code == 200, order.status
         assert owner.get(reverse('console:order_detail', args=[order.pk])).status_code == 200, order.status
+
+
+def test_no_htmx_inside_alpine_templates():
+    """
+    ปุ่ม hx-* ใน <template x-if/x-for> ถูก Alpine สร้างทีหลัง HTMX ไม่รู้จัก กดแล้วเงียบ
+    (บั๊กจริง: ปุ่ม + / - ในหน้าตะกร้า) · ใช้ x-show หรือสลับ class แทน
+    """
+    import re
+    from pathlib import Path
+
+    from django.conf import settings
+
+    bad = []
+    for path in Path(settings.BASE_DIR, 'templates').rglob('*.html'):
+        for block in re.findall(r'<template[^>]*x-(?:if|for)[^>]*>(.*?)</template>', path.read_text(), re.S):
+            if re.search(r'\shx-(get|post|put|patch|delete)=', block):
+                bad.append(str(path))
+    assert not bad, bad

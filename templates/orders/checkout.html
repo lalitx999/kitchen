@@ -30,12 +30,26 @@
           {% endif %}
 
           {% if google_maps_api_key %}
-            <div id="address-map" class="rounded-4 border mb-2" style="height: 260px;" aria-label="แผนที่ปักหมุด"></div>
-            <div class="small text-muted-tm mb-2">ลากหมุดหรือแตะบนแผนที่ให้ตรงบ้าน</div>
+            {% comment %}
+            หมุดอยู่กลางจอเสมอ (แบบแอปส่งอาหาร): เลื่อนแผนที่ด้วยนิ้วเดียวให้หมุดตรงบ้าน ปล่อยมือแล้วใช้จุดกลางจอ
+            ไม่มี "แตะแล้วหมุดย้าย" (เดิมเลื่อนหน้าแล้วนิ้วโดนแผนที่ หมุดกระโดดเอง) · data-no-ptr = ไม่ดึงเพื่อโหลดหน้าใหม่
+            {% endcomment %}
+            <div class="pin-map mb-2" id="pin-map" data-no-ptr>
+              <div id="address-map" class="pin-map-canvas" aria-label="แผนที่ปักหมุด เลื่อนแผนที่ให้หมุดตรงบ้าน"></div>
+              <div class="pin-map-center" aria-hidden="true"><i class="bi bi-geo-alt-fill"></i><span class="pin-map-dot"></span></div>
+              <div class="pin-map-hint" id="map-hint">เลื่อนแผนที่ให้หมุดตรงบ้าน</div>
+              <button type="button" class="pin-map-btn pin-map-expand" id="map-expand" aria-label="แผนที่เต็มจอ"><i class="bi bi-arrows-fullscreen"></i></button>
+              <button type="button" class="pin-map-btn pin-map-locate" id="map-locate" aria-label="ใช้ตำแหน่งปัจจุบัน"><span class="spinner-border spinner-border-sm d-none" data-locating></span><i class="bi bi-crosshair"></i></button>
+              <div class="pin-map-msg d-none" id="map-msg" role="status"></div>
+              <div class="pin-map-confirm" id="map-confirm">
+                <div class="small text-muted-tm mb-2" id="map-confirm-text">เลื่อนแผนที่ให้หมุดตรงบ้าน แล้วกดยืนยัน</div>
+                <button type="button" class="btn btn-action btn-lg w-100 rounded-pill fw-bold" id="map-confirm-btn">ยืนยันตำแหน่งนี้</button>
+              </div>
+            </div>
           {% endif %}
 
           <button type="button" class="btn btn-soft w-100 btn-icon" id="use-my-location">
-            <span class="spinner-border spinner-border-sm d-none" id="locating"></span><i class="bi bi-crosshair"></i>ใช้ตำแหน่งปัจจุบัน
+            <span class="spinner-border spinner-border-sm d-none" data-locating></span><i class="bi bi-crosshair"></i>ใช้ตำแหน่งปัจจุบัน
           </button>
           <div class="small mt-2" id="location-status" role="status">
             {% if form.latitude.value %}<span class="text-action"><i class="bi bi-check-circle me-1"></i>ปักหมุดแล้ว</span>
@@ -43,7 +57,7 @@
           </div>
 
           <div id="quote-box" class="mt-3"
-               hx-post="{% url 'orders:checkout_quote' %}" hx-trigger="tmpp:location from:body" hx-swap="innerHTML"
+               hx-post="{% url 'orders:checkout_quote' %}" hx-trigger="tmpp:location from:body delay:350ms" hx-swap="innerHTML"
                hx-include="#id_latitude, #id_longitude, #id_coupon_code"></div>
         </section>
 

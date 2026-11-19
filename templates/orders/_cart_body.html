@@ -37,16 +37,15 @@
           <div class="d-flex flex-column align-items-end gap-2">
             <span class="fw-bold font-mono-num">{{ line.line_total|floatformat:"-2"|intcomma }}</span>
             {# แตะวงกลมจำนวน -> แสดงปุ่ม - + #}
+            {# สลับด้วย class ไม่ใช้ <template x-if>: ปุ่มต้องอยู่ในหน้าตั้งแต่แรก HTMX ถึงจะรู้จัก hx-post (x-if สร้างทีหลัง กดแล้วไม่มีอะไรเกิดขึ้น) #}
             <div class="cart-qty" :class="open && 'is-open'">
-              <template x-if="open">
-                <div class="d-flex align-items-center">
+                <div class="align-items-center" :class="open ? 'd-flex' : 'd-none'" x-cloak>
                   <button type="button" class="cart-qty-btn" aria-label="ลด {{ line.item.name }}" hx-post="{% url 'orders:cart_update' %}" hx-target="#cart-body"
                           hx-vals='{"key": "{{ line.key }}", "qty": "{{ line.qty|add:-1 }}"}'><i class="bi {% if line.qty == 1 %}bi-trash{% else %}bi-dash-lg{% endif %}"></i></button>
                   <span class="cart-qty-num font-mono-num">{{ line.qty }}</span>
                   <button type="button" class="cart-qty-btn" aria-label="เพิ่ม {{ line.item.name }}" hx-post="{% url 'orders:cart_update' %}" hx-target="#cart-body"
                           hx-vals='{"key": "{{ line.key }}", "qty": "{{ line.qty|add:1 }}"}' {% if not line.available %}disabled{% endif %}><i class="bi bi-plus-lg"></i></button>
                 </div>
-              </template>
               <button type="button" class="cart-qty-circle font-mono-num" x-show="!open" @click="open = true" aria-label="เปลี่ยนจำนวน {{ line.item.name }} (ตอนนี้ {{ line.qty }})">{{ line.qty }}</button>
             </div>
           </div>

@@ -1,7 +1,7 @@
 {% extends "layouts/customer.html" %}
 {% block title %}สรุปคำสั่งซื้อ — {{ SITE_NAME }}{% endblock %}
 {# หน้าตะกร้าแบบแอป: ซ่อนแถบล่าง ใช้แถบสรุปยอด + ปุ่มสั่งซื้อติดขอบล่างแทน #}
-{% block body_class %}has-checkout-bar{% endblock %}
+{% block body_class %}{% if cart.is_empty %}has-bottom-nav{% else %}has-checkout-bar{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container-xl py-3" style="max-width: 760px;">
