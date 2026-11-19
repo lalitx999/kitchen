@@ -288,3 +288,53 @@ document.addEventListener('tmpp:cart-changed', function () {
     if (banner) banner.classList.add('d-none');
   });
 })();
+
+/* บันทึกรูป QR จ่ายเงินลงเครื่อง ([data-save-qr] ในหน้าออเดอร์)
+   1. วาดรูปใหม่: QR + ชื่อร้าน/ยอด/เลขออเดอร์ บนพื้นขาว (เปิดจากอัลบั้มแล้วรู้ว่าเป็นของออเดอร์ไหน)
+   2. มือถือที่แชร์ไฟล์ได้ (iPhone, Android) -> เปิดหน้าต่างแชร์ เลือก "บันทึกรูปภาพ" ลงอัลบั้ม
+   3. ไม่รองรับ -> ดาวน์โหลดไฟล์ · ยังไม่ได้อีก -> บอกให้กดค้างที่รูป QR */
+document.addEventListener('click', function (event) {
+  var btn = event.target.closest('[data-save-qr]');
+  if (!btn) return;
+  var img = new Image();
+  img.onload = function () {
+    var W = 720, PAD = 48, QR = W - PAD * 2;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = PAD + QR + 210;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = false;   // QR คมชัด สแกนง่าย
+    ctx.drawImage(img, PAD, PAD, QR, QR);
+    ctx.textAlign = 'center'; ctx.fillStyle = '#111827';
+    var font = '"Noto Sans Thai", -apple-system, "Segoe UI", sans-serif';
+    ctx.font = '700 40px ' + font; ctx.fillText(btn.dataset.line1 || '', W / 2, PAD + QR + 70);
+    ctx.font = '800 48px ' + font; ctx.fillText(btn.dataset.line2 || '', W / 2, PAD + QR + 130);
+    ctx.fillStyle = '#6b7280'; ctx.font = '400 30px ' + font; ctx.fillText(btn.dataset.line3 || '', W / 2, PAD + QR + 180);
+    canvas.toBlob(function (blob) {
+      if (!blob) { fallback(); return; }
+      var name = btn.dataset.filename || 'TMPP-QR.png';
+      var file = null;
+      try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { file = null; }
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'QR จ่ายเงิน TMPP' }).catch(function (err) {
+          if (err && err.name !== 'AbortError') download(blob, name);   // กดยกเลิกเอง ไม่ต้องทำอะไร
+        });
+      } else {
+        download(blob, name);
+      }
+    }, 'image/png');
+  };
+  img.onerror = fallback;
+  img.src = btn.dataset.qrSrc;
+
+  function download(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1500);
+    document.dispatchEvent(new CustomEvent('tmpp:toast', { detail: { message: 'บันทึกรูป QR แล้ว (ดูในไฟล์ดาวน์โหลด)', level: 'success' } }));
+  }
+  function fallback() {
+    document.dispatchEvent(new CustomEvent('tmpp:toast', { detail: { message: 'กดค้างที่รูป QR แล้วเลือก "บันทึกรูปภาพ"', level: 'warning' } }));
+  }
+});

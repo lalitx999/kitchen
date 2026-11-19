@@ -175,6 +175,8 @@ def test_check_refuses_auto_approve_when_shop_not_configured(settings):
 def test_order_page_shows_qr_when_configured(customer_client, order, settings):
     body = customer_client.get(reverse('orders:detail', args=[order.pk])).content.decode()
     assert 'data:image/png;base64,' in body and 'xxxxxx5678' in body
+    # ปุ่มบันทึก QR ใช้ JS (แชร์/ดาวน์โหลด) ไม่ใช่ลิงก์ data: ที่ iPhone กดแล้วเงียบ
+    assert 'data-save-qr' in body and f'ออเดอร์ {order.order_number}' in body and 'download="' not in body
     settings.PROMPTPAY_ID = ''
     body = customer_client.get(reverse('orders:detail', args=[order.pk])).content.decode()
     assert 'ยังไม่ได้ตั้งค่าพร้อมเพย์' in body

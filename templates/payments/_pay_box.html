@@ -20,7 +20,18 @@
         <div class="fw-bold">พร้อมเพย์ {{ promptpay_masked }}{% if account_name %} · {{ account_name }}{% endif %}</div>
         <div class="text-muted-tm">ยอดถูกใส่ใน QR แล้ว ตรวจชื่อบัญชีก่อนกดโอน</div>
       </div>
-      <a href="{{ qr_data_uri }}" download="TMPP-{{ order.order_number }}.png" class="btn btn-outline-ink btn-sm btn-icon mt-2"><i class="bi bi-download"></i>บันทึกรูป QR</a>
+      {% comment %}
+      บันทึก QR ลงเครื่อง: iPhone/แอปบนหน้าจอโฮมไม่รองรับลิงก์ดาวน์โหลดแบบ data: (กดแล้วเงียบ)
+      app.js ใช้หน้าต่าง "แชร์" ของมือถือ (มีเมนูบันทึกรูปภาพ) ถ้าไม่รองรับค่อยดาวน์โหลดไฟล์
+      รูปที่บันทึกมีชื่อร้าน ยอดเงิน เลขออเดอร์ ใต้ QR (แอปธนาคารสแกนจากรูปได้ตามปกติ)
+      {% endcomment %}
+      <button type="button" class="btn btn-outline-ink btn-sm btn-icon mt-2" data-save-qr
+              data-qr-src="{{ qr_data_uri }}" data-filename="TMPP-{{ order.order_number }}.png"
+              data-line1="{{ account_name|default:SITE_NAME }}" data-line2="ยอด ฿{{ order.total|floatformat:'2'|intcomma }}"
+              data-line3="ออเดอร์ {{ order.order_number }}">
+        <i class="bi bi-download"></i>บันทึกรูป QR
+      </button>
+      <div class="small-xs text-muted-tm mt-2">ในแอปธนาคาร เลือก "สแกน" แล้วกดเลือกรูปจากเครื่อง</div>
     </div>
   {% else %}
     <div class="alert alert-warning small">{{ qr_error }} กรุณาโทรหาร้าน</div>
