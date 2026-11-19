@@ -18,7 +18,8 @@
       </li>
     {% endfor %}
   </ul>
-  {% if order.rider and order.status != 'READY' %}<div class="small text-muted-tm px-3 mb-2"><i class="bi bi-scooter me-1"></i>ไรเดอร์ {{ order.rider.full_name }} รับงานแล้ว</div>{% endif %}
+  {% if order.rider and order.rider_arrived_at %}<div class="small text-action fw-bold px-3 mb-2"><i class="bi bi-geo-alt-fill me-1"></i>ไรเดอร์ {{ order.rider.full_name }} ถึงร้านแล้ว {{ order.rider_arrived_at|time:"H:i" }}</div>
+  {% elif order.rider and order.status != 'READY' %}<div class="small text-muted-tm px-3 mb-2"><i class="bi bi-scooter me-1"></i>ไรเดอร์ {{ order.rider.full_name }} รับงานแล้ว</div>{% endif %}
   {% if order.note %}<div class="kds-order-note mx-3 mb-2"><i class="bi bi-chat-left-text me-1"></i>{{ order.note }}</div>{% endif %}
 
   <footer class="d-flex gap-2 px-3 pb-3">
@@ -29,7 +30,7 @@
       <button class="btn btn-action btn-lg flex-grow-1 btn-icon" hx-post="{% url 'orders:kitchen_action' order.pk %}" hx-vals='{"action": "ready"}'
               hx-target="#kds-board" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-bag-check"></i>อาหารพร้อม</button>
     {% else %}
-      <div class="flex-grow-1 small text-muted-tm align-self-center"><i class="bi bi-hourglass-split me-1"></i>{% if order.rider %}{{ order.rider.full_name }} กำลังมารับ{% else %}ยังไม่มีไรเดอร์รับงาน{% endif %}</div>
+      <div class="flex-grow-1 small text-muted-tm align-self-center"><i class="bi bi-hourglass-split me-1"></i>{% if order.rider_arrived_at %}{{ order.rider.full_name }} รออยู่ที่ร้าน{% elif order.rider %}{{ order.rider.full_name }} กำลังมารับ{% else %}ยังไม่มีไรเดอร์รับงาน{% endif %}</div>
     {% endif %}
     <button class="btn btn-outline-ink btn-lg" aria-label="ยกเลิกออเดอร์ {{ order.order_number }}"
             hx-post="{% url 'orders:kitchen_action' order.pk %}" hx-vals='{"action": "cancel"}' hx-target="#kds-board" hx-swap="innerHTML"

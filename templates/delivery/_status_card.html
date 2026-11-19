@@ -11,13 +11,8 @@
         <div class="small text-muted-tm">กดเริ่มเมื่อพร้อมออกไปส่ง</div>
       {% endif %}
     </div>
-    <div class="text-end">
-      {% if today %}
-        <div class="small text-muted-tm">วันนี้</div>
-        <div class="fw-black">{{ today.jobs }} เที่ยว</div>
-        <div class="small text-brand fw-bold">฿{{ today.earned|floatformat:"0" }}</div>
-      {% endif %}
-    </div>
+    {# สรุปวันนี้ย้ายไปอยู่ในกล่อง 4 ช่องของรายการงาน (โหลดใหม่ทุก 5 วิ) #}
+    <i class="bi bi-scooter rider-status-icon {% if profile.is_online %}text-action{% else %}text-muted-tm{% endif %}" aria-hidden="true"></i>
   </div>
 
   <form hx-post="{% url 'delivery:rider_set_status' %}" hx-target="#rider-status" hx-swap="outerHTML" hx-disabled-elt="find button">

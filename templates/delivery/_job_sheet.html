@@ -1,0 +1,83 @@
+{% load humanize %}
+{# แผ่นล่างของหน้างาน: เป้าหมาย / ระยะ+เวลา (rider_job.js คิดจาก GPS) / ปุ่มขั้นถัดไป · โหลดใหม่ทุก 5 วิ #}
+{# ขั้นตอน: ไปร้าน -> ถึงร้านแล้ว -> (ครัวกดอาหารพร้อม) -> รับอาหาร ออกเดินทาง -> ถึงแล้ว ถ่ายรูป -> ส่งสำเร็จ #}
+<span id="job-target" data-kind="{% if going_to_customer %}customer{% else %}shop{% endif %}"
+      {% if target %}data-lat="{{ target.y|stringformat:'f' }}" data-lng="{{ target.x|stringformat:'f' }}"{% endif %} hidden></span>
+
+<div class="d-flex align-items-start justify-content-between gap-2">
+  <div class="min-w-0">
+    <div class="small text-muted-tm fw-bold">{% if going_to_customer %}ไปส่งที่{% elif job.status == 'CANCELLED' %}งานนี้{% else %}ไปรับที่ร้าน{% endif %}</div>
+    {% if going_to_customer %}
+      <div class="h5 fw-black mb-0 text-truncate">{{ job.recipient_name }}</div>
+      <div class="small">{{ job.address_text }}</div>
+      {% if job.address_note %}<div class="small text-muted-tm">จุดสังเกต: {{ job.address_note }}</div>{% endif %}
+    {% else %}
+      <div class="h5 fw-black mb-0 text-truncate">{{ job.branch.name }}</div>
+      {% if job.branch.address %}<div class="small">{{ job.branch.address }}</div>{% endif %}
+    {% endif %}
+  </div>
+  <div class="text-end flex-none">
+    <div class="fw-black font-mono-num">{{ job.order_number|slice:"-4:" }}</div>
+    <div class="fw-black text-brand">฿{{ job.rider_fee|floatformat:"0" }}</div>
+  </div>
+</div>
+
+{% if job.status == 'CANCELLED' %}
+  <div class="alert alert-light border mt-3 mb-0">
+    <div class="fw-bold"><i class="bi bi-x-circle me-1"></i>ออเดอร์นี้ถูกยกเลิกแล้ว</div>
+    {% if job.cancelled_reason %}<div class="small">{{ job.cancelled_reason }}</div>{% endif %}
+    <a href="{% url 'delivery:rider_home' %}" class="btn btn-ink btn-sm mt-2">กลับหน้าแรก</a>
+  </div>
+{% else %}
+  {# ระยะ/เวลา: ตัวเลขมาจาก GPS ของมือถือ ไม่มี GPS = บอกตรงๆ ไม่เดา #}
+  <div class="rider-eta mt-3" aria-live="polite">
+    <div><span class="rider-eta-value" data-eta-distance>-</span><span class="rider-eta-label">ระยะตรง</span></div>
+    <div><span class="rider-eta-value" data-eta-minutes>-</span><span class="rider-eta-label">ประมาณ (นาที)</span></div>
+  </div>
+  <div class="small-xs text-muted-tm mt-1" data-eta-note>รอตำแหน่ง GPS...</div>
+
+  <div class="d-flex gap-2 mt-3">
+    {% if target %}
+      <a class="btn btn-outline-ink btn-icon flex-fill" target="_blank" rel="noopener"
+         href="https://www.google.com/maps/dir/?api=1&destination={{ target.y|stringformat:'f' }},{{ target.x|stringformat:'f' }}&travelmode=driving"><i class="bi bi-sign-turn-right"></i>นำทาง</a>
+    {% endif %}
+    {% if going_to_customer %}
+      <a class="btn btn-outline-ink btn-icon flex-fill" href="tel:{{ job.recipient_phone }}"><i class="bi bi-telephone"></i>โทรลูกค้า</a>
+    {% elif job.branch.phone %}
+      <a class="btn btn-outline-ink btn-icon flex-fill" href="tel:{{ job.branch.phone }}"><i class="bi bi-telephone"></i>โทรร้าน</a>
+    {% endif %}
+  </div>
+
+  <details class="rider-items mt-3">
+    <summary class="small fw-bold">รายการอาหาร ({{ job.items.all|length }})</summary>
+    <ul class="list-unstyled small mb-0 mt-2">
+      {% for item in job.items.all %}
+        <li>{{ item.quantity }}x {{ item.name }}{% if item.options %} <span class="text-muted-tm">+ {% for o in item.options %}{{ o.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% if job.note %}<div class="small mt-2"><i class="bi bi-chat-left-text me-1"></i>{{ job.note }}</div>{% endif %}
+  </details>
+
+  <div class="d-grid gap-2 mt-3">
+    {% if going_to_customer %}
+      {% include "delivery/_proof_form.html" %}
+    {% else %}
+      {% if job.rider_arrived_at %}
+        <div class="small text-action fw-bold"><i class="bi bi-check-circle me-1"></i>แจ้งครัวแล้วว่าถึงร้าน {{ job.rider_arrived_at|time:"H:i" }} น.</div>
+      {% else %}
+        <button class="btn btn-primary btn-lg btn-icon" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "arrive"}'
+                hx-target="#job-sheet" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-geo-alt"></i>ถึงร้านแล้ว</button>
+      {% endif %}
+      {% if job.status == 'READY' %}
+        <button class="btn btn-action btn-lg btn-icon" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "pickup"}'
+                hx-target="#job-sheet" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-bag-check"></i>รับอาหารแล้ว ออกเดินทาง</button>
+      {% else %}
+        <div class="small text-muted-tm"><i class="bi bi-hourglass-split me-1"></i>ครัว{% if job.status == 'PREPARING' %}กำลังทำอาหาร{% else %}ยังไม่รับออเดอร์{% endif %} ปุ่ม "รับอาหาร" จะขึ้นเองเมื่ออาหารพร้อม</div>
+      {% endif %}
+      {% if can_release %}
+        <button class="btn btn-link btn-sm text-muted-tm" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "release"}'
+                hx-target="#job-sheet" hx-swap="innerHTML" hx-confirm="คืนงาน {{ job.order_number }}? งานจะกลับไปให้ไรเดอร์คนอื่น"><i class="bi bi-arrow-counterclockwise me-1"></i>คืนงานนี้</button>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endif %}

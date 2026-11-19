@@ -1,0 +1,26 @@
+{% extends "layouts/rider.html" %}
+{% load humanize %}
+{# หลังส่งสำเร็จ: สรุปงานนี้ + ยอดวันนี้ แล้วกลับหน้าแรกไปรับงานต่อ #}
+
+{% block title %}ส่งสำเร็จ {{ job.order_number }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="card-tm card-tm-body text-center py-5">
+  <span class="rider-done-check"><i class="bi bi-check-lg"></i></span>
+  <h1 class="h4 fw-black mt-3 mb-1">ส่งสำเร็จ</h1>
+  <div class="text-muted-tm">{{ job.order_number }} ส่งถึง {{ job.recipient_name }} แล้ว</div>
+
+  <dl class="rider-summary text-start mt-4 mb-0">
+    <div><dt>ค่าส่งงานนี้</dt><dd class="text-brand">฿{{ job.rider_fee|floatformat:"0" }}</dd></div>
+    <div><dt>เวลาตั้งแต่รับอาหาร</dt><dd>{% if minutes %}{{ minutes }} นาที{% else %}-{% endif %}</dd></div>
+    <div><dt>ระยะทาง</dt><dd>{{ job.distance_km }} กม.</dd></div>
+    <div><dt>รูปหลักฐาน</dt><dd>{{ photo_count }} รูป</dd></div>
+    <div><dt>วันนี้รวม</dt><dd>{{ today.jobs }} เที่ยว · ฿{{ today.earned|floatformat:"0"|intcomma }}</dd></div>
+  </dl>
+
+  <div class="d-grid gap-2 mt-4">
+    <a href="{% url 'delivery:rider_home' %}" class="btn btn-ink btn-lg btn-icon"><i class="bi bi-house-door"></i>กลับหน้าแรก รับงานต่อ</a>
+    <a href="{% url 'delivery:rider_history' %}?tab=done" class="btn btn-link btn-sm text-muted-tm">ดูงานที่ส่งแล้ว</a>
+  </div>
+</section>
+{% endblock %}

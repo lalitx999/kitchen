@@ -1,0 +1,42 @@
+{% extends "layouts/rider.html" %}
+{% load humanize %}
+{# แท็บ "งาน": งานของไรเดอร์คนนี้ย้อนหลัง {{ history_days }} วัน แยกแท็บตามสถานะ #}
+
+{% block title %}งานของฉัน — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<h1 class="h5 fw-black mb-3">งานของฉัน</h1>
+<nav class="scroller mb-3" aria-label="กรองงาน">
+  <a href="?tab=all" class="tm-pill {% if tab == 'all' %}tm-pill-ink{% else %}tm-pill-muted{% endif %}">ทั้งหมด</a>
+  <a href="?tab=active" class="tm-pill {% if tab == 'active' %}tm-pill-ink{% else %}tm-pill-muted{% endif %}">กำลังส่ง</a>
+  <a href="?tab=done" class="tm-pill {% if tab == 'done' %}tm-pill-ink{% else %}tm-pill-muted{% endif %}">สำเร็จ</a>
+  <a href="?tab=cancelled" class="tm-pill {% if tab == 'cancelled' %}tm-pill-ink{% else %}tm-pill-muted{% endif %}">ยกเลิก</a>
+</nav>
+
+<div class="card-tm overflow-hidden">
+  {% for job in jobs %}
+    {% if job.status == 'COMPLETED' %}{% url 'delivery:rider_job_done' job.pk as job_url %}
+    {% elif job.status == 'CANCELLED' %}{% url 'delivery:rider_job' job.pk as job_url %}
+    {% else %}{% url 'delivery:rider_job' job.pk as job_url %}{% endif %}
+    <a href="{{ job_url }}" class="rider-row">
+      <div class="min-w-0">
+        <div class="d-flex align-items-center gap-2">
+          <span class="fw-black font-mono-num">{{ job.order_number|slice:"-4:" }}</span>
+          {% include "components/_status_badge.html" with order=job %}
+        </div>
+        <div class="small text-truncate">{{ job.address_text }}</div>
+        <div class="small-xs text-muted-tm">{{ job.rider_assigned_at|date:"j M H:i" }} · {{ job.branch.name }}</div>
+      </div>
+      <div class="text-end flex-none">
+        <div class="fw-black {% if job.status == 'COMPLETED' %}text-brand{% else %}text-muted-tm{% endif %}">฿{{ job.rider_fee|floatformat:"0" }}</div>
+        <div class="small-xs text-muted-tm">{{ job.distance_km }} กม.</div>
+      </div>
+    </a>
+  {% empty %}
+    <div class="text-center py-5 px-3">
+      <i class="bi bi-inbox fs-2 text-muted-tm"></i>
+      <div class="small text-muted-tm mt-1">ยังไม่มีงานในแท็บนี้ ({{ history_days }} วันล่าสุด)</div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "layouts/rider.html" %}
+{# แท็บ "โปรไฟล์": ข้อมูลไรเดอร์ + ตั้งค่าเสียง/แจ้งเตือน/ติดตั้งแอป + ออกจากระบบ #}
+
+{% block title %}โปรไฟล์ — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="card-tm card-tm-body d-flex align-items-center gap-3 mb-3">
+  <span class="rider-avatar rider-avatar-lg">{{ user.full_name|slice:":1" }}</span>
+  <div class="min-w-0">
+    <h1 class="h5 fw-black mb-0 text-truncate">{{ user.full_name }}</h1>
+    <div class="small text-muted-tm">{{ user.email }}</div>
+  </div>
+</section>
+
+<section class="card-tm overflow-hidden mb-3">
+  <div class="rider-row"><span class="text-muted-tm">ทะเบียนรถ</span><span class="fw-bold">{{ profile.vehicle_plate|default:"ยังไม่ได้ระบุ" }}</span></div>
+  <div class="rider-row"><span class="text-muted-tm">เบอร์โทร</span><span class="fw-bold">{{ user.phone|default:"ยังไม่ได้ระบุ" }}</span></div>
+  <div class="rider-row"><span class="text-muted-tm">สถานะ</span>
+    <span class="fw-bold {% if profile.is_online %}text-action{% else %}text-muted-tm{% endif %}">{% if profile.is_online %}กำลังรับงาน{% else %}ปิดรับงาน{% endif %}</span></div>
+</section>
+<p class="small text-muted-tm">แก้ทะเบียนรถหรือเบอร์โทร: แจ้งเจ้าของร้าน</p>
+
+<h2 class="h6 fw-black mb-2">ตั้งค่าแอป</h2>
+<div class="d-grid gap-2 mb-4">
+  <button type="button" data-sound-toggle class="btn btn-outline-ink btn-lg btn-icon justify-content-start" aria-pressed="false" aria-label="เปิดเสียง">
+    <i class="bi bi-volume-mute"></i><span data-sound-label>เปิดเสียง</span>
+  </button>
+  {% if push_config %}{% include "components/_push_button.html" with extra_class="btn-lg justify-content-start" %}{% endif %}
+  {% include "components/_install_banner.html" %}
+</div>
+
+<form method="post" action="{% url 'accounts:logout' %}" class="d-grid">{% csrf_token %}
+  <button type="submit" class="btn btn-outline-ink btn-lg btn-icon text-danger"><i class="bi bi-box-arrow-right"></i>ออกจากระบบ</button>
+</form>
+{% endblock %}

@@ -108,6 +108,8 @@ class Order(UUIDModel):
 
     cancelled_reason = models.CharField(max_length=255, blank=True)
     rider_assigned_at = models.DateTimeField(null=True, blank=True)
+    # ไรเดอร์กด "ถึงร้านแล้ว" (ไม่ใช่สถานะออเดอร์ แค่บอกครัวว่ามีคนรออยู่) · คืนงาน = ล้างค่า
+    rider_arrived_at = models.DateTimeField(null=True, blank=True)
     # จ่ายค่าส่งให้ไรเดอร์แล้วในรอบไหน (ว่าง = ยังไม่จ่าย)
     rider_payout = models.ForeignKey('delivery.RiderPayout', on_delete=models.PROTECT, null=True, blank=True,
                                      related_name='orders')

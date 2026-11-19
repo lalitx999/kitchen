@@ -15,6 +15,7 @@
 
   // ---------------------------------------------------------------- แถบสถานะ GPS
   function setBar(text, level) {
+    if (!bar) return;
     bar.classList.remove('d-none', 'border-warning', 'border-danger', 'text-danger');
     if (level === 'warn') bar.classList.add('border-warning');
     if (level === 'error') bar.classList.add('border-danger', 'text-danger');
@@ -69,6 +70,8 @@
       speed: (pos.coords.speed === null || isNaN(pos.coords.speed)) ? null : pos.coords.speed,
     };
     fillProofForms();
+    // หน้างาน (rider_job.js) ใช้ตำแหน่งนี้คิดระยะ/เวลา และขยับหมุดบนแผนที่
+    document.dispatchEvent(new CustomEvent('tmpp:rider-position', { detail: last }));
     send(false);
   }
 
@@ -95,12 +98,13 @@
   function stop() {
     if (watchId !== null) navigator.geolocation.clearWatch(watchId);
     watchId = null; last = null; lastSentAt = 0;
-    bar.classList.add('d-none');
+    if (bar) bar.classList.add('d-none');
     if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
   }
 
   function syncWithStatus() {
-    var card = document.getElementById('rider-status');
+    // หน้าแรกมีการ์ดสถานะที่กดเปลี่ยนได้ · หน้าอื่นใช้ค่าจาก layout (#rider-config)
+    var card = document.getElementById('rider-status') || config;
     if (card && card.dataset.online === '1') start(); else stop();
   }
 
@@ -136,6 +140,7 @@
   document.body.addEventListener('htmx:afterSettle', function (event) {
     var id = event.detail.target && event.detail.target.id;
     if (id === 'rider-status') syncWithStatus();
+    if (id === 'job-sheet') fillProofForms();
     if (id === 'rider-jobs' || id === 'rider-status') {
       var ids = readIds();
       var fresh = ids.filter(function (x) { return !known.has(x); });

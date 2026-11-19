@@ -41,6 +41,14 @@ def release(order: Order, rider) -> Order:
         raise JobError(str(exc)) from exc
 
 
+def arrive_at_shop(order: Order, rider) -> Order:
+    """กด "ถึงร้านแล้ว": ครัวเห็นว่ามีไรเดอร์รออยู่ (กดซ้ำได้)"""
+    try:
+        return order_service.mark_rider_arrived(order, rider)
+    except order_service.OrderError as exc:
+        raise JobError(str(exc)) from exc
+
+
 def pick_up(order: Order, rider) -> Order:
     _require_own(order, rider)
     if order.status != OrderStatus.READY:

@@ -1,5 +1,5 @@
 {% load humanize %}
-{# การ์ดงาน 1 ใบ · mine=True: งานที่รับแล้ว (มีปุ่มขั้นถัดไป) · mine=False: งานใหม่ (ปุ่มรับงาน) #}
+{# การ์ดงาน 1 ใบ · mine=True: งานที่รับแล้ว -> แตะเปิดหน้างาน (แผนที่ + ขั้นตอน) · mine=False: งานใหม่ (ปุ่มรับงาน) #}
 <article class="card-tm mb-2 kds-ticket {% if job.status == 'DELIVERING' %}kds-preparing{% elif job.status == 'READY' %}kds-ready{% else %}kds-paid{% endif %}">
   <div class="p-3 d-grid gap-2">
     <div class="d-flex align-items-start justify-content-between gap-2">
@@ -16,92 +16,17 @@
     <div class="small">
       <div><i class="bi bi-shop text-muted-tm me-1"></i><span class="fw-bold">รับที่</span> {{ job.branch.name }}</div>
       <div><i class="bi bi-house text-muted-tm me-1"></i><span class="fw-bold">ส่งที่</span> {{ job.address_text }}</div>
-      {% if job.address_note %}<div class="text-muted-tm ps-4">จุดสังเกต: {{ job.address_note }}</div>{% endif %}
       <div class="text-muted-tm ps-4">{% for item in job.items.all %}{{ item.quantity }}x {{ item.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
     </div>
 
     {% if mine %}
-      <div class="d-flex flex-wrap gap-2">
-        {% if job.status == 'DELIVERING' %}
-          <a class="btn btn-outline-ink btn-sm btn-icon flex-fill" target="_blank" rel="noopener"
-             href="https://www.google.com/maps/dir/?api=1&destination={{ job.delivery_location.y|stringformat:'f' }},{{ job.delivery_location.x|stringformat:'f' }}&travelmode=driving"><i class="bi bi-sign-turn-right"></i>นำทางไปบ้านลูกค้า</a>
-        {% elif job.branch.location %}
-          <a class="btn btn-outline-ink btn-sm btn-icon flex-fill" target="_blank" rel="noopener"
-             href="https://www.google.com/maps/dir/?api=1&destination={{ job.branch.location.y|stringformat:'f' }},{{ job.branch.location.x|stringformat:'f' }}&travelmode=driving"><i class="bi bi-sign-turn-right"></i>นำทางไปร้าน</a>
-        {% endif %}
-        <a class="btn btn-outline-ink btn-sm btn-icon flex-fill" href="tel:{{ job.recipient_phone }}"><i class="bi bi-telephone"></i>โทรลูกค้า</a>
-      </div>
-
-      {% if job.status == 'DELIVERING' %}
-        {% comment %} ส่งสำเร็จต้องถ่ายรูป 1-4 รูป (แตะแล้วเปิดกล้องหลังทันที) · ใส่พิกัดตอนกดส่ง (rider.js เติมให้ถ้ามี)
-           ช่องไฟล์ 4 ช่องแยกกัน (ช่องละ 1 รูป) เพราะ iPhone ไม่เปิดกล้องตรงถ้าช่องเดียวเลือกหลายรูป
-           rider.js ย่อรูปก่อนส่ง (tmppCompressImage) ให้อัปโหลดเร็วบนเน็ตมือถือ {% endcomment %}
-        <form method="post" action="{% url 'delivery:rider_complete' job.pk %}" enctype="multipart/form-data" class="d-grid gap-2"
-              x-data="{ busy: false, working: false, opening: false, slots: [null, null, null, null],
-                        get count() { return this.slots.filter(Boolean).length },
-                        add() {
-                          const i = this.slots.indexOf(null);
-                          if (i === -1) return;
-                          /* ตั้ง data-busy ก่อนเปิดกล้อง: กลับจากกล้องแล้วหน้าเว็บจะโหลดรายการงานใหม่
-                             ถ้าไม่หยุดไว้ ฟอร์มถูกแทนที่และรูปที่เพิ่งถ่ายหายไป (บั๊กรอบแรก) */
-                          this.opening = true;
-                          this.$refs['p' + i].click();
-                        },
-                        async pick(i, event) {
-                          const input = event.target; let file = input.files[0];
-                          this.opening = false;
-                          if (!file) return;
-                          this.working = true;
-                          try { if (window.tmppCompressImage) file = await window.tmppCompressImage(input); } finally { this.working = false }
-                          if (this.slots[i]) URL.revokeObjectURL(this.slots[i]);
-                          this.slots[i] = URL.createObjectURL(file);
-                        },
-                        remove(i) { this.$refs['p' + i].value = ''; URL.revokeObjectURL(this.slots[i]); this.slots[i] = null } }"
-              @submit="busy = true" :data-busy="(count > 0 || busy || opening || working) ? 'true' : null">
-          {% csrf_token %}
-          <input type="hidden" name="latitude" data-gps-lat>
-          <input type="hidden" name="longitude" data-gps-lng>
-          {% for i in "0123" %}
-            <input type="file" name="photos" accept="image/*" capture="environment" class="d-none" x-ref="p{{ i }}"
-                   @change="pick({{ i }}, $event)" @cancel="opening = false">
-          {% endfor %}
-
-          <div class="proof-picker" aria-label="รูปตอนส่งของ">
-            <template x-for="(src, i) in slots" :key="i">
-              <div class="proof-slot" :class="!src && 'proof-slot-empty'">
-                <template x-if="src">
-                  <div class="w-100 h-100">
-                    <img :src="src" :alt="'รูปที่ ' + (i + 1)">
-                    <button type="button" class="btn btn-light proof-remove" @click="remove(i)" :aria-label="'ลบรูปที่ ' + (i + 1)"><i class="bi bi-x"></i></button>
-                  </div>
-                </template>
-                <template x-if="!src"><i class="bi bi-image"></i></template>
-              </div>
-            </template>
-          </div>
-
-          <button type="button" class="btn btn-soft btn-lg btn-icon" @click="add()" :disabled="count >= 4 || working || busy">
-            <span class="spinner-border spinner-border-sm" x-show="working" x-cloak></span>
-            <i class="bi bi-camera" x-show="!working"></i>
-            <span x-text="count === 0 ? 'ถ่ายรูปตอนส่งของ' : (count >= 4 ? 'ครบ 4 รูปแล้ว' : 'ถ่ายเพิ่ม (' + count + '/4)')">ถ่ายรูปตอนส่งของ</span>
-          </button>
-          <div class="small-xs text-muted-tm">อย่างน้อย 1 รูป สูงสุด 4 รูป เช่น ของที่หน้าบ้าน, ของในมือลูกค้า, เลขบ้าน/ห้อง</div>
-          <button type="submit" class="btn btn-action btn-lg btn-icon" :disabled="count === 0 || busy || working">
-            <span class="spinner-border spinner-border-sm" x-show="busy" x-cloak></span><i class="bi bi-check2-circle"></i>ส่งสำเร็จ
-          </button>
-        </form>
-      {% else %}
-        <div class="d-flex gap-2">
-          {% if job.status == 'READY' %}
-            <button class="btn btn-action btn-lg flex-grow-1 btn-icon" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "pickup"}'
-                    hx-target="#rider-jobs" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-bag-check"></i>รับอาหารแล้ว ออกเดินทาง</button>
-          {% else %}
-            <div class="flex-grow-1 small text-muted-tm align-self-center"><i class="bi bi-hourglass-split me-1"></i>ครัว{% if job.status == 'PREPARING' %}กำลังทำ{% else %}ยังไม่รับออเดอร์{% endif %} รอที่ร้านได้</div>
-          {% endif %}
-          <button class="btn btn-outline-ink btn-lg" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "release"}'
-                  hx-target="#rider-jobs" hx-swap="innerHTML" hx-confirm="คืนงาน {{ job.order_number }}? งานจะกลับไปให้ไรเดอร์คนอื่น" aria-label="คืนงาน"><i class="bi bi-arrow-counterclockwise"></i></button>
-        </div>
-      {% endif %}
+      <a href="{% url 'delivery:rider_job' job.pk %}" class="btn {% if job.status == 'DELIVERING' %}btn-action{% else %}btn-primary{% endif %} btn-lg btn-icon">
+        {% if job.status == 'DELIVERING' %}<i class="bi bi-sign-turn-right"></i>ไปส่งลูกค้า
+        {% elif job.status == 'READY' %}<i class="bi bi-bag-check"></i>อาหารพร้อม ไปรับที่ร้าน
+        {% elif job.rider_arrived_at %}<i class="bi bi-hourglass-split"></i>รออาหารที่ร้าน
+        {% else %}<i class="bi bi-shop"></i>ไปที่ร้าน{% endif %}
+        <i class="bi bi-chevron-right ms-auto"></i>
+      </a>
     {% else %}
       <button class="btn btn-primary btn-lg btn-icon" hx-post="{% url 'delivery:rider_job_action' job.pk %}" hx-vals='{"action": "accept"}'
               hx-target="#rider-jobs" hx-swap="innerHTML" hx-disabled-elt="this"><i class="bi bi-hand-thumbs-up"></i>รับงานนี้</button>

@@ -39,7 +39,7 @@
 
   {# ถามบอร์ดใหม่ทุก 5 วินาที เฉพาะตอนแท็บเปิด · data-refresh-on-visible: กลับมาที่แท็บแล้วโหลดทันที (app.js) #}
   <div id="kds-board" hx-get="{% url 'orders:kitchen_board' %}"
-       hx-trigger="every 5s [document.visibilityState === 'visible'], refresh" hx-swap="innerHTML" data-refresh-on-visible>
+       hx-trigger="every 5s [document.visibilityState === 'visible' && !document.querySelector('[data-touching]')], refresh" hx-swap="innerHTML" data-refresh-on-visible>
     {% include "orders/kitchen/_board.html" %}
   </div>
 </div>

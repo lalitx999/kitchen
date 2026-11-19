@@ -43,6 +43,19 @@ function tmppRefreshVisible() {
   document.querySelectorAll('[data-refresh-on-visible]').forEach(function (el) { htmx.trigger(el, 'refresh'); });
 }
 document.addEventListener('visibilitychange', tmppRefreshVisible);
+
+/* นิ้วแตะส่วนที่โหลดใหม่ทุก 5 วิ (บอร์ดครัว, งานไรเดอร์) -> ติด [data-touching] 2 วิ ให้ polling ข้ามรอบนั้น
+   ไม่อย่างนั้นปุ่มถูกแทนที่ระหว่างกด แล้วการกดหาย (เจอตอนทดสอบ M13) · ใช้คู่กับ hx-trigger "... && !document.querySelector('[data-touching]')" */
+(function () {
+  var timer = null;
+  document.addEventListener('pointerdown', function (event) {
+    var area = event.target.closest && event.target.closest('[data-refresh-on-visible]');
+    if (!area) return;
+    area.setAttribute('data-touching', '1');
+    clearTimeout(timer);
+    timer = setTimeout(function () { area.removeAttribute('data-touching'); }, 2000);
+  }, true);
+})();
 // แอปบนหน้าจอโฮม (iPhone) กลับมาจากพื้นหลังด้วยหน้าเก่าในหน่วยความจำ (bfcache) โดยไม่ยิง visibilitychange
 window.addEventListener('pageshow', function (event) { if (event.persisted) tmppRefreshVisible(); });
 window.addEventListener('focus', tmppRefreshVisible);

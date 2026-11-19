@@ -1,8 +1,31 @@
-{# รายการงาน: โหลดใหม่ทุก 5 วินาที · id งานใหม่ส่งให้ JS เล่นเสียง #}
+{% load humanize %}
+{# รายการงาน: โหลดใหม่ทุก 5 วินาที · id งานใหม่ส่งให้ JS เล่นเสียง · กล่องสรุปอยู่ในนี้ให้ตัวเลขสดตาม #}
 <script type="application/json" id="rider-available-ids">[{% for job in available_jobs %}"{{ job.pk }}"{% if not forloop.last %},{% endif %}{% endfor %}]</script>
 {# ตัวเลขบนไอคอนแอป "TMPP ไรเดอร์" = งานใหม่ที่รับได้ (app.js) #}
 <span data-app-badge="{% if profile.is_online %}{{ available_jobs|length }}{% else %}0{% endif %}" hidden></span>
-<span id="rider-delivering" data-active="{% for job in my_jobs %}{% if job.status == 'DELIVERING' %}1{% endif %}{% endfor %}" hidden></span>
+
+<section class="rider-stats mb-3" aria-label="สรุปวันนี้">
+  <div class="rider-stat">
+    <span class="rider-stat-icon text-brand"><i class="bi bi-box-seam"></i></span>
+    <span class="rider-stat-value">{% if profile.is_online %}{{ available_jobs|length }}{% else %}-{% endif %}</span>
+    <span class="rider-stat-label">งานรอรับ</span>
+  </div>
+  <div class="rider-stat">
+    <span class="rider-stat-icon text-action"><i class="bi bi-check2-circle"></i></span>
+    <span class="rider-stat-value">{{ today.jobs }}</span>
+    <span class="rider-stat-label">ส่งวันนี้</span>
+  </div>
+  <div class="rider-stat">
+    <span class="rider-stat-icon text-accent"><i class="bi bi-cash-coin"></i></span>
+    <span class="rider-stat-value">฿{{ today.earned|floatformat:"0"|intcomma }}</span>
+    <span class="rider-stat-label">ค่าส่งวันนี้</span>
+  </div>
+  <div class="rider-stat">
+    <span class="rider-stat-icon"><i class="bi bi-signpost-split"></i></span>
+    <span class="rider-stat-value">{{ today.km|floatformat:"1" }}</span>
+    <span class="rider-stat-label">กม. วันนี้</span>
+  </div>
+</section>
 
 <section class="mb-3">
   <h2 class="h6 fw-black mb-2"><i class="bi bi-box-seam text-brand me-2"></i>งานของฉัน <span class="text-muted-tm fw-normal">({{ my_jobs|length }})</span></h2>

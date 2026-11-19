@@ -1,6 +1,6 @@
 # TMPP — แผนสร้างระบบสั่งอาหารและส่งอาหารใหม่
 
-> วันที่: 19/11/2569 · สถานะ: ออนไลน์ที่ https://tmth-th.com (ใช้คู่ระบบเดิม) · ถัดไป: ออกแบบใหม่ M12–M15 (§11) → ทดสอบจริง + ปิดระบบเดิม
+> วันที่: 19/11/2569 · สถานะ: ออนไลน์ที่ https://tmth-th.com (ใช้คู่ระบบเดิม) · ถัดไป: M14 จอครัว → M15 เซลเพจ (§11) → ทดสอบจริง + ปิดระบบเดิม
 > ของเดิม: `~/Documents/food` (Django 5 + DRF + Next.js 15) · ของใหม่: `~/Documents/foodnes`
 
 ---
@@ -233,6 +233,7 @@ AuditLog (actor, action, target, before/after JSON, ip)
 | 17/11/2569 | M10 ขั้นที่ 1 | ขึ้น VPS ด้วย docker compose `tmpp-prod` + Caddy พอร์ต 8080 (80/443 เป็นของระบบเดิม), แก้ worker พังเพราะขาด `packaging` (`docs/modules/module_08_deploy.md`) | migrate ผ่าน, ทุก service ขึ้นค้าง, /healthz/ ok จากภายนอก, หน้าเว็บโหลดครบ |
 | 17/11/2569 | M10 ขั้นที่ 2 | โดเมน `tmth-th.com` + HTTPS ผ่าน Caddy ระบบเดิม ส่งต่อมาระบบใหม่ :8080, รองรับ HEAD | ใบรับรองออกแล้ว, redirect/HSTS/cookie Secure ถูกต้อง, api เดิมยังทำงาน |
 | 19/11/2569 | M12 PWA แบบแอป | manifest แยก ลูกค้า/ครัว/ไรเดอร์, service worker เก็บ static ที่มี hash + แถบเวอร์ชันใหม่, ปุ่มย้อนกลับ, ดึงลงโหลดใหม่, โครงร่างหน้าเลือกอาหาร, ตัวเลขบนไอคอน, `--tm-danger` (`docs/modules/module_12_pwa_app.md`) | pytest 260 passed, ทดสอบ localhost 375/768px · รอ user: ทดสอบมือถือจริงหลัง deploy |
+| 19/11/2569 | M13 แอปไรเดอร์ | แถบล่าง 4 แท็บ (หน้าแรก/งาน/รายได้/โปรไฟล์), กล่องสรุป 4 ช่อง, หน้างานแผนที่ + แผ่นล่าง (เส้นตรง U3), ถึงร้านแล้ว (`rider_arrived_at` + ครัวเห็น), หน้าส่งสำเร็จ, GPS ทุกแท็บ, กันการกดหายตอน polling (ไรเดอร์ + ครัว) (`docs/modules/module_13_rider_app.md`) | pytest 271 passed, ทดสอบ localhost 375px · R0: migrate `orders 0005` · รอ user: แผนที่/GPS/กล้องบนมือถือจริง |
 
 ---
 

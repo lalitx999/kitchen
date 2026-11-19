@@ -1,0 +1,58 @@
+{% extends "layouts/rider.html" %}
+{% load humanize %}
+{# แท็บ "รายได้": ค่าส่งที่ร้านยังไม่ได้จ่าย + สรุปวันนี้/7 วัน + ประวัติการจ่าย (ร้านบันทึกใน Console) #}
+
+{% block title %}รายได้ — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<h1 class="h5 fw-black mb-3">รายได้</h1>
+
+<section class="rider-wallet mb-3">
+  <div class="small fw-bold">ร้านยังไม่ได้จ่าย</div>
+  <div class="rider-wallet-value">฿{{ unpaid_total|floatformat:"0"|intcomma }}</div>
+  <div class="small">{{ unpaid_orders|length }}{% if unpaid_orders|length >= 20 %}+{% endif %} งานที่ส่งแล้ว · ร้านจ่ายแล้วจะหายจากยอดนี้</div>
+</section>
+
+<section class="rider-stats rider-stats-2 mb-3">
+  <div class="rider-stat">
+    <span class="rider-stat-label">วันนี้</span>
+    <span class="rider-stat-value">฿{{ today.earned|floatformat:"0"|intcomma }}</span>
+    <span class="small-xs text-muted-tm">{{ today.jobs }} เที่ยว · {{ today.km|floatformat:"1" }} กม.</span>
+  </div>
+  <div class="rider-stat">
+    <span class="rider-stat-label">7 วันล่าสุด</span>
+    <span class="rider-stat-value">฿{{ week.earned|floatformat:"0"|intcomma }}</span>
+    <span class="small-xs text-muted-tm">{{ week.jobs }} เที่ยว · {{ week.km|floatformat:"1" }} กม.</span>
+  </div>
+</section>
+
+<h2 class="h6 fw-black mb-2">งานที่รอร้านจ่าย</h2>
+<div class="card-tm overflow-hidden mb-3">
+  {% for job in unpaid_orders %}
+    <div class="rider-row">
+      <div class="min-w-0">
+        <div class="fw-bold font-mono-num">{{ job.order_number }}</div>
+        <div class="small-xs text-muted-tm">{{ job.completed_at|date:"j M H:i" }} · {{ job.distance_km }} กม.</div>
+      </div>
+      <div class="fw-black text-brand">฿{{ job.rider_fee|floatformat:"0" }}</div>
+    </div>
+  {% empty %}
+    <div class="small text-muted-tm text-center py-4">ไม่มีค่าส่งค้างจ่าย</div>
+  {% endfor %}
+</div>
+
+<h2 class="h6 fw-black mb-2">ร้านจ่ายแล้ว</h2>
+<div class="card-tm overflow-hidden">
+  {% for payout in payouts %}
+    <div class="rider-row">
+      <div class="min-w-0">
+        <div class="fw-bold">{{ payout.created_at|date:"j M Y" }}</div>
+        <div class="small-xs text-muted-tm">{{ payout.job_count }} งาน{% if payout.note %} · {{ payout.note }}{% endif %}</div>
+      </div>
+      <div class="fw-black">฿{{ payout.amount|floatformat:"0"|intcomma }}</div>
+    </div>
+  {% empty %}
+    <div class="small text-muted-tm text-center py-4">ยังไม่มีประวัติการจ่าย</div>
+  {% endfor %}
+</div>
+{% endblock %}

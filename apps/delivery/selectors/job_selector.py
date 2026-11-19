@@ -12,6 +12,7 @@ from ..services import live_location_service
 ACTIVE_JOB_STATUSES = (*ASSIGNABLE_STATUSES, OrderStatus.DELIVERING)
 _FIELDS = (
     'id', 'order_number', 'status', 'rider_id', 'branch_id', 'paid_at', 'rider_fee', 'distance_km', 'total',
+    'rider_assigned_at', 'rider_arrived_at', 'picked_up_at', 'completed_at',
     'recipient_name', 'recipient_phone', 'address_text', 'address_note', 'delivery_location', 'note',
     'branch__name', 'branch__phone', 'branch__address', 'branch__location',
 )
@@ -47,12 +48,68 @@ def get_job(order_id):
     return Order.objects.filter(pk=order_id).select_related('branch').first()
 
 
+def _day_start(days_ago: int = 0):
+    return timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days_ago)
+
+
+def _completed_summary(rider, since) -> dict:
+    agg = Order.objects.filter(rider=rider, status=OrderStatus.COMPLETED, completed_at__gte=since).aggregate(
+        n=Count('id'), earned=Sum('rider_fee'), km=Sum('distance_km'),
+    )
+    return {'jobs': agg['n'], 'earned': agg['earned'] or Decimal('0'), 'km': agg['km'] or Decimal('0')}
+
+
 def today_summary(rider) -> dict:
-    start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
-    agg = Order.objects.filter(
-        rider=rider, status=OrderStatus.COMPLETED, completed_at__gte=start, completed_at__lt=start + timedelta(days=1),
-    ).aggregate(n=Count('id'), earned=Sum('rider_fee'))
-    return {'jobs': agg['n'], 'earned': agg['earned'] or Decimal('0')}
+    """ส่งสำเร็จวันนี้: จำนวนเที่ยว, ค่าส่ง, กม. (ระยะร้าน-ลูกค้าตามที่คิดค่าส่ง) — 1 query"""
+    return _completed_summary(rider, _day_start())
+
+
+def week_summary(rider) -> dict:
+    """7 วันล่าสุด (รวมวันนี้)"""
+    return _completed_summary(rider, _day_start(6))
+
+
+# แท็บหน้า "งาน" ของไรเดอร์: ชื่อแท็บ -> สถานะที่แสดง (None = ทุกสถานะ)
+HISTORY_TABS = {
+    'all': None,
+    'active': ACTIVE_JOB_STATUSES,
+    'done': (OrderStatus.COMPLETED,),
+    'cancelled': (OrderStatus.CANCELLED,),
+}
+HISTORY_DAYS = 60
+HISTORY_LIMIT = 50
+
+
+def history(rider, tab: str = 'all') -> list[Order]:
+    """
+    งานของไรเดอร์คนนี้ 60 วันล่าสุด (สูงสุด 50 รายการ) — 1 query ไม่ดึงรายการอาหาร
+    ยกเลิก = งานที่ไรเดอร์คนนี้ถืออยู่ตอนออเดอร์ถูกยกเลิก
+    """
+    statuses = HISTORY_TABS.get(tab, None)
+    qs = Order.objects.filter(rider=rider, rider_assigned_at__gte=_day_start(HISTORY_DAYS))
+    if statuses:
+        qs = qs.filter(status__in=statuses)
+    return list(
+        qs.select_related('branch')
+        .only('id', 'order_number', 'status', 'rider_id', 'branch_id', 'branch__name', 'address_text', 'rider_fee',
+              'distance_km', 'rider_assigned_at', 'completed_at', 'cancelled_at', 'cancelled_reason')
+        .order_by('-rider_assigned_at')[:HISTORY_LIMIT]
+    )
+
+
+def get_my_job(rider, order_id) -> Order | None:
+    """งาน 1 งานของไรเดอร์คนนี้ (ทุกสถานะ) พร้อมร้านและรายการอาหาร · งานคนอื่น = None (view ตอบ 404)"""
+    return (
+        Order.objects.filter(pk=order_id, rider=rider)
+        .select_related('branch').only(*_FIELDS).prefetch_related(_items())
+        .first()
+    )
+
+
+def proof_photo_count(order) -> int:
+    from ..models import DeliveryProofPhoto
+
+    return DeliveryProofPhoto.objects.filter(proof__order=order).count()
 
 
 def tracking_for_order(order) -> dict:

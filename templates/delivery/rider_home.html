@@ -1,14 +1,18 @@
 {% extends "layouts/rider.html" %}
-{% load static humanize %}
+{% load static %}
+{# หน้าแรกไรเดอร์: ทักทาย + สถานะ / เปิด-ปิดรับงาน / สรุปวันนี้ 4 ช่อง / งานของฉัน / งานใหม่ #}
 
 {% block content %}
 <div class="d-grid gap-3">
   <div class="d-flex align-items-center justify-content-between gap-2">
-    <div class="min-w-0">
-      <div class="small text-muted-tm">สวัสดี</div>
-      <h1 class="h5 fw-black mb-0 text-truncate">{{ user.full_name }}</h1>
+    <div class="d-flex align-items-center gap-2 min-w-0">
+      <span class="rider-avatar">{{ user.full_name|slice:":1" }}</span>
+      <div class="min-w-0">
+        <div class="small text-muted-tm">สวัสดี</div>
+        <h1 class="h5 fw-black mb-0 text-truncate">{{ user.full_name }}</h1>
+      </div>
     </div>
-    <button type="button" data-sound-toggle class="btn btn-primary btn-sm btn-icon" aria-pressed="false" aria-label="เปิดเสียง">
+    <button type="button" data-sound-toggle class="btn btn-primary btn-sm btn-icon flex-none" aria-pressed="false" aria-label="เปิดเสียง">
       <i class="bi bi-volume-mute"></i><span data-sound-label>เปิดเสียง</span>
     </button>
   </div>
@@ -21,31 +25,10 @@
   {% include "delivery/_status_card.html" %}
   {% if push_config %}<div class="d-grid">{% include "components/_push_button.html" %}</div>{% endif %}
 
-  {# แถบสถานะการส่งตำแหน่ง (rider.js เป็นคนอัปเดต) #}
-  <div id="gps-bar" class="small px-3 py-2 rounded-3 border bg-white {% if not profile.is_online %}d-none{% endif %}" role="status">
-    <i class="bi bi-geo-alt me-1"></i><span id="gps-text">กำลังหาตำแหน่ง...</span>
-  </div>
-
-  {# หยุดโหลดใหม่ระหว่างที่ไรเดอร์ถ่ายรูปส่งของอยู่ ([data-busy]) ไม่อย่างนั้นรูปที่ถ่ายจะหาย #}
+  {# หยุดโหลดใหม่ระหว่างที่ไรเดอร์ทำอะไรค้างอยู่ ([data-busy]) #}
   <div id="rider-jobs" hx-get="{% url 'delivery:rider_jobs' %}"
-       hx-trigger="every 5s [document.visibilityState === 'visible' && !document.querySelector('[data-busy]')], refresh[!document.querySelector('[data-busy]')]" hx-swap="innerHTML" data-refresh-on-visible>
+       hx-trigger="every 5s [document.visibilityState === 'visible' && !document.querySelector('[data-busy], [data-touching]')], refresh[!document.querySelector('[data-busy]')]" hx-swap="innerHTML" data-refresh-on-visible>
     {% include "delivery/_jobs.html" %}
   </div>
-
-  <section class="card-tm card-tm-body p-4">
-    <h2 class="h6 fw-black mb-3"><i class="bi bi-person-badge text-brand me-2"></i>ข้อมูลไรเดอร์</h2>
-    <ul class="list-unstyled small d-grid gap-2 mb-0">
-      <li class="d-flex justify-content-between"><span class="text-muted-tm">ทะเบียนรถ</span><span class="fw-bold">{{ profile.vehicle_plate|default:"ยังไม่ได้ระบุ" }}</span></li>
-      <li class="d-flex justify-content-between"><span class="text-muted-tm">เบอร์โทร</span><span>{{ user.phone|default:"ยังไม่ได้ระบุ" }}</span></li>
-    </ul>
-  </section>
 </div>
-
-<audio data-sound="rider" src="{% static 'sounds/bell-rider.mp3' %}" preload="auto"></audio>
-<div id="rider-config" data-location-url="{% url 'delivery:rider_location' %}" data-online="{{ profile.is_online|yesno:'1,0' }}" hidden></div>
-{% endblock %}
-
-{% block extra_body %}
-<script src="{% static 'js/sound.js' %}" defer></script>
-<script src="{% static 'js/rider.js' %}" defer></script>
 {% endblock %}

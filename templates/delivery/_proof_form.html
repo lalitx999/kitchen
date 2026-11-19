@@ -1,0 +1,56 @@
+{% comment %} ถึงบ้านลูกค้า: ถ่ายรูป 1-4 รูป (แตะแล้วเปิดกล้องหลังทันที) แล้วกดส่งสำเร็จ · ใส่พิกัดตอนกดส่ง (rider.js เติมให้ถ้ามี)
+   ช่องไฟล์ 4 ช่องแยกกัน (ช่องละ 1 รูป) เพราะ iPhone ไม่เปิดกล้องตรงถ้าช่องเดียวเลือกหลายรูป
+   rider.js ย่อรูปก่อนส่ง (tmppCompressImage) ให้อัปโหลดเร็วบนเน็ตมือถือ
+   data-busy: หยุดแผ่นล่างโหลดใหม่ระหว่างถ่ายรูป ไม่อย่างนั้นกลับจากกล้องแล้วรูปหาย {% endcomment %}
+<form method="post" action="{% url 'delivery:rider_complete' job.pk %}" enctype="multipart/form-data" class="d-grid gap-2"
+      x-data="{ busy: false, working: false, opening: false, slots: [null, null, null, null],
+                get count() { return this.slots.filter(Boolean).length },
+                add() {
+                  const i = this.slots.indexOf(null);
+                  if (i === -1) return;
+                  this.opening = true;
+                  this.$refs['p' + i].click();
+                },
+                async pick(i, event) {
+                  const input = event.target; let file = input.files[0];
+                  this.opening = false;
+                  if (!file) return;
+                  this.working = true;
+                  try { if (window.tmppCompressImage) file = await window.tmppCompressImage(input); } finally { this.working = false }
+                  if (this.slots[i]) URL.revokeObjectURL(this.slots[i]);
+                  this.slots[i] = URL.createObjectURL(file);
+                },
+                remove(i) { this.$refs['p' + i].value = ''; URL.revokeObjectURL(this.slots[i]); this.slots[i] = null } }"
+      @submit="busy = true" :data-busy="(count > 0 || busy || opening || working) ? 'true' : null">
+  {% csrf_token %}
+  <input type="hidden" name="latitude" data-gps-lat>
+  <input type="hidden" name="longitude" data-gps-lng>
+  {% for i in "0123" %}
+    <input type="file" name="photos" accept="image/*" capture="environment" class="d-none" x-ref="p{{ i }}"
+           @change="pick({{ i }}, $event)" @cancel="opening = false">
+  {% endfor %}
+
+  <div class="proof-picker" aria-label="รูปตอนส่งของ" x-show="count > 0" x-cloak>
+    <template x-for="(src, i) in slots" :key="i">
+      <div class="proof-slot" :class="!src && 'proof-slot-empty'">
+        <template x-if="src">
+          <div class="w-100 h-100">
+            <img :src="src" :alt="'รูปที่ ' + (i + 1)">
+            <button type="button" class="btn btn-light proof-remove" @click="remove(i)" :aria-label="'ลบรูปที่ ' + (i + 1)"><i class="bi bi-x"></i></button>
+          </div>
+        </template>
+        <template x-if="!src"><i class="bi bi-image"></i></template>
+      </div>
+    </template>
+  </div>
+
+  <button type="button" class="btn btn-lg btn-icon" :class="count === 0 ? 'btn-primary' : 'btn-soft'" @click="add()" :disabled="count >= 4 || working || busy">
+    <span class="spinner-border spinner-border-sm" x-show="working" x-cloak></span>
+    <i class="bi bi-camera" x-show="!working"></i>
+    <span x-text="count === 0 ? 'ถึงแล้ว ถ่ายรูป' : (count >= 4 ? 'ครบ 4 รูปแล้ว' : 'ถ่ายเพิ่ม (' + count + '/4)')">ถึงแล้ว ถ่ายรูป</span>
+  </button>
+  <div class="small-xs text-muted-tm">อย่างน้อย 1 รูป สูงสุด 4 รูป เช่น ของที่หน้าบ้าน, ของในมือลูกค้า, เลขบ้าน/ห้อง</div>
+  <button type="submit" class="btn btn-action btn-lg btn-icon" x-show="count > 0" x-cloak :disabled="count === 0 || busy || working">
+    <span class="spinner-border spinner-border-sm" x-show="busy" x-cloak></span><i class="bi bi-check2-circle"></i>ส่งสำเร็จ
+  </button>
+</form>

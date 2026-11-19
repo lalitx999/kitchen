@@ -1,0 +1,47 @@
+{% extends "layouts/rider.html" %}
+{% load static %}
+{# หน้างาน (นำทาง): แผนที่ด้านบน + แผ่นล่างเลื่อนทับแผนที่ (ไม่มีแถบล่าง ให้พื้นที่กับแผนที่) #}
+{# เส้นบนแผนที่เป็นเส้นตรงจากไรเดอร์ถึงเป้าหมาย (ไม่ใช้ Directions API เพราะคิดเงินทุกครั้ง) ปุ่ม "นำทาง" เปิดแอป Google Maps #}
+
+{% block title %}งาน {{ job.order_number }} — {{ SITE_NAME }}{% endblock %}
+{% block body_class %}rider-app rider-job{% endblock %}
+{% block gps_bar %}{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<div class="rider-map" id="rider-map" data-no-ptr>
+  {% if not google_maps_api_key %}
+    <div class="rider-map-empty">
+      <i class="bi bi-map fs-2"></i>
+      <div class="fw-bold">ยังไม่มีแผนที่</div>
+      <div class="small">ตั้ง <code>GOOGLE_MAPS_API_KEY</code> ใน .env แล้วแผนที่จะขึ้นที่นี่ · ระหว่างนี้ใช้ปุ่ม "นำทาง" ด้านล่างได้</div>
+    </div>
+  {% endif %}
+</div>
+
+<div class="rider-sheet">
+  <div class="rider-sheet-grip" aria-hidden="true"></div>
+  {% include "delivery/_gps_bar.html" %}
+  {# หยุดโหลดใหม่ระหว่างถ่ายรูปส่งของ ([data-busy]) ไม่อย่างนั้นรูปที่ถ่ายจะหาย · และระหว่างนิ้วแตะแผ่นนี้ ([data-touching]) ไม่อย่างนั้นการกดปุ่มอาจหาย #}
+  <div id="job-sheet" hx-get="{% url 'delivery:rider_job_sheet' job.pk %}"
+       hx-trigger="every 5s [document.visibilityState === 'visible' && !document.querySelector('[data-busy], [data-touching]')], refresh[!document.querySelector('[data-busy]')]"
+       hx-swap="innerHTML" data-refresh-on-visible>
+    {% include "delivery/_job_sheet.html" %}
+  </div>
+</div>
+
+{# พิกัดร้าน/ลูกค้าของงานนี้ (ไรเดอร์คนนี้เท่านั้นที่เปิดหน้านี้ได้) #}
+<script type="application/json" id="job-config">{
+  "shop": {% if job.branch.location %}{"lat": {{ job.branch.location.y|stringformat:'f' }}, "lng": {{ job.branch.location.x|stringformat:'f' }}}{% else %}null{% endif %},
+  "customer": {"lat": {{ job.delivery_location.y|stringformat:'f' }}, "lng": {{ job.delivery_location.x|stringformat:'f' }}}
+}</script>
+{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/rider_job.js' %}" defer></script>
+{% if google_maps_api_key %}
+  {# Google Maps โหลดเฉพาะหน้านี้ (ลดค่าใช้จ่าย) #}
+  <script>window.TMPP_MAP_ID = '{{ google_maps_map_id|escapejs }}';</script>
+  <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key|urlencode }}&callback=tmppInitRiderMap&loading=async" defer></script>
+{% endif %}
+{% endblock %}

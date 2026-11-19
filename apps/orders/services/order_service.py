@@ -204,6 +204,22 @@ def assign_rider(order: Order, rider) -> Order:
     return locked
 
 
+def mark_rider_arrived(order: Order, rider) -> Order:
+    """ไรเดอร์ถึงร้าน: บันทึกเวลาให้ครัวเห็น (ไม่เปลี่ยนสถานะ จึงไม่ผ่าน transition_order) · กดซ้ำได้ ไม่เกิดผลซ้ำ"""
+    with transaction.atomic():
+        locked = Order.objects.select_for_update().get(pk=order.pk)
+        if locked.rider_id != rider.pk:
+            raise AssignmentError('ไม่ใช่งานของคุณ')
+        if locked.status not in ASSIGNABLE_STATUSES:
+            raise AssignmentError('รับอาหารไปแล้ว')
+        if locked.rider_arrived_at is None:
+            locked.rider_arrived_at = timezone.now()
+            locked.save(update_fields=['rider_arrived_at', 'updated_at'])
+            OrderStatusLog.objects.create(order=locked, from_status=locked.status, to_status=locked.status,
+                                          actor=rider, note=f'ไรเดอร์ {rider.full_name} ถึงร้านแล้ว')
+    return locked
+
+
 def unassign_rider(order: Order, rider, *, note: str = 'ไรเดอร์คืนงาน') -> Order:
     with transaction.atomic():
         locked = Order.objects.select_for_update().get(pk=order.pk)
@@ -211,8 +227,8 @@ def unassign_rider(order: Order, rider, *, note: str = 'ไรเดอร์ค
             raise AssignmentError('ไม่ใช่งานของคุณ')
         if locked.status not in ASSIGNABLE_STATUSES:
             raise AssignmentError('รับอาหารไปแล้ว คืนงานไม่ได้')
-        locked.rider, locked.rider_assigned_at = None, None
-        locked.save(update_fields=['rider', 'rider_assigned_at', 'updated_at'])
+        locked.rider, locked.rider_assigned_at, locked.rider_arrived_at = None, None, None
+        locked.save(update_fields=['rider', 'rider_assigned_at', 'rider_arrived_at', 'updated_at'])
         OrderStatusLog.objects.create(order=locked, from_status=locked.status, to_status=locked.status,
                                       actor=rider, note=note)
     return locked

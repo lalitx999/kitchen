@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{# หน้าไรเดอร์: ออกแบบให้ใช้มือเดียวบนมือถือ ปุ่มใหญ่ ไม่มี footer #}
+{# แอปไรเดอร์: ใช้มือเดียวบนมือถือ ปุ่มใหญ่ แถบล่าง 4 แท็บ (หน้าแรก / งาน / รายได้ / โปรไฟล์) #}
+{# GPS + กันจอดับ + เสียงงานใหม่ (rider.js) โหลดทุกหน้า: ไรเดอร์เปิดดูรายได้ระหว่างส่งของ ตำแหน่งก็ยังส่งให้ลูกค้าต่อ #}
 
 {% block title %}ไรเดอร์ — {{ SITE_NAME }}{% endblock %}
-{% block body_class %}rider-app{% endblock %}
+{% block body_class %}rider-app has-bottom-nav{% endblock %}
 {% block manifest %}{% static 'manifest-rider.webmanifest' %}{% endblock %}
 {% block app_name %}TMPP ไรเดอร์{% endblock %}
 
@@ -21,16 +22,46 @@
     </a>
     <div class="d-flex align-items-center gap-2">
       {% include "components/_bell.html" %}
-      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
-        <button type="submit" class="btn btn-outline-ink btn-sm btn-icon"><i class="bi bi-box-arrow-right"></i><span>ออก</span></button>
-      </form>
     </div>
   </div>
 </header>
 
 {% include "components/_messages.html" %}
 
-<main class="container-xl py-3" style="max-width: 640px;">
+<main class="container-xl py-3 rider-main">
+  {% block gps_bar %}{% include "delivery/_gps_bar.html" %}{% endblock %}
   {% block content %}{% endblock %}
 </main>
+
+{% block bottom_nav %}
+{% with name=request.resolver_match.url_name %}
+<nav class="tm-bottom-nav rider-bottom-nav" aria-label="เมนูไรเดอร์">
+  <a href="{% url 'delivery:rider_home' %}" class="{% if name == 'rider_home' %}active{% endif %}">
+    <i class="bi bi-house-door"></i><span>หน้าแรก</span>
+  </a>
+  <a href="{% url 'delivery:rider_history' %}" class="{% if name == 'rider_history' or name == 'rider_job' or name == 'rider_job_done' %}active{% endif %}">
+    <i class="bi bi-list-check"></i><span>งาน</span>
+  </a>
+  <a href="{% url 'delivery:rider_earnings' %}" class="{% if name == 'rider_earnings' %}active{% endif %}">
+    <i class="bi bi-wallet2"></i><span>รายได้</span>
+  </a>
+  <a href="{% url 'delivery:rider_profile' %}" class="{% if name == 'rider_profile' %}active{% endif %}">
+    <i class="bi bi-person"></i><span>โปรไฟล์</span>
+  </a>
+</nav>
+{% endwith %}
+{% endblock %}
+
+<div class="toast-container position-fixed start-50 translate-middle-x p-3" style="bottom: calc(var(--tm-bottom-nav-h) + .5rem); z-index: 1090;">
+  <div id="tm-toast" class="toast align-items-center border-0" role="status" aria-live="polite" aria-atomic="true">
+    <div class="d-flex"><div class="toast-body fw-semibold" id="tm-toast-body"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="ปิด"></button></div>
+  </div>
+</div>
+
+<audio data-sound="rider" src="{% static 'sounds/bell-rider.mp3' %}" preload="auto"></audio>
+{# rider.js อ่านสถานะรับงานจากที่นี่ (หน้าแรกมีการ์ดสถานะที่เปลี่ยนได้ ใช้การ์ดนั้นแทน) #}
+<div id="rider-config" data-location-url="{% url 'delivery:rider_location' %}" data-online="{{ user.rider_profile.is_online|yesno:'1,0' }}" hidden></div>
+<script src="{% static 'js/sound.js' %}" defer></script>
+<script src="{% static 'js/rider.js' %}" defer></script>
 {% endblock %}

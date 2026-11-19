@@ -20,7 +20,7 @@ def board(branch, now=None) -> dict:
         Order.objects.filter(branch=branch, status__in=KITCHEN_STATUSES)
         .select_related('rider')
         .only('id', 'order_number', 'status', 'note', 'paid_at', 'updated_at', 'recipient_name', 'total', 'branch_id',
-              'rider__id', 'rider__full_name')
+              'rider_arrived_at', 'rider__id', 'rider__full_name')
         .prefetch_related(items)
         .order_by('paid_at', 'created_at')   # จ่ายก่อนทำก่อน
     )

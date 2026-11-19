@@ -18,7 +18,8 @@ def test_rider_home_shows_status_and_plate(client, rider):
     client.force_login(rider)
     body = client.get(reverse('delivery:rider_home')).content.decode()
     assert 'ปิดรับงาน' in body
-    assert '1กข 1234' in body
+    # M13: ทะเบียนรถย้ายไปแท็บ "โปรไฟล์"
+    assert '1กข 1234' in client.get(reverse('delivery:rider_profile')).content.decode()
 
 
 @pytest.mark.django_db
