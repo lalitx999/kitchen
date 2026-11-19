@@ -94,12 +94,133 @@ document.addEventListener('tmpp:cart-changed', function () {
   var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   if (standalone) document.documentElement.classList.add('is-standalone');
 
-  // service worker: หน้า "ไม่มีอินเทอร์เน็ต" + รับแจ้งเตือน (ไฟล์เดียวกับ Firebase ต้องอยู่ที่ root)
+  // service worker: หน้า "ไม่มีอินเทอร์เน็ต" + เก็บไฟล์ static + รับแจ้งเตือน (ไฟล์เดียวกับ Firebase ต้องอยู่ที่ root)
   if ('serviceWorker' in navigator) {
+    // ตอนเปิดหน้ามี service worker คุมอยู่แล้ว = ถ้าเปลี่ยนตัวคุมทีหลัง แปลว่า deploy ใหม่
+    // (เปิดครั้งแรกสุดยังไม่มีตัวคุม การเปลี่ยนครั้งแรกนั้นไม่ใช่เวอร์ชันใหม่ ไม่ต้องเตือน)
+    var hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController) { hadController = true; return; }
+      var updateBar = document.getElementById('tm-update');
+      if (updateBar) updateBar.classList.remove('d-none');
+    });
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' }).catch(function () { /* ไม่รองรับก็ใช้เว็บได้ปกติ */ });
+      navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' }).then(function (registration) {
+        // จอครัว/ไรเดอร์เปิดค้างทั้งวันโดยไม่เปลี่ยนหน้า เบราว์เซอร์จึงไม่เช็คเวอร์ชันเอง -> เช็คทุก 30 นาที
+        setInterval(function () {
+          if (document.visibilityState === 'visible') registration.update().catch(function () { /* เน็ตหลุด รอบหน้าค่อยเช็ค */ });
+        }, 30 * 60 * 1000);
+      }).catch(function () { /* ไม่รองรับก็ใช้เว็บได้ปกติ */ });
     });
   }
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('[data-app-update]')) return;
+    // ไรเดอร์กำลังถ่ายรูปส่งของ: โหลดใหม่แล้วรูปหาย ต้องถามก่อน
+    if (document.querySelector('[data-busy]') && !window.confirm('รูปที่ถ่ายไว้จะหาย โหลดเวอร์ชันใหม่เลยไหม')) return;
+    window.location.reload();
+  });
+
+  // ปุ่มย้อนกลับบนหัวแอป (components/_app_back.html): แอปที่ติดตั้งแล้วไม่มีปุ่ม back ของเบราว์เซอร์
+  document.addEventListener('DOMContentLoaded', function () {
+    var back = document.querySelector('[data-app-back]');
+    if (!back) return;
+    var roots = (back.dataset.roots || '').split(/\s+/).filter(Boolean);
+    if (roots.indexOf(window.location.pathname) === -1) back.classList.add('is-shown');
+    back.addEventListener('click', function () {
+      // มาจากหน้าอื่นในเว็บเรา -> ย้อนกลับจริง · เปิดมาจากแจ้งเตือน/ลิงก์ภายนอก -> ไปหน้าหลัก
+      var cameFromHere = document.referrer.indexOf(window.location.origin + '/') === 0;
+      if (cameFromHere && window.history.length > 1) window.history.back();
+      else window.location.href = back.dataset.fallback || '/';
+    });
+  });
+
+  // ตัวเลขบนไอคอนแอป (Android/คอม ที่ติดตั้งแล้ว · iPhone ไม่รองรับ)
+  // ใช้ [data-app-badge] ของหน้านั้นก่อน (ครัว = ออเดอร์ใหม่, ไรเดอร์ = งานใหม่) ไม่มีก็ใช้แจ้งเตือนที่ยังไม่อ่าน
+  function syncAppBadge() {
+    if (!('setAppBadge' in navigator)) return;
+    var source = document.querySelector('[data-app-badge]');
+    var count = source ? source.dataset.appBadge : (document.querySelector('[data-app-badge-fallback]') || { dataset: {} }).dataset.appBadgeFallback;
+    count = parseInt(count || '0', 10) || 0;
+    (count > 0 ? navigator.setAppBadge(count) : navigator.clearAppBadge()).catch(function () { /* ไม่ได้ติดตั้งแอป */ });
+  }
+  document.addEventListener('DOMContentLoaded', syncAppBadge);
+  document.addEventListener('htmx:afterSettle', syncAppBadge);
+
+  // หน้าเลือกอาหาร: แตะเมนูแล้วเปิดหน้าต่างพร้อมโครงร่างทันที ไม่ต้องรอเน็ต (เหมือนแอป)
+  document.addEventListener('htmx:beforeRequest', function (event) {
+    var target = event.detail.target;
+    var skeleton = document.getElementById('item-sheet-skeleton');
+    if (!target || target.id !== 'item-sheet-body' || !skeleton || !window.bootstrap) return;
+    target.innerHTML = skeleton.innerHTML;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('item-sheet')).show();
+  });
+  document.addEventListener('htmx:afterRequest', function (event) {
+    var target = event.detail.target;
+    if (!target || target.id !== 'item-sheet-body' || event.detail.successful || !window.bootstrap) return;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('item-sheet')).hide();
+    document.dispatchEvent(new CustomEvent('tmpp:toast', { detail: { message: 'โหลดเมนูไม่สำเร็จ ลองแตะอีกครั้ง', level: 'warning' } }));
+  });
+
+  // ดึงลงเพื่อโหลดใหม่: เฉพาะแอปที่ติดตั้งแล้วบนจอสัมผัส (เบราว์เซอร์ปกติมีของตัวเองอยู่แล้ว)
+  // ถ้าหน้ามีส่วนที่โหลดเองได้ ([data-refresh-on-visible] เช่น บอร์ดครัว/งานไรเดอร์) โหลดแค่ส่วนนั้น ไม่โหลดทั้งหน้า
+  // ไม่โหลดทั้งหน้าเมื่อพิมพ์ฟอร์มค้างไว้หรือกำลังถ่ายรูปส่งของ ([data-busy]) ของที่กรอกจะได้ไม่หาย
+  (function () {
+    if (!standalone || !('ontouchstart' in window)) return;
+    var PULL_READY = 64;       // px ที่ต้องดึง (หลังหน่วงครึ่งหนึ่ง) ถึงจะโหลด
+    var indicator = null, startY = null, pulled = 0, formDirty = false;
+    document.addEventListener('input', function (e) { if (e.target.closest('form')) formDirty = true; });
+
+    function scrolledParent(node) {
+      for (; node && node !== document.body; node = node.parentElement) {
+        if (node.scrollTop > 0) return true;
+      }
+      return false;
+    }
+    function blocked(target) {
+      return document.body.classList.contains('modal-open') ||
+        !!target.closest('[data-no-ptr], .modal, .gm-style, input, textarea, select, .offcanvas') || scrolledParent(target);
+    }
+    function reset() {
+      startY = null; pulled = 0;
+      if (indicator) { indicator.style.transform = ''; indicator.classList.remove('is-pulling', 'is-ready'); }
+    }
+    function refresh() {
+      var parts = document.querySelectorAll('[data-refresh-on-visible]');
+      if (parts.length && window.htmx) {
+        indicator.classList.add('is-loading');
+        parts.forEach(function (el) { htmx.trigger(el, 'refresh'); });
+        setTimeout(function () { indicator.classList.remove('is-loading'); }, 700);
+        return;
+      }
+      if (formDirty || document.querySelector('[data-busy]')) {
+        document.dispatchEvent(new CustomEvent('tmpp:toast', { detail: { message: 'มีข้อมูลที่กรอกค้างไว้ จึงไม่โหลดหน้าใหม่', level: 'warning' } }));
+        return;
+      }
+      indicator.classList.add('is-loading');
+      window.location.reload();
+    }
+    document.addEventListener('touchstart', function (e) {
+      indicator = indicator || document.getElementById('tm-ptr');
+      if (!indicator || window.scrollY > 0 || e.touches.length !== 1 || blocked(e.target)) { startY = null; return; }
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (startY === null) return;
+      var distance = e.touches[0].clientY - startY;
+      if (distance <= 0 || window.scrollY > 0) { reset(); return; }
+      pulled = Math.min(distance / 2, 96);
+      indicator.classList.add('is-pulling');
+      indicator.classList.toggle('is-ready', pulled >= PULL_READY);
+      indicator.style.transform = 'translate(-50%, ' + pulled + 'px) rotate(' + (pulled * 4) + 'deg)';
+    }, { passive: true });
+    document.addEventListener('touchend', function () {
+      if (startY === null) return;
+      var ready = pulled >= PULL_READY;
+      reset();
+      if (ready) refresh();
+    });
+    document.addEventListener('touchcancel', reset);
+  })();
 
   // แถบโหลดด้านบน: เปลี่ยนหน้า (ลิงก์/ฟอร์ม) และ HTMX ที่ใช้เวลานานเกิน 150ms
   var bar = document.getElementById('tm-progress');

@@ -6,6 +6,15 @@
       "runtimeExecutable": ".venv/bin/python",
       "runtimeArgs": ["manage.py", "runserver", "127.0.0.1:8000"],
       "port": 8000
+    },
+    {
+      "name": "tmpp-django-docker",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["run", "--rm", "--name", "tmpp-dev-web", "--network", "host",
+                      "-v", "/home/tanchon/Documents/kitchen:/app",
+                      "-e", "DJANGO_SETTINGS_MODULE=config.settings.local",
+                      "tmpp-dev-test", "python", "manage.py", "runserver", "127.0.0.1:8000"],
+      "port": 8000
     }
   ]
 }

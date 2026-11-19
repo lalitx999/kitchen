@@ -4,10 +4,14 @@
 
 {% block title %}ไรเดอร์ — {{ SITE_NAME }}{% endblock %}
 {% block body_class %}rider-app{% endblock %}
+{% block manifest %}{% static 'manifest-rider.webmanifest' %}{% endblock %}
+{% block app_name %}TMPP ไรเดอร์{% endblock %}
 
 {% block layout %}
 <header class="tm-header">
   <div class="container-xl">
+    {% url 'delivery:rider_home' as rider_url %}
+    {% include "components/_app_back.html" with roots=rider_url fallback=rider_url %}
     <a href="{% block app_home %}{% url 'delivery:rider_home' %}{% endblock %}" class="tm-brand">
       <img src="{% static 'img/logo-mark.svg' %}" alt="" width="36" height="36">
       <span class="d-flex flex-column">

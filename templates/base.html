@@ -8,11 +8,13 @@
   <title>{% block title %}{{ SITE_NAME }} — {{ SITE_TAGLINE }}{% endblock %}</title>
 
   <link rel="icon" type="image/svg+xml" href="{% static 'img/logo-mark.svg' %}">
-  <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+  {# แอปแยกตามบทบาท: layout ครัว/ไรเดอร์เปลี่ยน manifest + ชื่อ ติดตั้งแล้วได้ไอคอนคนละตัวบนหน้าจอโฮม #}
+  {# manifest ลูกค้าคง id "/start/" ไว้เสมอ ไม่อย่างนั้นแอปที่ลูกค้าติดตั้งแล้วจะกลายเป็นแอปเก่าที่ค้าง #}
+  <link rel="manifest" href="{% block manifest %}{% static 'manifest.webmanifest' %}{% endblock %}">
   <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="TMPP">
+  <meta name="apple-mobile-web-app-title" content="{% block app_name %}TMPP{% endblock %}">
   {# default = แถบสถานะพื้นขาว เนื้อหาเริ่มใต้แถบ (ไม่ทับ header) #}
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="format-detection" content="telephone=no">
@@ -32,6 +34,12 @@
 <body class="{% block body_class %}{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {# แถบโหลดบางๆ ด้านบน (แบบแอป) ระหว่างเปลี่ยนหน้า/โหลด HTMX · app.js เป็นคนเปิดปิด #}
   <div id="tm-progress" aria-hidden="true"></div>
+  {# ดึงลงเพื่อโหลดใหม่ (เฉพาะแอปที่ติดตั้งแล้ว) · app.js ขยับวงกลมนี้ตามนิ้ว #}
+  <div id="tm-ptr" aria-hidden="true"><i class="bi bi-arrow-clockwise"></i></div>
+  {# service worker ตัวใหม่ทำงานแล้ว (deploy ใหม่) แต่หน้านี้ยังใช้ JS/CSS ชุดเก่า -> ชวนโหลดใหม่ #}
+  <button type="button" id="tm-update" class="tm-update d-none" data-app-update>
+    <i class="bi bi-arrow-repeat"></i><span>มีเวอร์ชันใหม่</span><span class="tm-update-cta">แตะเพื่อโหลด</span>
+  </button>
   {% block layout %}
     {% block content %}{% endblock %}
   {% endblock %}

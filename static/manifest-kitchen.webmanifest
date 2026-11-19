@@ -1,0 +1,63 @@
+{
+  "name": "TMPP ครัว",
+  "short_name": "TMPP ครัว",
+  "start_url": "/kitchen/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "/static/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/kitchen/",
+  "description": "จอครัว TMPP: รับออเดอร์ ทำอาหาร แจ้งพร้อมส่ง",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "portrait",
+  "dir": "ltr",
+  "categories": [
+    "food",
+    "business"
+  ],
+  "shortcuts": [
+    {
+      "name": "จอครัว",
+      "url": "/kitchen/",
+      "icons": [
+        {
+          "src": "/static/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "แจ้งเตือน",
+      "url": "/notifications/",
+      "icons": [
+        {
+          "src": "/static/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

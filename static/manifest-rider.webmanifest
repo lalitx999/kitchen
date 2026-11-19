@@ -1,0 +1,63 @@
+{
+  "name": "TMPP ไรเดอร์",
+  "short_name": "TMPP ไรเดอร์",
+  "start_url": "/rider/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "/static/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/rider/",
+  "description": "แอปไรเดอร์ TMPP: รับงาน นำทาง ถ่ายรูปส่งของ",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "portrait",
+  "dir": "ltr",
+  "categories": [
+    "food",
+    "business"
+  ],
+  "shortcuts": [
+    {
+      "name": "งานของฉัน",
+      "url": "/rider/",
+      "icons": [
+        {
+          "src": "/static/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "แจ้งเตือน",
+      "url": "/notifications/",
+      "icons": [
+        {
+          "src": "/static/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

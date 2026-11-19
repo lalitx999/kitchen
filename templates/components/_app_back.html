@@ -1,0 +1,6 @@
+{# ปุ่มย้อนกลับบนหัวแอป: แสดงเฉพาะแอปที่ติดตั้งแล้ว (ไม่มีปุ่ม back ของเบราว์เซอร์) และไม่ใช่หน้าหลักของแท็บ #}
+{# roots = หน้าหลักที่คั่นด้วยช่องว่าง · fallback = ไปหน้านี้ถ้าเปิดแอปมาจากแจ้งเตือน (ไม่มีหน้าก่อนหน้า) · app.js จัดการ #}
+<button type="button" class="btn btn-outline-ink btn-sm tm-app-back" data-app-back
+        data-roots="{{ roots }}" data-fallback="{{ fallback }}" aria-label="ย้อนกลับ">
+  <i class="bi bi-chevron-left"></i>
+</button>

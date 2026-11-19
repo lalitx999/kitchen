@@ -26,6 +26,7 @@
   --tm-action: #00c274;         /* เขียว: ปุ่มหลักที่ต้องการให้กด (สั่งเลย, ยืนยัน) */
   --tm-action-hover: #00a863;
   --tm-accent: #ff6b00;         /* ส้ม: แจ้งเตือน ป้ายใหม่ */
+  --tm-danger: #dc2626;         /* แดง: ออเดอร์ช้า ผิดพลาด */
   --tm-ink: #111827;            /* ตัวอักษรหลัก / เมนูที่เลือกใน console */
   --tm-muted: #6b7280;
   --tm-bg: #fcfcfa;             /* พื้นหลังหน้าเว็บ */
@@ -271,9 +272,9 @@ a.tm-pill-muted:hover { border-color: var(--tm-brand-line); color: var(--tm-bran
 .kds-ticket.kds-paid { border-left-color: var(--tm-accent); }
 .kds-ticket.kds-preparing { border-left-color: var(--tm-ink); }
 .kds-ticket.kds-ready { border-left-color: var(--tm-action); }
-.kds-ticket.kds-late { box-shadow: 0 0 0 2px #dc2626; }
+.kds-ticket.kds-late { box-shadow: 0 0 0 2px var(--tm-danger); }
 .kds-timer { font-size: .8rem; font-weight: 700; color: var(--tm-muted); white-space: nowrap; }
-.kds-timer.is-late { color: #dc2626; }
+.kds-timer.is-late { color: var(--tm-danger); }
 .kds-items li { padding: .35rem 0; border-bottom: 1px dashed var(--tm-line); font-size: 1.05rem; }
 .kds-items li:last-child { border-bottom: 0; }
 .kds-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 1.9rem; height: 1.9rem; margin-right: .4rem;
@@ -382,6 +383,10 @@ html { -webkit-tap-highlight-color: transparent; }
 /* เปลี่ยนหน้าแบบเฟดนุ่มๆ (เบราว์เซอร์ที่รองรับ View Transitions) */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
+/* หัวแอปกับแถบล่างอยู่นิ่ง เฟดแค่เนื้อหา (เหมือนแอปจริงที่เปลี่ยนแท็บ) */
+.tm-header { view-transition-name: tm-header; }
+.tm-bottom-nav { view-transition-name: tm-bottom-nav; }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
 /* กดแล้วยุบนิดหน่อย ให้รู้สึกเหมือนปุ่มในแอป */
 .btn, .tm-bottom-nav a, .menu-card-open, .sheet-step, .cart-qty-circle, .suggest-add { touch-action: manipulation; }
 .btn:active:not(:disabled), .menu-card-open:active, .tm-bottom-nav a:active, .sheet-step:active, .suggest-add:active { transform: scale(.97); }
@@ -405,3 +410,36 @@ html { -webkit-tap-highlight-color: transparent; }
 
 /* แถบล่างแบบแอป: ไอคอนเด่นขึ้นเมื่อเลือก */
 .tm-bottom-nav a.active i { transform: translateY(-1px); }
+
+/* ---- M12 แบบแอป ---- */
+/* ปุ่มย้อนกลับบนหัวแอป: แสดงเฉพาะแอปที่ติดตั้งแล้ว + หน้าที่ไม่ใช่หน้าหลัก (app.js ใส่ is-shown) */
+.tm-app-back { display: none; width: 2.25rem; height: 2.25rem; padding: 0; flex: none; align-items: center; justify-content: center; border-radius: 50%; }
+.is-standalone .tm-app-back.is-shown { display: inline-flex; }
+.tm-app-back + .tm-brand { margin-right: auto; }   /* ปุ่มย้อนกลับกับโลโก้อยู่ชิดซ้ายด้วยกัน ปุ่มอื่นชิดขวา */
+/* จอแคบ + มีปุ่มย้อนกลับ: ซ่อนชื่อร้านข้างโลโก้ ให้ปุ่มขวาไม่ล้น (375px) */
+@media (max-width: 399.98px) { .is-standalone .tm-app-back.is-shown + .tm-brand > .d-flex { display: none !important; } }
+
+/* ดึงลงเพื่อโหลดใหม่ */
+#tm-ptr { position: fixed; top: calc(var(--tm-header-h) + env(safe-area-inset-top) - 2.5rem); left: 50%; z-index: 1025;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--tm-surface); color: var(--tm-muted); border: 1px solid var(--tm-line); box-shadow: 0 2px 8px rgba(17, 24, 39, .12);
+  transform: translate(-50%, 0); opacity: 0; pointer-events: none; transition: transform .2s ease, opacity .2s ease; font-size: 1.15rem; }
+#tm-ptr.is-pulling { opacity: 1; transition: none; }
+#tm-ptr.is-ready { color: var(--tm-brand); border-color: var(--tm-brand-line); }
+#tm-ptr.is-loading { opacity: 1; color: var(--tm-brand); transform: translate(-50%, 3.5rem); }
+#tm-ptr.is-loading i { animation: tm-spin .7s linear infinite; }
+@keyframes tm-spin { to { transform: rotate(360deg); } }
+
+/* แถบ "มีเวอร์ชันใหม่" ลอยเหนือแถบล่าง */
+.tm-update { position: fixed; left: 50%; transform: translateX(-50%); z-index: 1095;
+  bottom: calc(1rem + env(safe-area-inset-bottom)); display: inline-flex; align-items: center; gap: .5rem;
+  max-width: calc(100vw - 2rem); padding: .65rem 1rem; border: 0; border-radius: 999px;
+  background: var(--tm-ink); color: #fff; font-weight: 600; font-size: .9rem; box-shadow: 0 6px 20px rgba(17, 24, 39, .25); white-space: nowrap; }
+.has-bottom-nav .tm-update { bottom: calc(var(--tm-bottom-nav-h) + .75rem + env(safe-area-inset-bottom)); }
+.tm-update.d-none { display: none !important; }
+.tm-update .tm-update-cta { color: var(--tm-brand-line); font-weight: 800; }
+
+/* โครงร่างระหว่างโหลด: กระพริบช้าๆ ด้วยสีพื้นเรียบ (ไม่ใช้แถบไล่สีวิ่ง เพราะห้าม gradient) */
+.tm-skeleton { background: #eceef1; border-radius: var(--tm-radius-sm); animation: tm-skeleton-pulse 1.1s ease-in-out infinite alternate; }
+@keyframes tm-skeleton-pulse { from { opacity: 1; } to { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .tm-skeleton, #tm-ptr.is-loading i { animation: none; } }

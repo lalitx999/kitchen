@@ -1,5 +1,7 @@
 {# บอร์ดครัว 3 คอลัมน์ (จอใหญ่) / แท็บ (มือถือ) · ถูกแทนที่ทุก 5 วินาที #}
 {{ new_order_ids|json_script:"kds-new-ids" }}
+{# ตัวเลขบนไอคอนแอป "TMPP ครัว" = ออเดอร์ที่ยังไม่รับ (app.js) #}
+<span data-app-badge="{{ new_orders|length }}" hidden></span>
 
 <nav class="d-flex d-lg-none gap-2 mb-3" aria-label="สถานะออเดอร์">
   <button type="button" class="tm-pill flex-fill justify-content-center py-2" :class="tab === 'new' ? 'tm-pill-accent' : 'tm-pill-muted'" @click="tab = 'new'">ใหม่ {{ new_orders|length }}</button>

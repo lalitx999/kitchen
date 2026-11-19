@@ -1,5 +1,7 @@
 {# รายการงาน: โหลดใหม่ทุก 5 วินาที · id งานใหม่ส่งให้ JS เล่นเสียง #}
 <script type="application/json" id="rider-available-ids">[{% for job in available_jobs %}"{{ job.pk }}"{% if not forloop.last %},{% endif %}{% endfor %}]</script>
+{# ตัวเลขบนไอคอนแอป "TMPP ไรเดอร์" = งานใหม่ที่รับได้ (app.js) #}
+<span data-app-badge="{% if profile.is_online %}{{ available_jobs|length }}{% else %}0{% endif %}" hidden></span>
 <span id="rider-delivering" data-active="{% for job in my_jobs %}{% if job.status == 'DELIVERING' %}1{% endif %}{% endfor %}" hidden></span>
 
 <section class="mb-3">

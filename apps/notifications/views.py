@@ -9,6 +9,8 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_safe, require_POST
 
+from apps.core.selectors import asset_selector
+
 from .selectors import notification_selector
 from .services import notify_service
 
@@ -77,6 +79,7 @@ def service_worker(request):
     config = notification_selector.push_config()
     body = render_to_string('notifications/firebase-messaging-sw.js', {
         'config': config, 'offline_icon': static('img/icon-192.png'),
+        'asset_version': asset_selector.asset_version(),
     })
     response = HttpResponse(body, content_type='application/javascript; charset=utf-8')
     response['Service-Worker-Allowed'] = '/'
