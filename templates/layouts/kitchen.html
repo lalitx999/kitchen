@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
-{# จอครัว: เต็มความกว้าง ใช้บนแท็บเล็ต/มือถือในครัว ปุ่มใหญ่ ไม่มี footer #}
+{# จอครัว (ต้นแบบ FoodTown): แถบซ้ายสีเข้มพับได้ + หัวจอมีนาฬิกา/เต็มจอ · ใช้บนแท็บเล็ต/จอใหญ่ในครัว ปุ่มใหญ่ ไม่มี footer #}
+{# แถบซ้าย: จอใหญ่ = พับเหลือไอคอน (จำในเครื่อง) · จอเล็ก = ซ่อน กดปุ่มแล้วเลื่อนออกมาทับ #}
 
 {% block title %}จอครัว — {{ SITE_NAME }}{% endblock %}
 {% block body_class %}kds-app{% endblock %}
@@ -8,33 +9,83 @@
 {% block app_name %}TMPP ครัว{% endblock %}
 
 {% block layout %}
-<header class="tm-header">
-  <div class="container-fluid px-3 px-lg-4">
-    {% url 'orders:kitchen' as kitchen_url %}
-    {% include "components/_app_back.html" with roots=kitchen_url fallback=kitchen_url %}
-    <a href="{% url 'orders:kitchen' %}" class="tm-brand">
-      <img src="{% static 'img/logo-mark.svg' %}" alt="" width="36" height="36">
-      <span class="d-flex flex-column">
-        <span class="tm-brand-name">{{ SITE_NAME }}</span>
-        <span class="tm-brand-tag">จอครัว</span>
-      </span>
+{% with name=request.resolver_match.url_name %}
+<div class="kds-shell"
+     x-data="{ collapsed: false, open: false,
+               init() { try { this.collapsed = localStorage.getItem('kds-side-collapsed') === '1' } catch (e) {} },
+               toggle() {
+                 if (window.matchMedia('(min-width: 992px)').matches) {
+                   this.collapsed = !this.collapsed;
+                   try { localStorage.setItem('kds-side-collapsed', this.collapsed ? '1' : '0') } catch (e) {}
+                 } else { this.open = !this.open }
+               } }"
+     :class="{ 'is-collapsed': collapsed, 'is-open': open }" @keydown.escape.window="open = false">
+
+  <aside class="kds-side" aria-label="เมนูจอครัว">
+    <a href="{% url 'orders:kitchen' %}" class="kds-side-brand">
+      <img src="{% static 'img/logo-mark.svg' %}" alt="" width="34" height="34">
+      <span class="kds-side-text"><span class="fw-black">{{ SITE_NAME }}</span> <span class="kds-side-sub">ครัว</span></span>
     </a>
-    <div class="tm-header-actions">
-      {% block header_actions %}{% endblock %}
-      {% include "components/_bell.html" %}
-      {% if user.is_owner %}<a href="{% url 'console:overview' %}" class="btn btn-outline-ink btn-sm btn-icon"><i class="bi bi-grid-1x2"></i><span class="d-none d-md-inline">Console</span></a>{% endif %}
+    <nav class="kds-side-nav">
+      <div class="kds-side-label kds-side-text">ออเดอร์</div>
+      <a href="{% url 'orders:kitchen' %}?view=display" class="{% if name == 'kitchen' and view == 'display' %}active{% endif %}" title="จอครัว">
+        <i class="bi bi-grid-3x2-gap"></i><span class="kds-side-text">จอครัว</span></a>
+      <a href="{% url 'orders:kitchen' %}?view=board" class="{% if name == 'kitchen' and view == 'board' %}active{% endif %}" title="บอร์ด 3 คอลัมน์">
+        <i class="bi bi-layout-three-columns"></i><span class="kds-side-text">บอร์ด</span></a>
+      <a href="{% url 'orders:kitchen_history' %}" class="{% if name == 'kitchen_history' %}active{% endif %}" title="วันนี้">
+        <i class="bi bi-clock-history"></i><span class="kds-side-text">วันนี้</span></a>
+      <div class="kds-side-label kds-side-text">ร้าน</div>
+      <a href="{% url 'orders:kitchen_menu' %}" class="{% if name == 'kitchen_menu' %}active{% endif %}" title="เมนูหมด / มีขาย">
+        <i class="bi bi-journal-text"></i><span class="kds-side-text">เมนูหมด / มีขาย</span></a>
+      <a href="{% url 'notifications:list' %}" class="{% if request.resolver_match.app_name == 'notifications' %}active{% endif %}" title="แจ้งเตือน">
+        <i class="bi bi-bell"></i><span class="kds-side-text">แจ้งเตือน</span>
+        {% if unread_notifications %}<span class="kds-side-count">{{ unread_notifications }}</span>{% endif %}</a>
+      {% if user.is_owner %}
+        <a href="{% url 'console:overview' %}" title="Console"><i class="bi bi-grid-1x2"></i><span class="kds-side-text">Console</span></a>
+      {% endif %}
+    </nav>
+    <div class="kds-side-foot">
+      {% if branch %}
+        <div class="kds-side-shop" title="{{ shop.reason|default:'เปิดรับออเดอร์' }}">
+          <i class="bi {% if shop.accepting %}bi-circle-fill text-action{% else %}bi-circle{% endif %}"></i>
+          <span class="kds-side-text text-truncate">{% if shop.accepting %}ร้านเปิด{% else %}ปิดรับออเดอร์{% endif %} · {{ branch.name }}</span>
+        </div>
+      {% endif %}
       <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
-        <button type="submit" class="btn btn-outline-ink btn-sm" aria-label="ออกจากระบบ"><i class="bi bi-box-arrow-right"></i></button>
+        <button type="submit" class="kds-side-logout" title="ออกจากระบบ"><i class="bi bi-box-arrow-right"></i><span class="kds-side-text">ออกจากระบบ</span></button>
       </form>
     </div>
+  </aside>
+  <div class="kds-backdrop" @click="open = false" aria-hidden="true"></div>
+
+  <div class="kds-main">
+    <header class="tm-header kds-topbar">
+      <div class="container-fluid px-3 px-lg-4">
+        <button type="button" class="btn btn-outline-ink btn-sm kds-side-toggle" @click="toggle()" aria-label="เปิด/พับเมนูด้านซ้าย">
+          <i class="bi bi-layout-sidebar"></i>
+        </button>
+        {% url 'orders:kitchen' as kitchen_url %}
+        {% include "components/_app_back.html" with roots=kitchen_url fallback=kitchen_url %}
+        <div class="kds-topbar-title min-w-0 me-auto">{% block page_title %}จอครัว{% endblock %}</div>
+        <div class="tm-header-actions">
+          <span class="kds-clock d-none d-sm-inline font-mono-num" data-clock aria-label="เวลาตอนนี้">{% now "H:i:s" %}</span>
+          {% block header_actions %}{% endblock %}
+          <button type="button" class="btn btn-outline-ink btn-sm d-none" data-fullscreen aria-label="เต็มจอ" title="เต็มจอ">
+            <i class="bi bi-arrows-fullscreen"></i>
+          </button>
+          {% include "components/_bell.html" %}
+        </div>
+      </div>
+    </header>
+
+    {% include "components/_messages.html" %}
+
+    <main class="container-fluid px-3 px-lg-4 py-3">
+      {% block content %}{% endblock %}
+    </main>
   </div>
-</header>
-
-{% include "components/_messages.html" %}
-
-<main class="container-fluid px-3 px-lg-4 py-3">
-  {% block content %}{% endblock %}
-</main>
+</div>
+{% endwith %}
 
 <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index: 1090;">
   <div id="tm-toast" class="toast align-items-center border-0" role="status" aria-live="polite" aria-atomic="true">
@@ -42,4 +93,7 @@
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="ปิด"></button></div>
   </div>
 </div>
+{# นาฬิกา + ปุ่มเต็มจอ ใช้ทุกหน้าของครัว (kitchen.js ทำงานเฉพาะส่วนที่มีในหน้านั้น) #}
+<script src="{% static 'js/sound.js' %}" defer></script>
+<script src="{% static 'js/kitchen.js' %}" defer></script>
 {% endblock %}

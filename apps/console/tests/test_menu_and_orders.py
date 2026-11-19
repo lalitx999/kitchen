@@ -28,7 +28,8 @@ def test_console_creates_main_branch_on_first_visit(owner_client):
 
 
 RATES = {'delivery_base_km': '3', 'delivery_base_fare': '30', 'rider_base_fare': '25',
-         'delivery_per_km_fare': '6', 'rider_per_km_fare': '5', 'max_delivery_km': '15'}
+         'delivery_per_km_fare': '6', 'rider_per_km_fare': '5', 'max_delivery_km': '15',
+         'kitchen_warn_minutes': '10', 'kitchen_late_minutes': '15'}
 
 
 def _shop_post(client, **fields):

@@ -1,0 +1,33 @@
+{% extends "layouts/kitchen.html" %}
+{% load humanize %}
+{# วันนี้: ออเดอร์ที่จ่ายวันนี้และออกจากครัวแล้ว (กำลังส่ง / ส่งแล้ว / ยกเลิก) ใหม่สุดอยู่บน #}
+
+{% block title %}วันนี้ — จอครัว — {{ SITE_NAME }}{% endblock %}
+{% block page_title %}<span class="fw-black">วันนี้</span><span class="small text-muted-tm d-none d-md-inline ms-2">{{ branch.name }}</span>{% endblock %}
+
+{% block content %}
+<div class="kds-counts mb-3">
+  <span><span class="kds-dot kds-dot-ready"></span>ออกจากร้านแล้ว <b class="font-mono-num">{{ done_count }}</b></span>
+  <span><span class="kds-dot" style="background: var(--tm-danger)"></span>ยกเลิก <b class="font-mono-num">{{ cancelled_count }}</b></span>
+</div>
+<div class="card-tm overflow-hidden">
+  {% for order in orders %}
+    <div class="kds-history-row">
+      <span class="fw-black font-mono-num fs-5">#{{ order.order_number|slice:"-4:" }}</span>
+      <div class="min-w-0">
+        {% include "components/_status_badge.html" %}
+        <div class="small text-muted-tm text-truncate">
+          จ่าย {{ order.paid_at|time:"H:i" }}
+          {% if order.picked_up_at %}· ไรเดอร์รับ {{ order.picked_up_at|time:"H:i" }}{% endif %}
+          {% if order.completed_at %}· ส่งถึง {{ order.completed_at|time:"H:i" }}{% endif %}
+          {% if order.rider %}· {{ order.rider.full_name }}{% endif %}
+        </div>
+        {% if order.status == 'CANCELLED' and order.cancelled_reason %}<div class="small">เหตุผล: {{ order.cancelled_reason }}</div>{% endif %}
+      </div>
+      <span class="fw-bold font-mono-num">฿{{ order.total|floatformat:"0"|intcomma }}</span>
+    </div>
+  {% empty %}
+    <div class="kds-empty m-3">วันนี้ยังไม่มีออเดอร์ที่ออกจากครัว</div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -17,6 +17,7 @@ owner_required = role_required(Role.OWNER)
 
 RATE_FIELDS = ('delivery_base_km', 'delivery_base_fare', 'delivery_per_km_fare',
                'rider_base_fare', 'rider_per_km_fare', 'max_delivery_km')
+KITCHEN_FIELDS = ('kitchen_warn_minutes', 'kitchen_late_minutes')
 
 
 def _initial(branch):
@@ -26,7 +27,7 @@ def _initial(branch):
         'maps_link': branch.maps_url or (f'{branch.location.y:.6f}, {branch.location.x:.6f}' if branch.location else ''),
         'opens_at': branch.opens_at, 'closes_at': branch.closes_at,
     }
-    initial.update({f: getattr(branch, f) for f in RATE_FIELDS})
+    initial.update({f: getattr(branch, f) for f in RATE_FIELDS + KITCHEN_FIELDS})
     return initial
 
 
@@ -43,7 +44,7 @@ def shop_settings(request):
                 latitude=data['latitude'], longitude=data['longitude'],
                 images={f: data.get(f) for f in ('storefront_image', 'cover_image') if data.get(f)},
                 remove_images=[f for f in ('storefront_image', 'cover_image') if data.get(f'remove_{f}')],
-                **{k: data[k] for k in ('name', 'phone', 'address', 'maps_url', 'opens_at', 'closes_at') + RATE_FIELDS},
+                **{k: data[k] for k in ('name', 'phone', 'address', 'maps_url', 'opens_at', 'closes_at') + RATE_FIELDS + KITCHEN_FIELDS},
             )
             if changes:
                 audit_service.record(request, action='branch.update', target_type='branch', target_id=branch.pk,

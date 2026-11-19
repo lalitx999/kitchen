@@ -19,6 +19,8 @@ urlpatterns = [
     # จอครัว
     path('kitchen/', kitchen_views.kitchen_home, name='kitchen'),
     path('kitchen/board/', kitchen_views.kitchen_board, name='kitchen_board'),
+    path('kitchen/menu/', kitchen_views.kitchen_menu, name='kitchen_menu'),
+    path('kitchen/history/', kitchen_views.kitchen_history, name='kitchen_history'),
     path('kitchen/orders/<uuid:order_id>/', kitchen_views.kitchen_action, name='kitchen_action'),
     path('kitchen/shop/', kitchen_views.kitchen_toggle_shop, name='kitchen_toggle_shop'),
     path('kitchen/menu/<uuid:item_id>/', kitchen_views.kitchen_toggle_item, name='kitchen_toggle_item'),

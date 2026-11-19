@@ -54,7 +54,8 @@ def create_branch(*, name: str, copy_rates_from: Branch | None = None) -> Branch
     if copy_rates_from is not None:
         # ใช้อัตราค่าส่งเดียวกับสาขาหลักเป็นค่าเริ่มต้น แก้ทีหลังได้
         for field in ('delivery_base_km', 'delivery_base_fare', 'delivery_per_km_fare',
-                      'rider_base_fare', 'rider_per_km_fare', 'max_delivery_km', 'opens_at', 'closes_at'):
+                      'rider_base_fare', 'rider_per_km_fare', 'max_delivery_km', 'opens_at', 'closes_at',
+                      'kitchen_warn_minutes', 'kitchen_late_minutes'):
             setattr(branch, field, getattr(copy_rates_from, field))
     branch.save()
     return branch
@@ -79,7 +80,7 @@ def _point_label(point):
 
 TEXT_FIELDS = ('name', 'phone', 'address', 'maps_url')
 VALUE_FIELDS = ('opens_at', 'closes_at', 'delivery_base_km', 'delivery_base_fare', 'delivery_per_km_fare',
-                'rider_base_fare', 'rider_per_km_fare', 'max_delivery_km')
+                'rider_base_fare', 'rider_per_km_fare', 'max_delivery_km', 'kitchen_warn_minutes', 'kitchen_late_minutes')
 IMAGE_FIELDS = ('storefront_image', 'cover_image')
 
 

@@ -90,6 +90,16 @@
       </details>
     </section>
 
+    {# ---- 4. จอครัว ---- #}
+    <section class="card-tm card-tm-body p-4">
+      <h2 class="h6 fw-black mb-1"><i class="bi bi-fire me-1"></i>จอครัว: สีตามเวลารอ</h2>
+      <div class="small text-muted-tm mb-3">หัวใบออเดอร์บนจอครัวเป็นสีเขียว แล้วเปลี่ยนเป็นสีส้มและสีแดงเมื่อรอครบเวลาที่ตั้ง (นับจากลูกค้าจ่ายเงิน)</div>
+      <div class="row g-3">
+        {% include "components/_field.html" with field=form.kitchen_warn_minutes wrapper_class="col-6 col-md-4" %}
+        {% include "components/_field.html" with field=form.kitchen_late_minutes wrapper_class="col-6 col-md-4" %}
+      </div>
+    </section>
+
     <div><button type="submit" class="btn btn-primary btn-lg">บันทึกข้อมูลร้าน</button></div>
   </form>
 </div>

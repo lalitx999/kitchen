@@ -1,10 +1,15 @@
 {% extends "layouts/kitchen.html" %}
 {% load static %}
+{# จอครัว: สถานะร้าน + ออเดอร์ (มุมมอง display/board) + หน้าต่างยกเลิกพร้อมเหตุผล #}
+
+{% block page_title %}
+  <span class="fw-black">{% if view == 'board' %}บอร์ด{% else %}จอครัว{% endif %}</span>
+  <span class="small text-muted-tm d-none d-md-inline ms-2">{{ branch.name }}</span>
+{% endblock %}
 
 {% block header_actions %}
   {% include "components/_branch_switcher.html" with branches=branches current=branch wrapper_class="d-none d-md-block" %}
   {# เบราว์เซอร์ไม่ให้เล่นเสียงจนกว่าผู้ใช้จะกดอะไรสักอย่าง จึงต้องมีปุ่มเปิดเสียงทุกครั้งที่เปิดจอ #}
-  {# บน header เหลือแค่ไอคอนในจอเล็ก ข้อความเต็มอยู่ใน title/aria-label (push.js อัปเดตให้) #}
   {% include "components/_push_button.html" with label_class="d-none d-xl-inline" %}
   <button type="button" data-sound-toggle class="btn btn-primary btn-sm btn-icon" aria-pressed="false" aria-label="เปิดเสียง">
     <i class="bi bi-volume-mute"></i><span data-sound-label class="d-none d-sm-inline">เปิดเสียง</span>
@@ -12,42 +17,49 @@
 {% endblock %}
 
 {% block content %}
-<div x-data="{ tab: 'new', showMenu: false }">
+<div x-data="{ tab: 'new' }">
   <div class="mb-3">{% include "components/_install_banner.html" %}</div>
   <button type="button" data-sound-banner class="alert alert-warning d-flex align-items-center gap-2 w-100 text-start mb-3 border-0">
     <i class="bi bi-volume-mute fs-4"></i>
     <span><span class="fw-bold d-block">เสียงยังไม่เปิด แตะตรงนี้</span><span class="small">ทุกครั้งที่เปิดแอป ต้องแตะหน้าจอ 1 ครั้ง ถึงจะมีเสียงเตือนออเดอร์ใหม่ (กฎของเบราว์เซอร์) · ปิดโหมดเงียบของมือถือด้วย</span></span>
   </button>
-  <div class="d-flex flex-wrap align-items-stretch gap-3 mb-3">
-    {% if branches|length > 1 %}<div class="w-100 d-md-none">{% include "components/_branch_switcher.html" with branches=branches current=branch %}</div>{% endif %}
-    <div class="flex-grow-1">{% include "orders/kitchen/_shop_switch.html" %}</div>
-    <button type="button" class="btn btn-outline-ink btn-icon" @click="showMenu = !showMenu" :aria-expanded="showMenu">
-      <i class="bi bi-journal-text"></i>เมนูหมด / มีขาย
-    </button>
-  </div>
+  {% if branches|length > 1 %}<div class="mb-3 d-md-none">{% include "components/_branch_switcher.html" with branches=branches current=branch %}</div>{% endif %}
+  <div class="mb-3">{% include "orders/kitchen/_shop_switch.html" %}</div>
 
-  <section class="card-tm card-tm-body mb-3" x-show="showMenu" x-cloak>
-    <div class="small text-muted-tm mb-2">กด "หมด" แล้วเมนูจะหายจากหน้าร้านทันที</div>
-    {% if menu_items %}
-      <div class="d-flex flex-wrap gap-2">
-        {% for item in menu_items %}{% include "orders/kitchen/_menu_item.html" %}{% endfor %}
-      </div>
-    {% else %}
-      <div class="small text-muted-tm">ยังไม่มีเมนู</div>
-    {% endif %}
-  </section>
-
-  {# ถามบอร์ดใหม่ทุก 5 วินาที เฉพาะตอนแท็บเปิด · data-refresh-on-visible: กลับมาที่แท็บแล้วโหลดทันที (app.js) #}
-  <div id="kds-board" hx-get="{% url 'orders:kitchen_board' %}"
+  {# ถามบอร์ดใหม่ทุก 5 วินาที เฉพาะตอนแท็บเปิด และไม่มีนิ้วแตะอยู่ ([data-touching] จาก app.js) #}
+  <div id="kds-board" hx-get="{% url 'orders:kitchen_board' %}?view={{ view }}"
        hx-trigger="every 5s [document.visibilityState === 'visible' && !document.querySelector('[data-touching]')], refresh" hx-swap="innerHTML" data-refresh-on-visible>
     {% include "orders/kitchen/_board.html" %}
   </div>
 </div>
 
-<audio data-sound="order" src="{% static 'sounds/bell-order.mp3' %}" preload="auto"></audio>
-{% endblock %}
+{# ยกเลิกออเดอร์: แตะเลือกเหตุผล (ลูกค้าเห็นข้อความนี้) · kitchen.js ใส่เลขออเดอร์และ URL ให้ตอนกดปุ่มยกเลิกบนใบ #}
+<div class="modal fade" id="kds-cancel" tabindex="-1" aria-labelledby="kds-cancel-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content border-0" style="border-radius: var(--tm-radius-lg);" data-cancel-form
+          x-data="{ reason: '', other: '' }" @kds-cancel-open.window="reason = ''; other = ''">
+      <input type="hidden" name="action" value="cancel">
+      <input type="hidden" name="reason" :value="reason === 'other' ? other.trim() : reason">
+      <div class="modal-header border-0 pb-0">
+        <h2 class="modal-title h5 fw-black" id="kds-cancel-title">ยกเลิก <span class="font-mono-num" data-cancel-number></span></h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+      </div>
+      <div class="modal-body d-grid gap-2">
+        <div class="small text-muted-tm">ลูกค้าจะเห็นเหตุผลนี้ · ลูกค้าจ่ายแล้ว ร้านต้องโอนเงินคืนเอง</div>
+        {% for reason in cancel_reasons %}
+          <label class="kds-reason"><input type="radio" name="reason_choice" value="{{ reason }}" x-model="reason"><span>{{ reason }}</span></label>
+        {% endfor %}
+        <label class="kds-reason"><input type="radio" name="reason_choice" value="other" x-model="reason"><span>อื่นๆ</span></label>
+        <input type="text" class="form-control" maxlength="200" placeholder="พิมพ์เหตุผล" x-show="reason === 'other'" x-model="other" x-cloak>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-ink" data-bs-dismiss="modal">ไม่ยกเลิก</button>
+        <button type="submit" class="btn btn-ink btn-icon" :disabled="!reason || (reason === 'other' && !other.trim())">
+          <i class="bi bi-x-circle"></i>ยืนยันยกเลิก</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-{% block extra_body %}
-<script src="{% static 'js/sound.js' %}" defer></script>
-<script src="{% static 'js/kitchen.js' %}" defer></script>
+<audio data-sound="order" src="{% static 'sounds/bell-order.mp3' %}" preload="auto"></audio>
 {% endblock %}

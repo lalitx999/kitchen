@@ -46,6 +46,9 @@ class Branch(UUIDModel):
     opens_at = models.TimeField('เวลาเปิด', null=True, blank=True)
     closes_at = models.TimeField('เวลาปิด', null=True, blank=True)
     # สวิตช์ที่เจ้าของ/ครัวกดเองได้ทันที เช่น ของหมด ปิดก่อนเวลา
+    # จอครัว: สีหัวใบออเดอร์ตามเวลารอ (นาทีนับจากลูกค้าจ่ายเงิน) เขียว -> ส้ม (ถึง warn) -> แดง (ถึง late)
+    kitchen_warn_minutes = models.PositiveSmallIntegerField('ครัว: เริ่มเตือน (นาที)', default=10)
+    kitchen_late_minutes = models.PositiveSmallIntegerField('ครัว: ช้า (นาที)', default=15)
     is_open = models.BooleanField('เปิดรับออเดอร์', default=False)
     is_active = models.BooleanField('ใช้งาน', default=True)
     sort_order = models.PositiveSmallIntegerField(default=0)

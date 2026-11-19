@@ -49,6 +49,9 @@ class BranchForm(forms.Form):
     rider_per_km_fare = _money('ไรเดอร์ได้ / กม. ถัดไป')
     max_delivery_km = forms.DecimalField(label='ส่งไกลสุด (กม.)', min_value=Decimal('1'), max_value=Decimal('100'),
                                          max_digits=5, decimal_places=2)
+    kitchen_warn_minutes = forms.IntegerField(label='เริ่มเตือน (สีส้ม) เมื่อรอครบ', min_value=1, max_value=120,
+                                              help_text='นาที นับจากลูกค้าจ่ายเงิน')
+    kitchen_late_minutes = forms.IntegerField(label='ช้า (สีแดง) เมื่อรอครบ', min_value=2, max_value=180, help_text='นาที')
 
     def clean_phone(self):
         phone = normalize_thai_phone(self.cleaned_data['phone'])
@@ -81,6 +84,9 @@ class BranchForm(forms.Form):
             rider, fare = cleaned.get(rider_key), cleaned.get(fare_key)
             if rider is not None and fare is not None and rider > fare:
                 self.add_error(rider_key, 'ไรเดอร์ได้มากกว่าที่ลูกค้าจ่ายไม่ได้')
+        warn, late = cleaned.get('kitchen_warn_minutes'), cleaned.get('kitchen_late_minutes')
+        if warn is not None and late is not None and late <= warn:
+            self.add_error('kitchen_late_minutes', 'ต้องมากกว่าเวลาเริ่มเตือน')
         base_km, max_km = cleaned.get('delivery_base_km'), cleaned.get('max_delivery_km')
         if base_km is not None and max_km is not None and max_km < base_km:
             self.add_error('max_delivery_km', 'ต้องไม่น้อยกว่าระยะเหมา')

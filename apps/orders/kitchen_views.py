@@ -1,6 +1,7 @@
 """
-จอครัว (KDS) — ใช้ได้ทั้งพนักงานครัวและเจ้าของร้าน
+จอครัว (KDS) — ใช้ได้ทั้งพนักงานครัวและเจ้าของร้าน · แถบซ้ายพับได้: จอครัว / บอร์ด / เมนูหมด / วันนี้
 หน้าแรกโหลดครั้งเดียว แล้ว HTMX ถาม /kitchen/board/ ทุก 5 วินาที (เฉพาะตอนแท็บเปิด)
+มุมมอง: display = ใบใหญ่เรียงตามเวลา หัวสีตามเวลารอ · board = 3 คอลัมน์ ใหม่/กำลังทำ/รอไรเดอร์ (จำในเซสชัน)
 """
 import json
 
@@ -33,16 +34,63 @@ def _shop_context(branch):
     return {'branch': branch, 'shop': menu_selector.shop_status(branch)}
 
 
+VIEWS = ('display', 'board')
+VIEW_SESSION_KEY = 'kitchen_view'
+
+
+def _view(request):
+    """?view=... เปลี่ยนมุมมองแล้วจำไว้ (แท็บเล็ตแต่ละเครื่องจำของตัวเอง) · ค่าแปลก = display"""
+    chosen = request.GET.get('view')
+    if chosen in VIEWS:
+        request.session[VIEW_SESSION_KEY] = chosen
+        return chosen
+    saved = request.session.get(VIEW_SESSION_KEY)
+    return saved if saved in VIEWS else 'display'
+
+
+def _board_context(request, branch):
+    return {**kitchen_selector.board(branch), 'view': _view(request)}
+
+
 @kitchen_required
 @require_safe
 def kitchen_home(request):
     branch = _branch(request)
-    categories, uncategorized = menu_selector.console_menu(branch)
     return render(request, 'orders/kitchen/home.html', {
-        **kitchen_selector.board(branch), **_shop_context(branch),
+        **_board_context(request, branch), **_shop_context(branch),
         # เจ้าของสลับสาขาได้จากจอครัว (พนักงานครัวเห็นแค่สาขาตัวเอง)
         'branches': menu_selector.all_branches() if request.user.is_owner else [],
-        'menu_items': [item for c in categories for item in c.menu] + uncategorized,
+        'cancel_reasons': CANCEL_REASONS,
+    })
+
+
+# เหตุผลยกเลิกที่ครัวแตะเลือกได้ (ลูกค้าเห็นข้อความนี้) · "อื่นๆ" พิมพ์เอง
+CANCEL_REASONS = (
+    'วัตถุดิบหมด', 'ร้านจะปิดแล้ว ทำไม่ทัน', 'ลูกค้าขอยกเลิก', 'ส่งไม่ได้ / นอกพื้นที่',
+)
+
+
+@kitchen_required
+@require_safe
+def kitchen_menu(request):
+    """เมนูหมด / มีขาย (แตะสลับได้ทันที ลูกค้าเห็นผลทันที)"""
+    branch = _branch(request)
+    categories, uncategorized = menu_selector.console_menu(branch)
+    return render(request, 'orders/kitchen/menu.html', {
+        **_shop_context(branch), 'categories': categories, 'uncategorized': uncategorized,
+    })
+
+
+@kitchen_required
+@require_safe
+def kitchen_history(request):
+    """ออเดอร์วันนี้ที่ออกจากครัวแล้ว (กำลังส่ง / ส่งแล้ว / ยกเลิก)"""
+    branch = _branch(request)
+    orders = kitchen_selector.today_history(branch)
+    return render(request, 'orders/kitchen/history.html', {
+        **_shop_context(branch), 'orders': orders,
+        'done_count': sum(1 for o in orders if o.status != 'CANCELLED'),
+        'cancelled_count': sum(1 for o in orders if o.status == 'CANCELLED'),
     })
 
 
@@ -50,7 +98,7 @@ def kitchen_home(request):
 @require_safe
 @never_cache
 def kitchen_board(request):
-    return render(request, 'orders/kitchen/_board.html', kitchen_selector.board(_branch(request)))
+    return render(request, 'orders/kitchen/_board.html', _board_context(request, _branch(request)))
 
 
 @kitchen_required
@@ -73,8 +121,8 @@ def kitchen_action(request, order_id):
         else:
             kitchen_service.apply_action(order, action, actor=request.user)
     except kitchen_service.KitchenError as exc:
-        response = _toast(render(request, 'orders/kitchen/_board.html', kitchen_selector.board(branch)), str(exc))
-    return response or render(request, 'orders/kitchen/_board.html', kitchen_selector.board(branch))
+        response = _toast(render(request, 'orders/kitchen/_board.html', _board_context(request, branch)), str(exc))
+    return response or render(request, 'orders/kitchen/_board.html', _board_context(request, branch))
 
 
 @kitchen_required
